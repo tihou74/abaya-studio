@@ -179,16 +179,17 @@ INTRO_BANDS = """
 """
 
 
-def build_bands(name, heading, intro_html, per_page=2):
+def build_bands(name, heading, intro_html, per_page=2,
+                index_file="index_bands.json", svg_dir="bands"):
     """صفحات الأشرطة الرأسية: شريطان في صفحة A4 بطول الصفحة كاملاً."""
-    data = json.loads((ROOT / "index_bands.json").read_text(encoding="utf-8"))
+    data = json.loads((ROOT / index_file).read_text(encoding="utf-8"))
     talls = [d for d in data if d.get("tall")]
     rest = [d for d in data if not d.get("tall")]
 
     def strip_page(items, pageno, total):
         cells = "".join(
             f'<div class="cell" style="flex:1;min-width:0">'
-            f'<img src="../bands/{it["file"]}" '
+            f'<img src="../{svg_dir}/{it["file"]}" '
             f'style="height:235mm;width:auto;margin:0 auto;display:block">'
             f'<div class="cap"><b>{it["num"]:03d}</b> — {it["title"]}</div></div>'
             for it in items)
@@ -211,8 +212,8 @@ def build_bands(name, heading, intro_html, per_page=2):
     for grp in rest_pages:
         n += 1
         for d in grp:
-            d["_dir"] = "bands"
-        body.append(page(grp, 2, f"{heading} — ألواح وعناصر", n, total))
+            d["_dir"] = svg_dir
+        body.append(page(grp, 2, f"{heading} — عناصر", n, total))
 
     html = (f'<!DOCTYPE html>\n<html lang="ar" dir="rtl">\n<head>\n'
             f'<meta charset="utf-8">\n<title>{heading}</title>\n'
@@ -230,12 +231,29 @@ def main():
               INTRO_CATALOG2, "index_art.json", "art")
     d = build("trace2.html", 4, 2, 2, "المجموعة الثانية — النقل",
               INTRO_TRACE2, "index_art.json", "art")
+    INTRO_BOT = """
+<div class="note">
+<h1>المجموعة الخامسة — فروع نباتية واقعية</h1>
+<p>ورد وزنابق بالخط الرفيع: ورود بطبقات بتلات، براعم بسبلات ومحفظة،
+أوراق ورد مركّبة مسنّنة، وأوراق زنبق بعروق موازية.</p>
+<ul>
+<li>اطبع بمقاس <b>A4</b> ومقياس <b>100%</b> (عطّل «تحجيم لملاءمة الصفحة»).</li>
+<li>الفرع الواحد بطول ≈ <b>235 مم</b>. لطرف أطول: اطبع عدة نسخ وصِلها.</li>
+<li>الخطوط رفيعة بقصد (مطابقةً للمرجع). لتطريز أسمك غيّر سماكة الخط
+من أي برنامج متجهي.</li>
+</ul>
+</div>
+"""
     e = build_bands("bands.html", "أشرطة أطراف رأسية", INTRO_BANDS)
+    f = build_bands("botanical.html", "فروع نباتية واقعية", INTRO_BOT,
+                    per_page=2, index_file="index_botanical.json",
+                    svg_dir="botanical")
     print(f"print/catalog.html  — {a} صفحة  (المجموعة الأولى)")
     print(f"print/trace.html    — {b} صفحة")
     print(f"print/catalog2.html — {c} صفحة  (المجموعة الثانية)")
     print(f"print/trace2.html   — {d} صفحة")
     print(f"print/bands.html    — {e} صفحة  (المجموعة الثالثة)")
+    print(f"print/botanical.html— {f} صفحة  (المجموعة الخامسة)")
 
 
 if __name__ == "__main__":

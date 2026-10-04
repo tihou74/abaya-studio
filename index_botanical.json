@@ -1,0 +1,182 @@
+[
+ {
+  "num": 1,
+  "file": "R001_rose_vine_01.svg",
+  "title": "فرع ورد رأسي",
+  "family": "فروع ورد رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 273
+ },
+ {
+  "num": 2,
+  "file": "R002_rose_vine_02.svg",
+  "title": "فرع ورد رأسي",
+  "family": "فروع ورد رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 375
+ },
+ {
+  "num": 3,
+  "file": "R003_rose_vine_03.svg",
+  "title": "فرع ورد رأسي",
+  "family": "فروع ورد رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 273
+ },
+ {
+  "num": 4,
+  "file": "R004_rose_vine_04.svg",
+  "title": "فرع ورد رأسي",
+  "family": "فروع ورد رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 375
+ },
+ {
+  "num": 5,
+  "file": "R005_rose_vine_05.svg",
+  "title": "فرع ورد رأسي",
+  "family": "فروع ورد رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 273
+ },
+ {
+  "num": 6,
+  "file": "R006_rose_vine_06.svg",
+  "title": "فرع ورد رأسي",
+  "family": "فروع ورد رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 375
+ },
+ {
+  "num": 7,
+  "file": "R007_lily_vine_01.svg",
+  "title": "فرع زنابق رأسي",
+  "family": "فروع زنابق رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 121
+ },
+ {
+  "num": 8,
+  "file": "R008_lily_vine_02.svg",
+  "title": "فرع زنابق رأسي",
+  "family": "فروع زنابق رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 109
+ },
+ {
+  "num": 9,
+  "file": "R009_lily_vine_03.svg",
+  "title": "فرع زنابق رأسي",
+  "family": "فروع زنابق رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 121
+ },
+ {
+  "num": 10,
+  "file": "R010_lily_vine_04.svg",
+  "title": "فرع زنابق رأسي",
+  "family": "فروع زنابق رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 109
+ },
+ {
+  "num": 11,
+  "file": "R011_lily_vine_05.svg",
+  "title": "فرع زنابق رأسي",
+  "family": "فروع زنابق رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 121
+ },
+ {
+  "num": 12,
+  "file": "R012_lily_vine_06.svg",
+  "title": "فرع زنابق رأسي",
+  "family": "فروع زنابق رأسية",
+  "wide": false,
+  "tall": true,
+  "elements": 109
+ },
+ {
+  "num": 13,
+  "file": "R013_rose_open.svg",
+  "title": "وردة متفتّحة",
+  "family": "عناصر منفردة",
+  "wide": false,
+  "tall": false,
+  "elements": 22
+ },
+ {
+  "num": 14,
+  "file": "R014_rose_open_b.svg",
+  "title": "وردة متفتّحة ٢",
+  "family": "عناصر منفردة",
+  "wide": false,
+  "tall": false,
+  "elements": 22
+ },
+ {
+  "num": 15,
+  "file": "R015_rose_open_c.svg",
+  "title": "وردة متفتّحة ٣",
+  "family": "عناصر منفردة",
+  "wide": false,
+  "tall": false,
+  "elements": 16
+ },
+ {
+  "num": 16,
+  "file": "R016_rose_bud.svg",
+  "title": "برعم ورد",
+  "family": "عناصر منفردة",
+  "wide": false,
+  "tall": false,
+  "elements": 8
+ },
+ {
+  "num": 17,
+  "file": "R017_lily_open.svg",
+  "title": "زنبق",
+  "family": "عناصر منفردة",
+  "wide": false,
+  "tall": false,
+  "elements": 38
+ },
+ {
+  "num": 18,
+  "file": "R018_lily_open_b.svg",
+  "title": "زنبق ٢",
+  "family": "عناصر منفردة",
+  "wide": false,
+  "tall": false,
+  "elements": 38
+ },
+ {
+  "num": 19,
+  "file": "R019_rose_leaf.svg",
+  "title": "ورقة ورد مركّبة",
+  "family": "عناصر منفردة",
+  "wide": false,
+  "tall": false,
+  "elements": 51
+ },
+ {
+  "num": 20,
+  "file": "R020_lily_leaf.svg",
+  "title": "ورقة زنبق",
+  "family": "عناصر منفردة",
+  "wide": false,
+  "tall": false,
+  "elements": 6
+ }
+]
