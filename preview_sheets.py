@@ -131,19 +131,18 @@ def load_svg(path):
         if tag == "path":
             for poly in parse_d(el.get("d", "")):
                 pts = [(x * s + tx, y * s + ty) for x, y in poly]
-                # الشكل المُعبّأ يُحاكى بخط سميك على محيطه
-                out.append((pts, (sw * s) if not filled else max(2.0, sw * s)))
+                out.append((pts, sw * s, filled))
         elif tag == "circle":
             cx, cy, r = (float(el.get("cx")), float(el.get("cy")),
                          float(el.get("r")))
             cx, cy, r = cx * s + tx, cy * s + ty, r * s
+            ring = [(cx + r * math.cos(math.tau * k / 64),
+                     cy + r * math.sin(math.tau * k / 64)) for k in range(65)]
             if filled:
                 # نقطة مُعبّأة: تُرسم كقرص مصمت بسماكة تساوي قطرها
-                out.append(([(cx, cy), (cx + 0.01, cy)], r * 2))
+                out.append(([(cx, cy), (cx + 0.01, cy)], r * 2, False))
             else:
-                out.append(([(cx + r * math.cos(math.tau * k / 64),
-                              cy + r * math.sin(math.tau * k / 64))
-                             for k in range(65)], sw * s))
+                out.append((ring, sw * s, False))
 
     for child in g:
         if child.tag.replace(NS, "") == "g":
@@ -186,6 +185,37 @@ class Canvas:
             self.disc(int(round(x0 + (x1 - x0) * t)),
                       int(round(y0 + (y1 - y0) * t)), r)
 
+    def fill_poly(self, pts):
+        """
+        تعبئة مضلّع بطريقة المسح السطري وقاعدة الزوجي-الفردي.
+        ضرورية لمعاينة الزخرفة المصمتة — بلا هذا تظهر الأشكال المُعبّأة
+        كمحيطات فقط ولا يمكن الحكم على التصميم.
+        """
+        if len(pts) < 3:
+            return
+        ys = [p[1] for p in pts]
+        y_lo = max(0, int(math.floor(min(ys))))
+        y_hi = min(self.h - 1, int(math.ceil(max(ys))))
+        n = len(pts)
+        for y in range(y_lo, y_hi + 1):
+            yc = y + 0.5
+            xs = []
+            for i in range(n):
+                x1, y1 = pts[i]
+                x2, y2 = pts[(i + 1) % n]
+                if (y1 <= yc < y2) or (y2 <= yc < y1):
+                    t = (yc - y1) / (y2 - y1)
+                    xs.append(x1 + t * (x2 - x1))
+            if not xs:
+                continue
+            xs.sort()
+            row = y * self.w
+            for i in range(0, len(xs) - 1, 2):
+                xa = max(0, int(math.ceil(xs[i] - 0.5)))
+                xb = min(self.w - 1, int(math.floor(xs[i + 1] - 0.5)))
+                for x in range(xa, xb + 1):
+                    self.buf[row + x] = 0
+
     def downsample(self, factor):
         w2, h2 = self.w // factor, self.h // factor
         rows = []
@@ -207,11 +237,14 @@ def render_cell(canvas, polys, vw, vh, ox, oy, cw, ch):
     k = min(cw / vw, ch / vh)
     dx = ox + (cw - vw * k) / 2
     dy = oy + (ch - vh * k) / 2
-    for poly, sw in polys:
+    for poly, sw, filled in polys:
+        mapped = [(px * k + dx, py * k + dy) for px, py in poly]
+        if filled:
+            canvas.fill_poly(mapped)
+            continue
         r = max(0.8, sw * k / 2)
-        for a, b in zip(poly, poly[1:]):
-            canvas.thick_line((a[0] * k + dx, a[1] * k + dy),
-                              (b[0] * k + dx, b[1] * k + dy), r)
+        for a, b in zip(mapped, mapped[1:]):
+            canvas.thick_line(a, b, r)
 
 
 def frame(canvas, ox, oy, cw, ch):

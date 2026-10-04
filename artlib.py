@@ -50,6 +50,35 @@ def FILLED(points, smooth=True):
             "closed": True, "smooth": smooth, "w": W_MAIN}
 
 
+def filled_ribbon(axis, half, n=120, smooth=True):
+    """
+    شريط مصمت حول محور حرّ — الأساس في الزخرفة المصمتة:
+    ساق يتدرّج في السماكة، وفرع ينتهي بسنّ، وحلزون يتلاشى طرفه.
+
+    ميزة مهمة: الأشكال المصمتة المتراكبة تتّحد في ظلّ واحد،
+    بخلاف المحيطات التي تتشابك خطوطها عند التراكب.
+    """
+    return FILLED(ribbon(axis, half, n=n)["pts"], smooth=smooth)
+
+
+def taper_tip(w0, power=0.78, tip=0.0):
+    """نصف عرض يتدرّج من w0 عند t=0 إلى `tip` عند t=1 — لساق أو فرع."""
+    def f(t):
+        t = min(1.0, max(0.0, t))
+        return tip + (w0 - tip) * (1 - t) ** power
+    return f
+
+
+def spiral_axis(R, turns=1.35, phase=0.0, shrink=0.88, at=(0.0, 0.0)):
+    """محور حلزوني: يبدأ من المحيط وينتهي عند القلب."""
+    def f(t):
+        a = phase + TAU * turns * t
+        r = R * (1 - shrink * t)
+        return (at[0] + r * math.cos(a), at[1] + r * math.sin(a))
+    o = f(0.0)
+    return lambda t: (f(t)[0] - o[0] + at[0], f(t)[1] - o[1] + at[1])
+
+
 def LINE(p1, p2, w=W_MAIN):
     return P([p1, p2], closed=False, smooth=False, w=w)
 

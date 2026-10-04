@@ -76,6 +76,12 @@ def check(path):
         errs.append(f"مقياس غير صالح: {s}")
         return errs, warns
 
+    # هل يحتوي الملف مجموعة مُعبّأة؟ (الزخرفة المصمتة قد تكون بلا أي خط)
+    has_fill_group = any(
+        sub.tag.replace(NS, "") == "g"
+        and (sub.get("fill") or "none") != "none"
+        for sub in g)
+
     # السماكات: إمّا واحدة على المجموعة الرئيسية، أو عدة مجموعات متداخلة
     widths = []
     if g.get("stroke-width"):
@@ -83,16 +89,20 @@ def check(path):
     for sub in g:
         if sub.tag.replace(NS, "") == "g" and sub.get("stroke-width"):
             widths.append(float(sub.get("stroke-width")))
-    if not widths:
-        errs.append("stroke-width مفقود تماماً")
-        widths = [0.0]
 
-    eff_max = max(w * s for w in widths)
-    eff_min = min(w * s for w in widths)
-    if not (0.5 <= eff_min and eff_max <= 3.5):
-        warns.append(f"سماكة الخط الفعلية {eff_min:.2f}–{eff_max:.2f} "
-                     f"خارج المدى المعتاد 0.5–3.5")
-    eff = eff_max
+    if widths:
+        eff_max = max(w * s for w in widths)
+        eff_min = min(w * s for w in widths)
+        if not (0.5 <= eff_min and eff_max <= 3.5):
+            warns.append(f"سماكة الخط الفعلية {eff_min:.2f}–{eff_max:.2f} "
+                         f"خارج المدى المعتاد 0.5–3.5")
+        eff = eff_max
+    elif has_fill_group:
+        # رسمة مصمتة بالكامل: لا تحتاج سماكة خط، والحدود بلا هامش خط
+        eff = 0.0
+    else:
+        errs.append("لا سماكة خط ولا مجموعة مُعبّأة — الملف بلا محتوى مرئي")
+        eff = 0.0
 
     xs, ys = [], []
     count = 0
