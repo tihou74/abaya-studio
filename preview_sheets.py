@@ -17,8 +17,12 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SVG_DIR = ROOT / "svg"
-OUT = ROOT / "preview"
+# المجموعة افتراضياً الأولى؛ ويمكن تمرير مجموعة أخرى:
+#   python3 preview_sheets.py art index_art.json preview_art
+_A = sys.argv[1:] if len(sys.argv) > 1 else []
+SVG_DIR = ROOT / (_A[0] if len(_A) > 0 else "svg")
+INDEX = ROOT / (_A[1] if len(_A) > 1 else "index.json")
+OUT = ROOT / (_A[2] if len(_A) > 2 else "preview")
 NS = "{http://www.w3.org/2000/svg}"
 
 SS = 3            # معامل الإفراط في العيّنات (للتنعيم)
@@ -105,7 +109,11 @@ def parse_d(d):
 
 
 def load_svg(path):
-    """يُرجع (قائمة مسارات متعددة الأضلاع, عرض, ارتفاع, سماكة الخط)"""
+    """
+    يُرجع (قائمة (مسار, سماكة), عرض, ارتفاع).
+    يدعم المجموعتين: سماكة واحدة على المجموعة الرئيسية (المجموعة الأولى)،
+    أو مجموعات متداخلة بسماكات مختلفة (المجموعة الفنّية).
+    """
     root = ET.parse(path).getroot()
     vw, vh = [float(v) for v in root.get("viewBox").split()[2:]]
     g = root.find(f"{NS}g")
@@ -114,20 +122,31 @@ def load_svg(path):
     tx, ty = (float(m.group(1)), float(m.group(2))) if m else (0.0, 0.0)
     m = re.search(r"scale\(([-\d.eE+]+)\)", tr)
     s = float(m.group(1)) if m else 1.0
-    sw = float(g.get("stroke-width", 1)) * s
+    root_sw = float(g.get("stroke-width", 1) or 1)
 
-    polys = []
-    for el in g.iter():
+    out = []
+
+    def emit(el, sw):
         tag = el.tag.replace(NS, "")
         if tag == "path":
             for poly in parse_d(el.get("d", "")):
-                polys.append([(x * s + tx, y * s + ty) for x, y in poly])
+                out.append(([(x * s + tx, y * s + ty) for x, y in poly], sw * s))
         elif tag == "circle":
-            cx, cy, r = (float(el.get("cx")), float(el.get("cy")), float(el.get("r")))
+            cx, cy, r = (float(el.get("cx")), float(el.get("cy")),
+                         float(el.get("r")))
             cx, cy, r = cx * s + tx, cy * s + ty, r * s
-            polys.append([(cx + r * math.cos(math.tau * k / 64),
-                           cy + r * math.sin(math.tau * k / 64)) for k in range(65)])
-    return polys, vw, vh, sw
+            out.append(([(cx + r * math.cos(math.tau * k / 64),
+                          cy + r * math.sin(math.tau * k / 64))
+                         for k in range(65)], sw * s))
+
+    for child in g:
+        if child.tag.replace(NS, "") == "g":
+            sub_sw = float(child.get("stroke-width", root_sw) or root_sw)
+            for el in child.iter():
+                emit(el, sub_sw)
+        else:
+            emit(child, root_sw)
+    return out, vw, vh
 
 
 # --------------------------------------------------------------------------
@@ -176,13 +195,13 @@ class Canvas:
         return w2, h2, rows
 
 
-def render_cell(canvas, polys, vw, vh, sw, ox, oy, cw, ch):
+def render_cell(canvas, polys, vw, vh, ox, oy, cw, ch):
     """يرسم رسمة واحدة داخل خلية (ox,oy,cw,ch) بإحداثيات الـ supersample."""
     k = min(cw / vw, ch / vh)
     dx = ox + (cw - vw * k) / 2
     dy = oy + (ch - vh * k) / 2
-    r = max(0.9, sw * k / 2)
-    for poly in polys:
+    for poly, sw in polys:
+        r = max(0.8, sw * k / 2)
         for a, b in zip(poly, poly[1:]):
             canvas.thick_line((a[0] * k + dx, a[1] * k + dy),
                               (b[0] * k + dx, b[1] * k + dy), r)
@@ -203,12 +222,12 @@ def build_sheet(files, cols, cell_w, cell_h, out_path, draw_frames=True):
     cv = Canvas(W * SS, H * SS)
     for idx, f in enumerate(files):
         r, c = divmod(idx, cols)
-        polys, vw, vh, sw = load_svg(SVG_DIR / f)
+        polys, vw, vh = load_svg(SVG_DIR / f)
         ox, oy = c * cell_w * SS, r * cell_h * SS
         pad = 5 * SS
         if draw_frames:
             frame(cv, ox + 1, oy + 1, cell_w * SS - 2, cell_h * SS - 2)
-        render_cell(cv, polys, vw, vh, sw,
+        render_cell(cv, polys, vw, vh,
                     ox + pad, oy + pad, cell_w * SS - 2 * pad, cell_h * SS - 2 * pad)
     w2, h2, rows = cv.downsample(SS)
     write_png(out_path, w2, h2, rows)
@@ -219,15 +238,20 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("*.png"):
         old.unlink()
-    data = json.loads((ROOT / "index.json").read_text(encoding="utf-8"))
+    data = json.loads(INDEX.read_text(encoding="utf-8"))
     squares = [d["file"] for d in data if not d["wide"]]
     wides = [d["file"] for d in data if d["wide"]]
 
     made = []
-    per = 48            # 6 أعمدة × 8 صفوف
+    # المجموعات الصغيرة تُعرض بخلايا أكبر لتُرى التفاصيل،
+    # مع البقاء دائماً تحت 2000 بكسل في كل بُعد.
+    if len(squares) <= 90:
+        cols, cell, per = 4, 280, 16
+    else:
+        cols, cell, per = 6, 200, 48
     for n, i in enumerate(range(0, len(squares), per), start=1):
         p = OUT / f"sheet_units_{n}.png"
-        w, h = build_sheet(squares[i:i + per], 6, 200, 200, p)
+        w, h = build_sheet(squares[i:i + per], cols, cell, cell, p)
         made.append((p.name, w, h, len(squares[i:i + per])))
         print(f"{p.name}  {w}x{h}")
 

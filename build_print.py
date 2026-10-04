@@ -52,7 +52,8 @@ def page(items, cols, title, pageno, total_pages, img_w_mm=None):
     cells = []
     for it in items:
         cells.append(
-            f'<div class="cell"><img src="../svg/{it["file"]}" alt="{it["num"]}">'
+            f'<div class="cell">'
+            f'<img src="../{it.get("_dir", "svg")}/{it["file"]}" alt="{it["num"]}">'
             f'<div class="cap"><b>{it["num"]:03d}</b> — {it["title"]}</div></div>'
         )
     style = f"grid-template-columns: repeat({cols}, 1fr);"
@@ -71,8 +72,11 @@ def chunk(seq, n):
     return [seq[i:i + n] for i in range(0, len(seq), n)]
 
 
-def build(name, square_per_page, square_cols, wide_per_page, heading, intro_html):
-    data = json.loads((ROOT / "index.json").read_text(encoding="utf-8"))
+def build(name, square_per_page, square_cols, wide_per_page, heading, intro_html,
+          index_file="index.json", svg_dir="svg"):
+    data = json.loads((ROOT / index_file).read_text(encoding="utf-8"))
+    for d in data:
+        d["_dir"] = svg_dir
     squares = [d for d in data if not d["wide"]]
     wides = [d for d in data if d["wide"]]
 
@@ -129,12 +133,46 @@ INTRO_TRACE = """
 """
 
 
+INTRO_CATALOG2 = """
+<div class="note">
+<h1>المجموعة الثانية — تطريز بالخط الرفيع</h1>
+<p>أكاليل دائرية وزوايا وإطارات وأغصان وباقات بأسلوب <b>الخط الرفيع</b>:
+خطوط رقيقة، زهور صغيرة بسيطة، وفراغ واسع.</p>
+<ul>
+<li>الخطوط رفيعة بقصد — إن أردتها أسمك للتطريز الثقيل، غيّر سماكة الخط
+في برنامج متجهي بضغطة واحدة (الملف متجهي فلا تتأثر الجودة).</li>
+<li><b>الأكاليل</b> مناسبة لظهر العباية أو الكتف أو كإطار لحرف أول.</li>
+<li><b>الزوايا والإطارات</b> مناسبة لأطراف العباية وزوايا الأكمام.</li>
+<li>للطباعة بالمقاس الحقيقي: <code>trace2.html</code> بمقياس 100%.</li>
+</ul>
+</div>
+"""
+
+INTRO_TRACE2 = """
+<div class="note">
+<h1>صفحات النقل — المجموعة الثانية</h1>
+<p>اطبع بمقاس <b>A4</b> ومقياس <b>100%</b> (عطّل «تحجيم لملاءمة الصفحة»).</p>
+<ul>
+<li>الأكاليل والزوايا بعرض ≈ <b>88 مم</b> للرسمة.</li>
+<li>الأشرطة بعرض ≈ <b>190 مم</b>.</li>
+<li>الإكليل يبدو أجمل بمقاس أكبر (12–18 سم) — استخدم ملف SVG مباشرة.</li>
+</ul>
+</div>
+"""
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     a = build("catalog.html", 20, 4, 5, "فهرس الرسومات", INTRO_CATALOG)
     b = build("trace.html", 4, 2, 2, "صفحات النقل", INTRO_TRACE)
-    print(f"print/catalog.html — {a} صفحة")
-    print(f"print/trace.html   — {b} صفحة")
+    c = build("catalog2.html", 12, 3, 4, "المجموعة الثانية — فهرس",
+              INTRO_CATALOG2, "index_art.json", "art")
+    d = build("trace2.html", 4, 2, 2, "المجموعة الثانية — النقل",
+              INTRO_TRACE2, "index_art.json", "art")
+    print(f"print/catalog.html  — {a} صفحة  (المجموعة الأولى)")
+    print(f"print/trace.html    — {b} صفحة")
+    print(f"print/catalog2.html — {c} صفحة  (المجموعة الثانية)")
+    print(f"print/trace2.html   — {d} صفحة")
 
 
 if __name__ == "__main__":

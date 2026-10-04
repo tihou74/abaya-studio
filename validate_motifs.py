@@ -15,9 +15,13 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SVG_DIR = ROOT / "svg"
+# افتراضياً المجموعة الأولى؛ ولفحص المجموعة الثانية:
+#   python3 validate_motifs.py art index_art.json 78
+_A = sys.argv[1:]
+SVG_DIR = ROOT / (_A[0] if len(_A) > 0 else "svg")
+INDEX = ROOT / (_A[1] if len(_A) > 1 else "index.json")
 NS = "{http://www.w3.org/2000/svg}"
-EXPECTED = 200
+EXPECTED = int(_A[2]) if len(_A) > 2 else 200
 NUM_RE = re.compile(r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?")
 
 
@@ -66,21 +70,29 @@ def check(path):
     stroke = g.get("stroke")
     if not stroke or stroke == "none":
         errs.append(f"stroke مفقود (القيمة: {stroke!r})")
-    try:
-        sw = float(g.get("stroke-width", "0"))
-    except ValueError:
-        sw = 0.0
-        errs.append("stroke-width غير رقمي")
 
     tx, ty, s = parse_transform(g.get("transform"))
     if s <= 0:
         errs.append(f"مقياس غير صالح: {s}")
         return errs, warns
 
-    # سماكة الخط الفعلية بعد المقياس
-    eff = sw * s
-    if not (1.0 <= eff <= 3.5):
-        warns.append(f"سماكة الخط الفعلية {eff:.2f} خارج المدى المعتاد 1.0–3.5")
+    # السماكات: إمّا واحدة على المجموعة الرئيسية، أو عدة مجموعات متداخلة
+    widths = []
+    if g.get("stroke-width"):
+        widths.append(float(g.get("stroke-width")))
+    for sub in g:
+        if sub.tag.replace(NS, "") == "g" and sub.get("stroke-width"):
+            widths.append(float(sub.get("stroke-width")))
+    if not widths:
+        errs.append("stroke-width مفقود تماماً")
+        widths = [0.0]
+
+    eff_max = max(w * s for w in widths)
+    eff_min = min(w * s for w in widths)
+    if not (0.5 <= eff_min and eff_max <= 3.5):
+        warns.append(f"سماكة الخط الفعلية {eff_min:.2f}–{eff_max:.2f} "
+                     f"خارج المدى المعتاد 0.5–3.5")
+    eff = eff_max
 
     xs, ys = [], []
     count = 0
@@ -143,8 +155,13 @@ def main():
         print(f"!! العدد {len(files)} لا يساوي المطلوب {EXPECTED}")
         bad += 1
 
-    nums = [f.name[:3] for f in files]
-    if len(set(nums)) != len(nums):
+    # الرقم التسلسلي = أول مجموعة أرقام في اسم الملف (يدعم "001_" و "A001_")
+    nums = [m.group(0) for m in (re.match(r"[A-Za-z]*(\d+)", f.name) for f in files)
+            if m]
+    if len(nums) != len(files):
+        print("!! توجد ملفات بلا رقم تسلسلي في الاسم")
+        bad += 1
+    elif len(set(nums)) != len(nums):
         print("!! توجد أرقام مكرّرة في أسماء الملفات")
         bad += 1
 
@@ -159,7 +176,7 @@ def main():
             warn_count += 1
             print(f"[تنبيه] {f.name}: {w}")
 
-    idx = ROOT / "index.json"
+    idx = INDEX
     if idx.exists():
         data = json.loads(idx.read_text(encoding="utf-8"))
         missing = [d["file"] for d in data if not (SVG_DIR / d["file"]).exists()]
