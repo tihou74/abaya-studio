@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <title>111 — نجمة 6 أطراف</title>
-  <g transform="translate(100,100) scale(0.97727)" fill="none" stroke="#000000" stroke-width="1.9442" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M0,-88 L18.48,-32.01 L76.21,-44 L36.96,0 L76.21,44 L18.48,32.01 L0,88 L-18.48,32.01 L-76.21,44 L-36.96,0 L-76.21,-44 L-18.48,-32.01 Z"/>
-    <circle cx="0" cy="0" r="28.83"/>
-  </g>
-</svg>

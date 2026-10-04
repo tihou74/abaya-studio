@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <title>107 — نجمة 10 رؤوس متشابكة</title>
-  <g transform="translate(100,100) scale(1.00000)" fill="none" stroke="#000000" stroke-width="1.9000" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M0,-86 L50.55,69.58 L-81.79,-26.58 L81.79,-26.58 L-50.55,69.58 Z"/>
-    <path d="M50.55,-69.58 L0,86 L-50.55,-69.58 L81.79,26.58 L-81.79,26.58 Z"/>
-    <circle cx="0" cy="0" r="86"/>
-  </g>
-</svg>

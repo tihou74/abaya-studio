@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <title>115 — نجمة 8 أطراف</title>
-  <g transform="translate(100,100) scale(0.97727)" fill="none" stroke="#000000" stroke-width="1.9442" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M0,-88 L20.88,-50.41 L62.23,-62.23 L50.41,-20.88 L88,0 L50.41,20.88 L62.23,62.23 L20.88,50.41 L0,88 L-20.88,50.41 L-62.23,62.23 L-50.41,20.88 L-88,0 L-50.41,-20.88 L-62.23,-62.23 L-20.88,-50.41 Z"/>
-    <circle cx="0" cy="0" r="42.56"/>
-  </g>
-</svg>

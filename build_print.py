@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-بناء صفحات طباعة A4 جاهزة من ملفات SVG.
+بناء صفحات طباعة A4 للمجموعتين.
 
 يُنتج:
-  print/catalog.html  — فهرس للاختيار (20 رسمة في الصفحة)
-  print/trace.html    — مقاس الرسم على الورق (4 في الصفحة، ~88 مم)
+  print/bands.html   — أشرطة الأطراف الرأسية (نقوش تطريز)
+  print/damask.html  — الزخرفة المصمتة والأشرطة الكلاسيكية والمتدلّيات
 
 التشغيل:  python3 build_print.py
-ثم افتح الملف في المتصفح واطبع (Ctrl+P) بمقاس A4 وبدون "تحجيم لملاءمة الصفحة".
+ثم افتح الملف في المتصفح واطبع (Ctrl+P) بمقاس A4 ومقياس 100%
+وبدون «تحجيم لملاءمة الصفحة».
 """
 
 import json
@@ -29,7 +30,7 @@ body { margin: 0; font-family: "Noto Sans Arabic", "Segoe UI", Tahoma, sans-seri
         border-bottom: 0.4mm solid #111; padding-bottom: 2mm; margin-bottom: 4mm;
         font-size: 3.4mm; }
 .head b { font-size: 4.2mm; }
-.grid { display: grid; gap: 3mm; }
+.grid { display: grid; gap: 4mm; }
 .cell { display: flex; flex-direction: column; align-items: center;
         page-break-inside: avoid; break-inside: avoid; }
 .cell img { display: block; width: 100%; height: auto; }
@@ -48,172 +49,66 @@ body { margin: 0; font-family: "Noto Sans Arabic", "Segoe UI", Tahoma, sans-seri
 """
 
 
-def page(items, cols, title, pageno, total_pages, img_w_mm=None):
-    cells = []
-    for it in items:
-        cells.append(
-            f'<div class="cell">'
-            f'<img src="../{it.get("_dir", "svg")}/{it["file"]}" alt="{it["num"]}">'
-            f'<div class="cap"><b>{it["num"]:03d}</b> — {it["title"]}</div></div>'
-        )
-    style = f"grid-template-columns: repeat({cols}, 1fr);"
-    return (
-        f'<section class="page">'
-        f'<div class="head"><b>{title}</b>'
-        f'<span>صفحة {pageno} من {total_pages}</span></div>'
-        f'<div class="grid" style="{style}">' + "".join(cells) + "</div>"
-        f'<div class="foot"><span>رسومات أطراف العباية — تحديد فقط</span>'
-        f'<span>SVG متجهي قابل للتكبير</span></div>'
-        f"</section>"
-    )
-
-
 def chunk(seq, n):
     return [seq[i:i + n] for i in range(0, len(seq), n)]
 
 
-def build(name, square_per_page, square_cols, wide_per_page, heading, intro_html,
-          index_file="index.json", svg_dir="svg"):
-    data = json.loads((ROOT / index_file).read_text(encoding="utf-8"))
-    for d in data:
-        d["_dir"] = svg_dir
-    squares = [d for d in data if not d["wide"]]
-    wides = [d for d in data if d["wide"]]
-
-    sq_pages = chunk(squares, square_per_page)
-    wd_pages = chunk(wides, wide_per_page)
-    total = len(sq_pages) + len(wd_pages)
-
-    body = [intro_html]
-    n = 0
-    for grp in sq_pages:
-        n += 1
-        body.append(page(grp, square_cols, f"{heading} — وحدات ومربعات", n, total))
-    for grp in wd_pages:
-        n += 1
-        body.append(page(grp, 1, f"{heading} — أشرطة الأطراف", n, total))
-
-    html = (
-        f'<!DOCTYPE html>\n<html lang="ar" dir="rtl">\n<head>\n'
-        f'<meta charset="utf-8">\n<title>{heading}</title>\n'
-        f"<style>{CSS}</style>\n</head>\n<body>\n" + "\n".join(body) + "\n</body>\n</html>\n"
-    )
-    (OUT / name).write_text(html, encoding="utf-8")
-    return total
+def grid_page(items, cols, heading, sub, pageno, total, svg_dir):
+    cells = "".join(
+        f'<div class="cell"><img src="../{svg_dir}/{it["file"]}" '
+        f'alt="{it["num"]}">'
+        f'<div class="cap"><b>{it["num"]:03d}</b> — {it["title"]}</div></div>'
+        for it in items)
+    return (f'<section class="page">'
+            f'<div class="head"><b>{heading}</b>'
+            f'<span>صفحة {pageno} من {total}</span></div>'
+            f'<div class="grid" style="grid-template-columns: repeat({cols},1fr)">'
+            f'{cells}</div>'
+            f'<div class="foot"><span>{sub}</span>'
+            f'<span>SVG متجهي قابل للتكبير</span></div></section>')
 
 
-INTRO_CATALOG = """
-<div class="note">
-<h1>فهرس رسومات أطراف العباية — 200 رسمة</h1>
-<p>هذه صفحات <b>للاختيار</b>. كل رسمة تحديد خارجي فقط (بلا تلوين) بصيغة SVG متجهية،
-فتُكبّر أو تُصغّر لأي مقاس بلا فقدان في الجودة.</p>
-<ul>
-<li><b>للطباعة بمقاس الرسم الحقيقي:</b> افتح <code>trace.html</code> واطبع بمقاس A4
-مع تعطيل خيار «تحجيم لملاءمة الصفحة» (اجعل المقياس 100%).</li>
-<li><b>لمقاس مخصّص:</b> افتح أي ملف من مجلد <code>svg/</code> في أي برنامج متجهي
-(Illustrator / Inkscape / Affinity) وحدّد العرض بالمليمتر الذي تريده.</li>
-<li><b>للنقل على العباية:</b> اطبع، ثم انقل الخطوط بورق كربون للأقمشة
-أو بقلم مُعلّم يزول بالماء، ثم ارسم فوقها.</li>
-<li>أشرطة الأطراف قابلة للتكرار بطول الطرف بوضع نسخ متتالية بنفس الارتفاع.</li>
-</ul>
-</div>
-"""
-
-INTRO_TRACE = """
-<div class="note">
-<h1>صفحات النقل — مقاس الرسم على الورق</h1>
-<p>اطبع هذه الصفحات بمقاس <b>A4</b> و<b>مقياس 100%</b>
-(عطّل «Fit to page» / «تحجيم لملاءمة الصفحة»)، وإلا تغيّر المقاس الفعلي.</p>
-<ul>
-<li>الوحدات المربعة بعرض ≈ <b>88 مم</b> للرسمة.</li>
-<li>أشرطة الأطراف بعرض ≈ <b>190 مم</b> (عرض الصفحة كاملاً).</li>
-<li>تريد مقاساً أكبر أو أصغر؟ استخدم ملف SVG مباشرة — فهو متجهي وغير محدود المقاس.</li>
-</ul>
-</div>
-"""
+def strip_page(items, heading, pageno, total, svg_dir, height_mm=235):
+    cells = "".join(
+        f'<div class="cell" style="flex:1;min-width:0">'
+        f'<img src="../{svg_dir}/{it["file"]}" '
+        f'style="height:{height_mm}mm;width:auto;margin:0 auto;display:block">'
+        f'<div class="cap"><b>{it["num"]:03d}</b> — {it["title"]}</div></div>'
+        for it in items)
+    return (f'<section class="page">'
+            f'<div class="head"><b>{heading}</b>'
+            f'<span>صفحة {pageno} من {total}</span></div>'
+            f'<div style="display:flex;gap:6mm;justify-content:center;'
+            f'align-items:flex-start">{cells}</div>'
+            f'<div class="foot"><span>شريط رأسي بطول ≈ {height_mm} مم</span>'
+            f'<span>SVG متجهي</span></div></section>')
 
 
-INTRO_CATALOG2 = """
-<div class="note">
-<h1>المجموعة الثانية — تطريز بالخط الرفيع</h1>
-<p>أكاليل دائرية وزوايا وإطارات وأغصان وباقات بأسلوب <b>الخط الرفيع</b>:
-خطوط رقيقة، زهور صغيرة بسيطة، وفراغ واسع.</p>
-<ul>
-<li>الخطوط رفيعة بقصد — إن أردتها أسمك للتطريز الثقيل، غيّر سماكة الخط
-في برنامج متجهي بضغطة واحدة (الملف متجهي فلا تتأثر الجودة).</li>
-<li><b>الأكاليل</b> مناسبة لظهر العباية أو الكتف أو كإطار لحرف أول.</li>
-<li><b>الزوايا والإطارات</b> مناسبة لأطراف العباية وزوايا الأكمام.</li>
-<li>للطباعة بالمقاس الحقيقي: <code>trace2.html</code> بمقياس 100%.</li>
-</ul>
-</div>
-"""
-
-INTRO_TRACE2 = """
-<div class="note">
-<h1>صفحات النقل — المجموعة الثانية</h1>
-<p>اطبع بمقاس <b>A4</b> ومقياس <b>100%</b> (عطّل «تحجيم لملاءمة الصفحة»).</p>
-<ul>
-<li>الأكاليل والزوايا بعرض ≈ <b>88 مم</b> للرسمة.</li>
-<li>الأشرطة بعرض ≈ <b>190 مم</b>.</li>
-<li>الإكليل يبدو أجمل بمقاس أكبر (12–18 سم) — استخدم ملف SVG مباشرة.</li>
-</ul>
-</div>
-"""
-
-
-INTRO_BANDS = """
-<div class="note">
-<h1>المجموعة الثالثة — أشرطة أطراف رأسية</h1>
-<p>مبنية على المراجع التي أرسلتها: <b>صيغة رأسية</b> تناسب طرف العباية الأمامي،
-بنقاط مُعبّأة سوداء، وأوراق محشوّة بخطوط (تطريز ساتان)، وسلاسل معلّقة،
-ووريدات صغيرة مزخرفة.</p>
-<ul>
-<li><b>الأشرطة الرأسية</b> كل شريط بطول صفحة A4 تقريباً. لطرف أطول:
-اطبع الصفحة مرتين أو ثلاثاً وصِلها — النمط مُصمَّم ليستمر.</li>
-<li><b>ألواح السلاسل</b> تُستخدم كمساحة كاملة (الكتف أو الظهر أو عرض الطرف).</li>
-<li><b>الوريدات والعناقيد</b> عناصر منفردة تُوزَّع كما تشاء.</li>
-<li>النقاط السوداء تُطرَّز <b>عُقَد فرنسية</b> (French knots) أو خرزاً.</li>
-<li>الخطوط داخل الأوراق تُطرَّز <b>ساتان</b> — وهي دليل اتجاه الإبرة.</li>
-</ul>
-</div>
-"""
-
-
-def build_bands(name, heading, intro_html, per_page=2,
-                index_file="index_bands.json", svg_dir="bands"):
-    """صفحات الأشرطة الرأسية: شريطان في صفحة A4 بطول الصفحة كاملاً."""
+def build(name, heading, intro, index_file, svg_dir,
+          talls_per_page=2, wides_per_page=2, units_cols=3, units_per_page=9):
     data = json.loads((ROOT / index_file).read_text(encoding="utf-8"))
     talls = [d for d in data if d.get("tall")]
-    rest = [d for d in data if not d.get("tall")]
+    wides = [d for d in data if d.get("wide")]
+    units = [d for d in data if not d.get("tall") and not d.get("wide")]
 
-    def strip_page(items, pageno, total):
-        cells = "".join(
-            f'<div class="cell" style="flex:1;min-width:0">'
-            f'<img src="../{svg_dir}/{it["file"]}" '
-            f'style="height:235mm;width:auto;margin:0 auto;display:block">'
-            f'<div class="cap"><b>{it["num"]:03d}</b> — {it["title"]}</div></div>'
-            for it in items)
-        return (f'<section class="page">'
-                f'<div class="head"><b>{heading}</b>'
-                f'<span>صفحة {pageno} من {total}</span></div>'
-                f'<div style="display:flex;gap:6mm;justify-content:center;'
-                f'align-items:flex-start">{cells}</div>'
-                f'<div class="foot"><span>أشرطة أطراف رأسية</span>'
-                f'<span>SVG متجهي</span></div></section>')
+    tp = chunk(talls, talls_per_page)
+    wp = chunk(wides, wides_per_page)
+    up = chunk(units, units_per_page)
+    total = len(tp) + len(wp) + len(up)
 
-    tall_pages = chunk(talls, per_page)
-    rest_pages = chunk(rest, 4)
-    total = len(tall_pages) + len(rest_pages)
-    body = [intro_html]
+    body = [intro]
     n = 0
-    for grp in tall_pages:
+    for grp in tp:
         n += 1
-        body.append(strip_page(grp, n, total))
-    for grp in rest_pages:
+        body.append(strip_page(grp, heading, n, total, svg_dir))
+    for grp in wp:
         n += 1
-        for d in grp:
-            d["_dir"] = svg_dir
-        body.append(page(grp, 2, f"{heading} — عناصر", n, total))
+        body.append(strip_page(grp, f"{heading} — ألواح", n, total, svg_dir,
+                               height_mm=230))
+    for grp in up:
+        n += 1
+        body.append(grid_page(grp, units_cols, f"{heading} — عناصر منفردة",
+                              "عناصر تُوزَّع بحرّية", n, total, svg_dir))
 
     html = (f'<!DOCTYPE html>\n<html lang="ar" dir="rtl">\n<head>\n'
             f'<meta charset="utf-8">\n<title>{heading}</title>\n'
@@ -223,37 +118,51 @@ def build_bands(name, heading, intro_html, per_page=2,
     return total
 
 
-def main():
-    OUT.mkdir(parents=True, exist_ok=True)
-    a = build("catalog.html", 20, 4, 5, "فهرس الرسومات", INTRO_CATALOG)
-    b = build("trace.html", 4, 2, 2, "صفحات النقل", INTRO_TRACE)
-    c = build("catalog2.html", 12, 3, 4, "المجموعة الثانية — فهرس",
-              INTRO_CATALOG2, "index_art.json", "art")
-    d = build("trace2.html", 4, 2, 2, "المجموعة الثانية — النقل",
-              INTRO_TRACE2, "index_art.json", "art")
-    INTRO_BOT = """
+INTRO_BANDS = """
 <div class="note">
-<h1>المجموعة الخامسة — فروع نباتية واقعية</h1>
-<p>ورد وزنابق بالخط الرفيع: ورود بطبقات بتلات، براعم بسبلات ومحفظة،
-أوراق ورد مركّبة مسنّنة، وأوراق زنبق بعروق موازية.</p>
+<h1>أشرطة أطراف رأسية — نقوش تطريز</h1>
+<p>صيغة رأسية تناسب طرف العباية الأمامي، بنقاط مُعبّأة سوداء،
+وأوراق محشوّة بخطوط (تطريز ساتان)، وسلاسل معلّقة، ووريدات مزخرفة.</p>
 <ul>
-<li>اطبع بمقاس <b>A4</b> ومقياس <b>100%</b> (عطّل «تحجيم لملاءمة الصفحة»).</li>
-<li>الفرع الواحد بطول ≈ <b>235 مم</b>. لطرف أطول: اطبع عدة نسخ وصِلها.</li>
-<li>الخطوط رفيعة بقصد (مطابقةً للمرجع). لتطريز أسمك غيّر سماكة الخط
-من أي برنامج متجهي.</li>
+<li>اطبع بمقاس <b>A4</b> ومقياس <b>100%</b> — عطّل «تحجيم لملاءمة الصفحة»،
+وإلا تغيّر المقاس الفعلي على الورق.</li>
+<li>الشريط الواحد بطول ≈ <b>235 مم</b>. لطرف أطول اطبع عدة نسخ وصِلها
+طرفاً بطرف — النمط مُصمَّم ليتّصل.</li>
+<li><b>النقاط السوداء</b> تُطرَّز عُقَداً فرنسية (French knots) أو خرزاً.</li>
+<li><b>الخطوط داخل الأوراق</b> تُطرَّز ساتان، وهي دليل اتجاه الإبرة.</li>
+<li>الوريدات والعناقيد عناصر منفردة تُوزَّع كما تشاء.</li>
 </ul>
 </div>
 """
-    e = build_bands("bands.html", "أشرطة أطراف رأسية", INTRO_BANDS)
-    f = build_bands("botanical.html", "فروع نباتية واقعية", INTRO_BOT,
-                    per_page=2, index_file="index_botanical.json",
-                    svg_dir="botanical")
-    print(f"print/catalog.html  — {a} صفحة  (المجموعة الأولى)")
-    print(f"print/trace.html    — {b} صفحة")
-    print(f"print/catalog2.html — {c} صفحة  (المجموعة الثانية)")
-    print(f"print/trace2.html   — {d} صفحة")
-    print(f"print/bands.html    — {e} صفحة  (المجموعة الثالثة)")
-    print(f"print/botanical.html— {f} صفحة  (المجموعة الخامسة)")
+
+INTRO_DAMASK = """
+<div class="note">
+<h1>زخرفة مصمتة وأشرطة كلاسيكية ومتدلّيات</h1>
+<p>فروع زهرية مصمتة بتدرّج سماكة وحلزون في أسفلها، وأشرطة كلاسيكية
+متناظرة (داماسك، أرابيسك، مفتاح يوناني، فرط لولبي)، وألواح متدلّيات.</p>
+<ul>
+<li>اطبع بمقاس <b>A4</b> ومقياس <b>100%</b>.</li>
+<li><b>الفروع والأشرطة</b> للطرف الأمامي والأكمام — بطول ≈ 235 مم.</li>
+<li><b>ألواح المتدلّيات</b> لمساحة كاملة: الكتف أو الظهر أو عرض الطرف.</li>
+<li>الزخرفة <b>مصمتة</b>: تُطرَّز مساحةً ممتلئة (ساتان) أو تُقص قماشاً
+وتُخاط (أبليك)، أو تُستخدم كاستنسل للطباعة على القماش.</li>
+<li>تريدها <b>تحديداً فقط</b> بلا تعبئة؟ انظر الملاحظة في الدليل
+(`README.md`) — تعديل سطر واحد في المولّد.</li>
+</ul>
+</div>
+"""
+
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    for old in OUT.glob("*.html"):
+        old.unlink()
+    a = build("bands.html", "أشرطة أطراف رأسية", INTRO_BANDS,
+              "index_bands.json", "bands", units_cols=4, units_per_page=12)
+    b = build("damask.html", "زخرفة مصمتة وكلاسيكية", INTRO_DAMASK,
+              "index_damask.json", "damask", units_cols=4, units_per_page=8)
+    print(f"print/bands.html  — {a} صفحة")
+    print(f"print/damask.html — {b} صفحة")
 
 
 if __name__ == "__main__":
