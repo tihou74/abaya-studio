@@ -290,7 +290,9 @@ def leaf_hatched(length, width, a=0.68, b=0.95, bend=2.0, lines=9,
         out.append(P([mid(0.04 + 0.92 * i / 18) for i in range(19)],
                      smooth=True, w=wh))
     for k in range(lines):
-        t = 0.10 + 0.80 * k / max(1, lines - 1)
+        # تبدأ خطوط الحشو بعد القاعدة (0.22) لا من عندها:
+        # تكدّس الخطوط عند نقطة التشعّب يُنتج ضجيجاً بصرياً
+        t = 0.22 + 0.70 * k / max(1, lines - 1)
         te = min(0.985, t + lean)
         bx, by = mid(t)
         ex, ey = mid(te)

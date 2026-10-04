@@ -38,19 +38,30 @@ STROKE = 1.5
 # ===========================================================================
 
 
-def leaf_plain(length=22.0, width=7.0, bend=2.0, vein=True, w=W_MAIN):
+# مُعامِل القاعدة في مُحيط الورقة:
+#   a = 0.70  ورقة عريضة عند قاعدتها — مناسبة للورقة المنفردة على ساق
+#   a = 1.25  ورقة ضيّقة عند قاعدتها — *ضرورية* للأوراق المتشعّبة من نقطة واحدة
+# السبب: نصف العرض عند t يساوي width·t^a·(1−t)^b / norm، وبـ a=0.70 يبلغ
+# نصف العرض 10.4 على مسافة 8.8 من القاعدة، أي امتداد زاوي ≈ 50° لكل ورقة،
+# فورقتان تتلاقيان حتى لو فصلت بينهما 96°. وبـ a=1.25 يهبط الامتداد إلى ≈ 33°.
+A_SINGLE = 0.70
+A_RADIAL = 1.25
+
+
+def leaf_plain(length=22.0, width=7.0, bend=2.0, vein=True, w=W_MAIN,
+               a=A_SINGLE):
     out = [ribbon(lambda t: (bend * math.sin(math.pi * t), -length * t),
-                  taper_fn(width, 0.70, 0.95), n=54, w=w)]
+                  taper_fn(width, a, 0.95), n=54, w=w)]
     if vein:
         out.append(P([(0, -length * 0.08), (bend, -length * 0.55),
                       (0, -length * 0.92)], smooth=True, w=W_FINE))
     return out
 
 
-def leaf_solid(length=20.0, width=6.5, bend=2.0):
+def leaf_solid(length=20.0, width=6.5, bend=2.0, a=A_SINGLE):
     """ورقة مصمتة — تُستخدم في النقوش الداكنة كما في المرجع."""
     r = ribbon(lambda t: (bend * math.sin(math.pi * t), -length * t),
-               taper_fn(width, 0.70, 0.95), n=54)
+               taper_fn(width, a, 0.95), n=54)
     return [FILLED(r["pts"])]
 
 
@@ -72,6 +83,20 @@ def berry_cluster(n=5, r=2.9, spread=9.0, seed=0):
 
 def berry_triple(r=3.0, spread=7.5):
     return [DOT(polar(spread, -math.pi / 2 + TAU * k / 3), r) for k in range(3)]
+
+
+def berry_bunch(rows=(3, 2, 1), r=3.2, gap=7.6):
+    """
+    عنقود منتظم كعنقود العنب: صفوف متناقصة ومتداخلة.
+    الترتيب المنتظم أنظف من التوزيع العشوائي الذي يُخرج بقعاً متفرّقة.
+    """
+    out = []
+    for ri, count in enumerate(rows):
+        y = ri * gap * 0.88
+        for k in range(count):
+            x = (k - (count - 1) / 2) * gap
+            out.append(DOT((x, y), r))
+    return out
 
 
 def tendril(size=16.0, turns=1.25, side=1, w=W_MAIN):
@@ -129,7 +154,8 @@ def lotus_sprig(h=26.0, w_=18.0, w=W_MAIN):
     out = []
     for u in (-1, 0, 1):
         ln = h * (0.72 if u else 1.0)
-        out += xf_all(leaf_plain(ln, ln * 0.30, bend=u * 2.5, vein=False, w=w),
+        out += xf_all(leaf_plain(ln, ln * 0.30, bend=u * 2.5, vein=False, w=w,
+                                 a=A_RADIAL),
                       u * math.radians(34), 1.0, (0, 0))
     out.append(LINE((0, 0), (0, w_ * 0.42), w=W_MID))
     return out
@@ -193,8 +219,8 @@ def build_band_vine(i):
                 for side in (1, -1):
                     ln = 30 * rng.uniform(0.9, 1.1)
                     ang = math.radians(-90 + side * 44) + math.pi / 2
-                    leaf = (leaf_hatched(ln, ln * 0.31, lines=7)
-                            if hatch else leaf_plain(ln, ln * 0.31))
+                    leaf = (leaf_hatched(ln, ln * 0.31, a=A_RADIAL, lines=7)
+                            if hatch else leaf_plain(ln, ln * 0.31, a=A_RADIAL))
                     shapes += xf_all(leaf, ang, 1.0, (px, py))
             else:
                 shapes += xf_all(berry_cluster(5, 3.0, 10.0, seed=i * 31 + k),
@@ -231,8 +257,8 @@ def build_band_vine(i):
             for side in (1, -1):
                 ln = 27 * rng.uniform(0.92, 1.08)
                 ang = math.radians(-90 + side * 48) + math.pi / 2
-                leaf = (leaf_hatched(ln, ln * 0.30, lines=6)
-                        if hatch else leaf_plain(ln, ln * 0.30))
+                leaf = (leaf_hatched(ln, ln * 0.30, a=A_RADIAL, lines=6)
+                        if hatch else leaf_plain(ln, ln * 0.30, a=A_RADIAL))
                 shapes += xf_all(leaf, ang, 1.0, (px, py))
             if k < n - 1:
                 my = (py + f(t + 0.94 / (n - 1))[1]) / 2
@@ -286,7 +312,7 @@ def build_band_vine(i):
                 for side in (1, -1):
                     ln = 28 * rng.uniform(0.9, 1.1)
                     ang = math.radians(-90 + side * 46) + math.pi / 2
-                    shapes += xf_all(leaf_solid(ln, ln * 0.30),
+                    shapes += xf_all(leaf_solid(ln, ln * 0.30, a=A_RADIAL),
                                      ang, 1.0, (px, py))
             else:
                 shapes += xf_all(berry_cluster(6, 3.2, 11.0, seed=i * 17 + k),
@@ -358,12 +384,20 @@ def _ornament_set(seed):
 
 
 def build_strand(i):
-    """سلسلة معلّقة مفردة."""
+    """
+    سلسلة معلّقة مفردة.
+    الكثافة: 5–7 عناصر على السلسلة. ثلاثة عناصر فقط تترك خطّ خرز طويلاً فارغاً
+    ولا تُشبه المرجع.
+    """
     pool = _ornament_set(900 + i)
-    n_orn = 3 + i % 3
-    positions = [0.12 + 0.76 * k / max(1, n_orn - 1) for k in range(n_orn)]
+    n_orn = 5 + i % 3
+    jitter = random.Random(700 + i)
+    positions = []
+    for k in range(n_orn):
+        base = 0.08 + 0.84 * k / max(1, n_orn - 1)
+        positions.append(min(0.95, max(0.05, base + jitter.uniform(-0.03, 0.03))))
     orns = [(p, pool[k % len(pool)]) for k, p in enumerate(positions)]
-    shapes = strand(0.0, 20.0, 660.0, 15.0 + (i % 3) * 3, 2.6,
+    shapes = strand(0.0, 20.0, 660.0, 14.0 + (i % 3) * 2.5, 2.6,
                     tuple(orns), seed=900 + i)
     return (f"strand_{i + 1:02d}", "سلسلة معلّقة بعناصر", shapes, BAND)
 
@@ -376,9 +410,9 @@ def build_panel(i):
     for k in range(n_str):
         x = (k - (n_str - 1) / 2) * gap
         pool = _ornament_set(1300 + i * 13 + k)
-        n_orn = 3 + (k + i) % 3
-        offset = 0.06 * ((k * 7 + i * 3) % 5)
-        positions = [min(0.93, 0.10 + offset + 0.74 * j / max(1, n_orn - 1))
+        n_orn = 4 + (k + i) % 3
+        offset = 0.05 * ((k * 7 + i * 3) % 5)
+        positions = [min(0.93, 0.08 + offset + 0.78 * j / max(1, n_orn - 1))
                      for j in range(n_orn)]
         orns = [(p, pool[j % len(pool)]) for j, p in enumerate(positions)]
         shapes += strand(x, 20.0, 660.0, 15.0 + ((k + i) % 3) * 3, 2.5,
@@ -413,48 +447,98 @@ def build_rosette(i):
 
 
 def build_cluster(i):
-    """عنقود أوراق وحبّات منفرد — عنصر يُستخدم مفرداً أو مُعلّقاً."""
-    rng = random.Random(2000 + i)
+    """
+    عناصر منفردة — ثمانية تصاميم مختلفة فعلاً (لا أربعة مكرّرة).
+
+    قاعدة صريحة: **لا تقاطع بين العناصر المحشوّة بالخطوط.**
+    تقاطع ورقتين محشوّتين يُنتج تشابك خطوط لا يُقرأ. ولذلك:
+      - الأوراق المتعدّدة تُربط على سويقة بارتفاعات مختلفة لا من نقطة واحدة
+      - الأوراق المتقابلة تتجه جهتين متعاكستين فلا تتلاقى
+      - لا أوراق فوق بتلات الزهرة — تُنقل إلى الساق أسفلها
+    """
     shapes = []
-    style = i % 4
-    if style == 0:
-        for u in (-1, 0, 1):
-            ln = 70 if u == 0 else 56
-            shapes += xf_all(leaf_hatched(ln, ln * 0.30, lines=9),
-                             u * math.radians(36), 1.0, (0, 40))
-        shapes += xf_all(berry_cluster(6, 5.0, 17.0, seed=i), 0.0, 1.0, (0, 58))
-        title = "عنقود أوراق محشوّة"
-    elif style == 1:
-        f = vwave(0.0, -60.0, 70.0, 16.0, 1.4)
-        shapes.append(P([f(k / 40) for k in range(41)], smooth=True, w=W_MAIN))
-        for k in range(7):
-            t = 0.06 + 0.88 * k / 6
-            px, py = f(t)
-            th = tangent_of(f, t)
-            side = 1 if k % 2 == 0 else -1
-            ln = 34 * rng.uniform(0.9, 1.1)
-            shapes += xf_all(leaf_plain(ln, ln * 0.32),
-                             th + side * math.radians(50) + math.pi / 2,
-                             1.0, (px, py))
-        shapes += xf_all(berry_triple(4.0, 10.0), 0.0, 1.0, f(0.02))
-        title = "غصن رأسي بأوراق"
-    elif style == 2:
+
+    if i == 0:          # ثلاث أوراق محشوّة على سويقة بارتفاعات مختلفة
+        shapes.append(LINE((0, 92), (0, 24), w=W_MAIN))
+        shapes += xf_all(leaf_hatched(72, 20, a=A_RADIAL, lines=9),
+                         0.0, 1.0, (0, 24))
+        # القاعدتان على ارتفاعين مختلفين — لا من نقطة واحدة
+        for side, y in ((1, 46), (-1, 62)):
+            shapes += xf_all(leaf_hatched(52, 14, a=A_RADIAL, lines=7),
+                             side * math.radians(56), 1.0, (0, y))
+        shapes += xf_all(berry_bunch((3, 2), 3.2, 7.6), 0.0, 1.0, (0, 100))
+        title = "ثلاث أوراق محشوّة وعنقود"
+
+    elif i == 1:        # ورقتان متقابلتان محشوّتان + حبّات
+        shapes.append(LINE((0, 92), (0, 8), w=W_MAIN))
+        for side in (1, -1):
+            shapes += xf_all(leaf_hatched(62, 17, a=A_RADIAL, lines=8),
+                             side * math.radians(58), 1.0, (0, 44))
+        shapes += xf_all(leaf_hatched(46, 13, a=A_RADIAL, lines=6),
+                         0.0, 1.0, (0, 8))
+        shapes += xf_all(berry_triple(3.4, 8.5), 0.0, 1.0, (0, 80))
+        title = "ورقتان متقابلتان محشوّتان"
+
+    elif i == 2:        # زهرة خمسية بوريدة — بلا أي ورقة فوق البتلات
         for k in range(5):
             a = TAU * k / 5
-            # petal() يُرجع شكلاً واحداً لا قائمة
-            shapes.append(xf(petal(44, 16, a=0.95, b=0.68), a, 1.0,
-                             polar(13, a - math.pi / 2)))
+            shapes.append(xf(petal(46, 13, a=0.95, b=0.68), a, 1.0,
+                             polar(14, a - math.pi / 2)))
         shapes += rosette_small(13, 10, rings=2)
-        for u in (-1, 1):
-            shapes += xf_all(leaf_hatched(46, 14, lines=7),
-                             u * math.radians(132), 1.0, (0, 20))
-        title = "زهرة بوريدة وأوراق محشوّة"
-    else:
-        shapes += lotus_sprig(76, 48)
-        shapes += xf_all(berry_triple(4.2, 11.0), 0.0, 1.0, (0, 34))
-        shapes.append(LINE((0, 20), (0, 62), w=W_MAIN))
-        shapes += xf_all(diamond_ornament(14), 0.0, 1.0, (0, 78))
-        title = "سعفة بمعيّن وحبّات"
+        title = "زهرة خمسية بوريدة"
+
+    elif i == 3:        # زهرة على ساق بورقتين أسفلها
+        shapes += xf_all([xf(petal(42, 12, a=0.95, b=0.68), TAU * k / 5, 1.0,
+                             polar(13, TAU * k / 5 - math.pi / 2))
+                          for k in range(5)], 0.0, 1.0, (0, -22))
+        shapes += xf_all(rosette_small(12, 8, rings=2), 0.0, 1.0, (0, -22))
+        shapes.append(LINE((0, -8), (0, 100), w=W_MAIN))
+        for side, y in ((1, 32), (-1, 64)):
+            shapes += xf_all(leaf_hatched(46, 12, a=A_RADIAL, lines=6),
+                             side * math.radians(64), 1.0, (0, y))
+        title = "زهرة على ساق بورقتين"
+
+    elif i == 4:        # عنقود حبّات كبير بورقتين فوقه
+        shapes += xf_all(berry_bunch((3, 3, 2, 1), 3.6, 8.6), 0.0, 1.0, (0, 20))
+        shapes.append(LINE((0, 16), (0, -20), w=W_MAIN))
+        for side in (1, -1):
+            shapes += xf_all(leaf_plain(46, 13, a=A_RADIAL),
+                             side * math.radians(56), 1.0, (0, -6))
+        title = "عنقود حبّات بورقتين"
+
+    elif i == 5:        # وريدة بأربع أوراق متباعدة 90°
+        shapes += rosette_small(30, 14, rings=3)
+        for k in range(4):
+            a = TAU * k / 4 + math.pi / 4
+            shapes += xf_all(leaf_plain(42, 12, a=A_RADIAL), a, 1.0,
+                             polar(32, a - math.pi / 2))
+        for k in range(4):
+            a = TAU * k / 4
+            shapes.append(DOT(polar(40, a), 2.8))
+        title = "وريدة بأربع أوراق"
+
+    elif i == 6:        # سعفة لوتس بمعيّن مُعلّق
+        # ثلاث وريقات بقواعد ضيّقة وزوايا واسعة فلا تتراكب
+        for u, ln in ((0, 76), (1, 58), (-1, 58)):
+            shapes += xf_all(leaf_plain(ln, ln * 0.26, bend=u * 3.0,
+                                        vein=True, a=A_RADIAL),
+                             u * math.radians(44), 1.0, (0, 22))
+        shapes.append(LINE((0, 22), (0, 66), w=W_MAIN))
+        shapes.append(DOT((0, 38), 3.0))
+        shapes += xf_all(diamond_ornament(14), 0.0, 1.0, (0, 84))
+        title = "سعفة لوتس بمعيّن"
+
+    else:               # غصن بمحلقين متناظرين وحبّات
+        shapes += xf_all(leaf_plain(58, 16, bend=0.0, a=A_RADIAL),
+                         0.0, 1.0, (0, 26))
+        shapes.append(LINE((0, 26), (0, 98), w=W_MAIN))
+        # المحالق تخرج يميناً ويساراً. الزاوية ±28° تشير للجهة نفسها
+        # (كلتاهما نحو اليمين)؛ الصحيح 20° و160°.
+        for side, theta in ((1, math.radians(20)), (-1, math.radians(160))):
+            shapes += tendril_at(theta, 20, 1.15, side, (0, 50))
+        shapes += xf_all(berry_triple(3.2, 8.0), 0.0, 1.0, (0, 86))
+        title = "غصن بمحلقين وحبّات"
+
     return f"cluster_{i + 1:02d}", title, shapes, TILE
 
 

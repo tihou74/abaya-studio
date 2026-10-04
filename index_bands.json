@@ -114,7 +114,7 @@
   "family": "سلاسل معلّقة",
   "wide": false,
   "tall": true,
-  "elements": 82
+  "elements": 87
  },
  {
   "num": 14,
@@ -123,7 +123,7 @@
   "family": "سلاسل معلّقة",
   "wide": false,
   "tall": true,
-  "elements": 88
+  "elements": 93
  },
  {
   "num": 15,
@@ -132,7 +132,7 @@
   "family": "سلاسل معلّقة",
   "wide": false,
   "tall": true,
-  "elements": 80
+  "elements": 88
  },
  {
   "num": 16,
@@ -141,7 +141,7 @@
   "family": "سلاسل معلّقة",
   "wide": false,
   "tall": true,
-  "elements": 51
+  "elements": 71
  },
  {
   "num": 17,
@@ -150,7 +150,7 @@
   "family": "سلاسل معلّقة",
   "wide": false,
   "tall": true,
-  "elements": 71
+  "elements": 98
  },
  {
   "num": 18,
@@ -159,7 +159,7 @@
   "family": "سلاسل معلّقة",
   "wide": false,
   "tall": true,
-  "elements": 66
+  "elements": 112
  },
  {
   "num": 19,
@@ -168,7 +168,7 @@
   "family": "سلاسل معلّقة",
   "wide": false,
   "tall": true,
-  "elements": 63
+  "elements": 71
  },
  {
   "num": 20,
@@ -177,7 +177,7 @@
   "family": "سلاسل معلّقة",
   "wide": false,
   "tall": true,
-  "elements": 68
+  "elements": 88
  },
  {
   "num": 21,
@@ -186,7 +186,7 @@
   "family": "ألواح سلاسل",
   "wide": true,
   "tall": false,
-  "elements": 397
+  "elements": 426
  },
  {
   "num": 22,
@@ -195,7 +195,7 @@
   "family": "ألواح سلاسل",
   "wide": true,
   "tall": false,
-  "elements": 401
+  "elements": 439
  },
  {
   "num": 23,
@@ -204,7 +204,7 @@
   "family": "ألواح سلاسل",
   "wide": true,
   "tall": false,
-  "elements": 433
+  "elements": 450
  },
  {
   "num": 24,
@@ -213,7 +213,7 @@
   "family": "ألواح سلاسل",
   "wide": true,
   "tall": false,
-  "elements": 375
+  "elements": 406
  },
  {
   "num": 25,
@@ -290,73 +290,73 @@
  {
   "num": 33,
   "file": "B033_cluster_01.svg",
-  "title": "عنقود أوراق محشوّة",
+  "title": "ثلاث أوراق محشوّة وعنقود",
   "family": "عناقيد وعناصر",
   "wide": false,
   "tall": false,
-  "elements": 67
+  "elements": 58
  },
  {
   "num": 34,
   "file": "B034_cluster_02.svg",
-  "title": "غصن رأسي بأوراق",
+  "title": "ورقتان متقابلتان محشوّتان",
   "family": "عناقيد وعناصر",
   "wide": false,
   "tall": false,
-  "elements": 18
+  "elements": 54
  },
  {
   "num": 35,
   "file": "B035_cluster_03.svg",
-  "title": "زهرة بوريدة وأوراق محشوّة",
+  "title": "زهرة خمسية بوريدة",
   "family": "عناقيد وعناصر",
   "wide": false,
   "tall": false,
-  "elements": 60
+  "elements": 28
  },
  {
   "num": 36,
   "file": "B036_cluster_04.svg",
-  "title": "سعفة بمعيّن وحبّات",
+  "title": "زهرة على ساق بورقتين",
   "family": "عناقيد وعناصر",
   "wide": false,
   "tall": false,
-  "elements": 11
+  "elements": 53
  },
  {
   "num": 37,
   "file": "B037_cluster_05.svg",
-  "title": "عنقود أوراق محشوّة",
+  "title": "عنقود حبّات بورقتين",
   "family": "عناقيد وعناصر",
   "wide": false,
   "tall": false,
-  "elements": 67
+  "elements": 14
  },
  {
   "num": 38,
   "file": "B038_cluster_06.svg",
-  "title": "غصن رأسي بأوراق",
+  "title": "وريدة بأربع أوراق",
   "family": "عناقيد وعناصر",
   "wide": false,
   "tall": false,
-  "elements": 18
+  "elements": 44
  },
  {
   "num": 39,
   "file": "B039_cluster_07.svg",
-  "title": "زهرة بوريدة وأوراق محشوّة",
-  "family": "عناقيد وعناصر",
-  "wide": false,
-  "tall": false,
-  "elements": 60
- },
- {
-  "num": 40,
-  "file": "B040_cluster_08.svg",
-  "title": "سعفة بمعيّن وحبّات",
+  "title": "سعفة لوتس بمعيّن",
   "family": "عناقيد وعناصر",
   "wide": false,
   "tall": false,
   "elements": 11
+ },
+ {
+  "num": 40,
+  "file": "B040_cluster_08.svg",
+  "title": "غصن بمحلقين وحبّات",
+  "family": "عناقيد وعناصر",
+  "wide": false,
+  "tall": false,
+  "elements": 8
  }
 ]
