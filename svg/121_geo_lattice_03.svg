@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <title>121 — بلاط سداسي</title>
+  <g transform="translate(100,100) scale(1.10341)" fill="none" stroke="#000000" stroke-width="1.7219" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-15,-25.98 L-30,0 L-60,0 L-75,-25.98 L-60,-51.96 L-30,-51.96 Z"/>
+    <path d="M30,-51.96 L15,-25.98 L-15,-25.98 L-30,-51.96 L-15,-77.94 L15,-77.94 Z"/>
+    <path d="M75,-25.98 L60,0 L30,0 L15,-25.98 L30,-51.96 L60,-51.96 Z"/>
+    <path d="M-15,25.98 L-30,51.96 L-60,51.96 L-75,25.98 L-60,0 L-30,0 Z"/>
+    <path d="M30,0 L15,25.98 L-15,25.98 L-30,0 L-15,-25.98 L15,-25.98 Z"/>
+    <path d="M75,25.98 L60,51.96 L30,51.96 L15,25.98 L30,0 L60,0 Z"/>
+    <path d="M30,51.96 L15,77.94 L-15,77.94 L-30,51.96 L-15,25.98 L15,25.98 Z"/>
+  </g>
+</svg>

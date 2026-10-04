@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <title>120 — مربعات متداخلة</title>
+  <g transform="translate(100,100) scale(0.97727)" fill="none" stroke="#000000" stroke-width="1.9442" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-88,-88 L88,-88 L88,88 L-88,88 Z"/>
+    <path d="M0,-88 L88,0 L0,88 L-88,0 Z"/>
+    <path d="M44,-44 L44,44 L-44,44 L-44,-44 Z"/>
+    <path d="M44,0 L0,44 L-44,0 L0,-44 Z"/>
+    <path d="M22,22 L-22,22 L-22,-22 L22,-22 Z"/>
+  </g>
+</svg>

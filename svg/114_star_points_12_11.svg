@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <title>114 — نجمة 12 أطراف</title>
+  <g transform="translate(100,100) scale(0.97727)" fill="none" stroke="#000000" stroke-width="1.9442" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0,-88 L13.67,-51 L44,-76.21 L37.34,-37.34 L76.21,-44 L51,-13.67 L88,0 L51,13.67 L76.21,44 L37.34,37.34 L44,76.21 L13.67,51 L0,88 L-13.67,51 L-44,76.21 L-37.34,37.34 L-76.21,44 L-51,13.67 L-88,0 L-51,-13.67 L-76.21,-44 L-37.34,-37.34 L-44,-76.21 L-13.67,-51 Z"/>
+    <circle cx="0" cy="0" r="41.18"/>
+    <circle cx="0" cy="0" r="88"/>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 150" width="620" height="150">
+  <title>181 — شريط طرف — دوائر متشابكة</title>
+  <g transform="translate(25.75,75) scale(0.81215)" fill="none" stroke="#000000" stroke-width="2.7088" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="50" cy="0" r="62"/>
+    <circle cx="50" cy="0" r="32.24"/>
+    <circle cx="150" cy="0" r="62"/>
+    <circle cx="150" cy="0" r="32.24"/>
+    <circle cx="250" cy="0" r="62"/>
+    <circle cx="250" cy="0" r="32.24"/>
+    <circle cx="350" cy="0" r="62"/>
+    <circle cx="350" cy="0" r="32.24"/>
+    <circle cx="450" cy="0" r="62"/>
+    <circle cx="450" cy="0" r="32.24"/>
+    <circle cx="550" cy="0" r="62"/>
+    <circle cx="550" cy="0" r="32.24"/>
+    <circle cx="650" cy="0" r="62"/>
+    <circle cx="650" cy="0" r="32.24"/>
+  </g>
+</svg>

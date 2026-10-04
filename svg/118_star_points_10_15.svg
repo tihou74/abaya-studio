@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <title>118 — نجمة 10 أطراف</title>
+  <g transform="translate(100,100) scale(0.97727)" fill="none" stroke="#000000" stroke-width="1.9442" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0,-88 L10.33,-31.8 L51.73,-71.19 L27.05,-19.66 L83.69,-27.19 L33.44,0 L83.69,27.19 L27.05,19.66 L51.73,71.19 L10.33,31.8 L0,88 L-10.33,31.8 L-51.73,71.19 L-27.05,19.66 L-83.69,27.19 L-33.44,0 L-83.69,-27.19 L-27.05,-19.66 L-51.73,-71.19 L-10.33,-31.8 Z"/>
+    <circle cx="0" cy="0" r="26.08"/>
+    <circle cx="0" cy="0" r="88"/>
+  </g>
+</svg>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <title>126 — تضفير سلّة</title>
+  <g transform="translate(100,100) scale(0.97727)" fill="none" stroke="#000000" stroke-width="1.9442" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-88,-88 L-44,-88 L-44,-44 L-88,-44 Z"/>
+    <path d="M-88,-77 L-44,-77"/>
+    <path d="M-88,-66 L-44,-66"/>
+    <path d="M-88,-55 L-44,-55"/>
+    <path d="M-44,-88 L0,-88 L0,-44 L-44,-44 Z"/>
+    <path d="M-33,-88 L-33,-44"/>
+    <path d="M-22,-88 L-22,-44"/>
+    <path d="M-11,-88 L-11,-44"/>
+    <path d="M0,-88 L44,-88 L44,-44 L0,-44 Z"/>
+    <path d="M0,-77 L44,-77"/>
+    <path d="M0,-66 L44,-66"/>
+    <path d="M0,-55 L44,-55"/>
+    <path d="M44,-88 L88,-88 L88,-44 L44,-44 Z"/>
+    <path d="M55,-88 L55,-44"/>
+    <path d="M66,-88 L66,-44"/>
+    <path d="M77,-88 L77,-44"/>
+    <path d="M-88,-44 L-44,-44 L-44,0 L-88,0 Z"/>
+    <path d="M-77,-44 L-77,0"/>
+    <path d="M-66,-44 L-66,0"/>
+    <path d="M-55,-44 L-55,0"/>
+    <path d="M-44,-44 L0,-44 L0,0 L-44,0 Z"/>
+    <path d="M-44,-33 L0,-33"/>
+    <path d="M-44,-22 L0,-22"/>
+    <path d="M-44,-11 L0,-11"/>
+    <path d="M0,-44 L44,-44 L44,0 L0,0 Z"/>
+    <path d="M11,-44 L11,0"/>
+    <path d="M22,-44 L22,0"/>
+    <path d="M33,-44 L33,0"/>
+    <path d="M44,-44 L88,-44 L88,0 L44,0 Z"/>
+    <path d="M44,-33 L88,-33"/>
+    <path d="M44,-22 L88,-22"/>
+    <path d="M44,-11 L88,-11"/>
+    <path d="M-88,0 L-44,0 L-44,44 L-88,44 Z"/>
+    <path d="M-88,11 L-44,11"/>
+    <path d="M-88,22 L-44,22"/>
+    <path d="M-88,33 L-44,33"/>
+    <path d="M-44,0 L0,0 L0,44 L-44,44 Z"/>
+    <path d="M-33,0 L-33,44"/>
+    <path d="M-22,0 L-22,44"/>
+    <path d="M-11,0 L-11,44"/>
+    <path d="M0,0 L44,0 L44,44 L0,44 Z"/>
+    <path d="M0,11 L44,11"/>
+    <path d="M0,22 L44,22"/>
+    <path d="M0,33 L44,33"/>
+    <path d="M44,0 L88,0 L88,44 L44,44 Z"/>
+    <path d="M55,0 L55,44"/>
+    <path d="M66,0 L66,44"/>
+    <path d="M77,0 L77,44"/>
+    <path d="M-88,44 L-44,44 L-44,88 L-88,88 Z"/>
+    <path d="M-77,44 L-77,88"/>
+    <path d="M-66,44 L-66,88"/>
+    <path d="M-55,44 L-55,88"/>
+    <path d="M-44,44 L0,44 L0,88 L-44,88 Z"/>
+    <path d="M-44,55 L0,55"/>
+    <path d="M-44,66 L0,66"/>
+    <path d="M-44,77 L0,77"/>
+    <path d="M0,44 L44,44 L44,88 L0,88 Z"/>
+    <path d="M11,44 L11,88"/>
+    <path d="M22,44 L22,88"/>
+    <path d="M33,44 L33,88"/>
+    <path d="M44,44 L88,44 L88,88 L44,88 Z"/>
+    <path d="M44,55 L88,55"/>
+    <path d="M44,66 L88,66"/>
+    <path d="M44,77 L88,77"/>
+  </g>
+</svg>
