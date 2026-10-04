@@ -45,6 +45,17 @@ def leaf_fill(length=40.0, width=13.0, bend=4.0, a=1.0, b=0.92):
         taper_fn(width, a, b), n=70)
 
 
+def leaf_slim(length=32.0, width=8.5, bend=3.0):
+    """
+    ورقة رفيعة مدبّبة الطرف ضيّقة القاعدة.
+    الورقة السابقة (a=1.0, b=0.92, عرض 0.34·الطول) كانت كتلة بيضاوية فجّة؛
+    هذه بـ b=1.20 يتلاشى طرفها بسرعة فتصير مدبّبة، وبـ a=1.10 تضيق قاعدتها.
+    """
+    return filled_ribbon(
+        lambda t: (bend * math.sin(math.pi * t), -length * t),
+        taper_fn(width, 1.10, 1.20), n=74)
+
+
 def petal_fill(length=24.0, width=9.0, bend=0.0):
     return filled_ribbon(
         lambda t: (bend * math.sin(math.pi * t), -length * t),
@@ -98,10 +109,12 @@ def palmette_fill(h=58.0, w=46.0, blades=7):
         ln = h * (1 - 0.34 * abs(u))
         out.append(xf(petal_fill(ln, w / blades * 0.78, bend=u * 3.0),
                       ang, 1.0, (0, 0)))
-    # تجعيدتان عند القاعدة
+    # تجعيدتان عند القاعدة — مقاسهما يتبع مقاس المروحة.
+    # بمقاس ثابت صغير كانتا تظهران كنتوءين يشبهان عيوباً في الرسم.
+    cr = h * 0.21
     for side in (1, -1):
-        out += curl_fill(13.0, 0.95, math.radians(90 if side > 0 else 90),
-                         4.2, (side * 12.0, 7.0))
+        out += curl_fill(cr, 0.92, math.radians(90),
+                         h * 0.068, (side * h * 0.17, h * 0.11))
     return out
 
 
@@ -111,34 +124,73 @@ def palmette_fill(h=58.0, w=46.0, blades=7):
 
 
 def build_vine(i):
+    """
+    فرع زهري مصمت.
+
+    التصحيح الجوهري: الحلزون والساق **محور واحد متّصل** لا قطعتين.
+    بناؤهما منفصلين كان يُنتج:
+      - حدّاً مسطّحاً مقطوعاً عند أسفل الساق
+      - وصلة مكتّلة بين القطعتين
+    ونصف العرض يبدأ من صفر عند طرف الحلزون، يبلغ أقصاه عند الوصلة،
+    ثم يتلاشى إلى صفر عند قمة الفرع — فيخرج شكل واحد متدرّج بلا أطراف مقطوعة.
+
+    وعدد اللفّات ≤ 1.0: ما زاد على ذلك تتراكب لفّاته فيصير الحلزون كتلة مصمتة.
+    """
     rng = random.Random(400 + i)
-    H = 600.0
-    dirn = 1 if i % 2 == 0 else -1
-    amp = 24.0 + (i % 3) * 9.0
-    cycles = 1.15 + (i % 4) * 0.16
-    w0 = 7.0 + (i % 2) * 1.2
+    # يُبنى الفرع دائماً باتجاه واحد ثم يُعكَس بالمرآة للنسخ الفردية.
+    # قلب إشارة الاتجاه داخل الحساب كان يقلب طور الحلزون فيتقاطع مع الساق.
+    flip = (i % 2 == 1)
+    dirn = 1
+    H = 560.0
+    amp = 26.0 + (i % 3) * 10.0
+    cycles = 1.10 + (i % 4) * 0.15
+    w_max = 5.2 + (i % 2) * 0.8          # أرقّ من قبل — كان يبدو حبلاً سميكاً
+
+    R = 40.0 + (i % 3) * 5.0
+    turns = 0.88 + (i % 3) * 0.06        # ≤ 1.0 لئلا تتراكب اللفّات
+    tc = 0.17                            # نسبة المحور التي يشغلها الحلزون
+    # زاوية الطرف الخارجي للحلزون تُحسب لا تُخمّن:
+    #   r(u) = R·u^0.85 و ang(u) = φ + 2π·turns·(1−u)
+    #   dx/du|u=1 = R[0.85·cos φ + 2π·turns·sin φ]
+    # ونريدها صفراً ليكون مَيل الحلزون رأسياً فيتّصل بالساق بلا انكسار:
+    #   tan φ = −0.85 / (2π·turns)
+    phi_out = math.atan2(-0.85, TAU * turns)
+    cx, cy = -R * 0.5, 640.0
+
+    def curl_pt(u):
+        """u: 0 عند القلب، 1 عند الطرف الخارجي."""
+        ang = phi_out + TAU * turns * (1 - u)
+        r = R * (u ** 0.85)
+        return (cx + r * math.cos(ang), cy + r * math.sin(ang))
+
+    sx, sy = curl_pt(1.0)                # الساق يبدأ من طرف الحلزون بالضبط
 
     def axis(t):
-        return (dirn * amp * math.sin(TAU * cycles * t), H * (1 - t))
+        if t <= tc:
+            return curl_pt(t / tc)
+        u = (t - tc) / (1 - tc)
+        return (sx + dirn * amp * math.sin(TAU * cycles * u) * u ** 0.35,
+                sy - H * u)
 
-    shapes = list(stem_fill(axis, w0, 0.74))
+    def half(t):
+        if t <= tc:
+            return w_max * (t / tc) ** 0.55
+        u = (t - tc) / (1 - tc)
+        return w_max * (1 - u) ** 0.80
 
-    # حلزون في الأسفل — السمة المميّزة للمرجع
-    base = axis(0.02)
-    shapes += curl_fill(34.0 + (i % 3) * 6, 1.4, math.radians(dirn * 60),
-                        5.4, (base[0] - dirn * 26, base[1] - 34))
-    shapes += stem_fill(lambda t: (base[0] - dirn * 26 * t,
-                                   base[1] - 34 * t), 5.0, 0.6, 3.0, n=40)
+    shapes = [filled_ribbon(axis, half, n=220)]
 
+    # ---- فروع جانبية بزهور ----
     n_br = 5 + i % 3
     for k in range(n_br):
-        t = 0.12 + 0.80 * k / max(1, n_br - 1)
+        t = tc + (1 - tc) * (0.10 + 0.84 * k / max(1, n_br - 1))
         px, py = axis(t)
         th = tangent_of(axis, t)
         side = 1 if k % 2 == 0 else -1
-        blen = (74 - 24 * t) * rng.uniform(0.9, 1.1)
-        bang = th + side * math.radians(52)
-        bbow = rng.uniform(10, 20) * side
+        u_rel = (t - tc) / (1 - tc)
+        blen = (70 - 22 * u_rel) * rng.uniform(0.9, 1.1)
+        bang = th + side * math.radians(50)
+        bbow = rng.uniform(10, 18) * side
 
         def br(u, px=px, py=py, bang=bang, blen=blen, bbow=bbow):
             r = blen * u
@@ -146,36 +198,36 @@ def build_vine(i):
             d = bbow * math.sin(math.pi * u)
             return (x - d * math.sin(bang), y + d * math.cos(bang))
 
-        shapes += stem_fill(br, w0 * 0.52, 0.80, n=60)
+        # الفرع رقيق ويتلاشى طرفه — القاعدة السميكة كانت تُنتج تكتّلاً
+        shapes += stem_fill(br, 3.0, 0.85, n=60)
 
-        # أوراق على الفرع
-        for j, u in enumerate((0.34, 0.66)):
-            lx, ly = br(u)
-            lth = tangent_of(br, u)
-            lside = 1 if j % 2 == 0 else -1
-            ln = (34 - 8 * t) * rng.uniform(0.9, 1.12)
-            shapes.append(xf(leaf_fill(ln, ln * 0.34, bend=lside * 4),
-                             lth + lside * math.radians(54) + math.pi / 2,
-                             1.0, (lx, ly)))
-        # زهرة عند طرف الفرع
-        fr = (23 - 5 * t) * rng.uniform(0.9, 1.1)
+        # ورقة واحدة على الفرع (ورقتان كانتا تزدحمان مع الزهرة)
+        lx, ly = br(0.46)
+        lth = tangent_of(br, 0.46)
+        ln = (32 - 7 * u_rel) * rng.uniform(0.9, 1.1)
+        shapes.append(xf(leaf_slim(ln, ln * 0.26, bend=-side * 3),
+                         lth - side * math.radians(56) + math.pi / 2,
+                         1.0, (lx, ly)))
+
+        # زهرة تغطّي طرف الفرع، وأحجامها متفاوتة
+        fr = (21 - 4 * u_rel) * rng.uniform(0.82, 1.18)
         shapes += xf_all(flower_fill(fr, 5, rng.uniform(0, 1.2)),
                          0.0, 1.0, br(1.0))
-        # محلق صغير مقابل
-        if k % 2 == 1:
-            shapes += curl_fill(16.0, 1.0, th - side * math.radians(40),
-                                3.4, (px, py))
 
-    # أوراق على الساق الرئيسي
-    for u in (0.22, 0.46, 0.70, 0.90):
-        lx, ly = axis(u)
-        lth = tangent_of(axis, u)
+    # ---- أوراق على الساق الرئيسي ----
+    for u in (0.16, 0.40, 0.62, 0.84):
+        t = tc + (1 - tc) * u
+        lx, ly = axis(t)
+        lth = tangent_of(axis, t)
+        side = -1 if u in (0.16, 0.62) else 1
         ln = 30 - 8 * u
-        shapes.append(xf(leaf_fill(ln, ln * 0.34, bend=-4),
-                         lth - math.radians(58) + math.pi / 2, 1.0, (lx, ly)))
+        shapes.append(xf(leaf_slim(ln, ln * 0.26, bend=side * 3),
+                         lth + side * math.radians(58) + math.pi / 2,
+                         1.0, (lx, ly)))
 
-    # زهرة في القمة
-    shapes += xf_all(flower_fill(19, 5, 0.4), 0.0, 1.0, axis(1.0))
+    shapes += xf_all(flower_fill(17, 5, 0.4), 0.0, 1.0, axis(1.0))
+    if flip:
+        shapes = mirror_x(shapes)
     return f"vine_{i + 1:02d}", "فرع زهري مصمت", shapes, VINE
 
 
@@ -356,8 +408,9 @@ def build_hanging(i):
             th = tangent_of(f, t)
             side = 1 if j % 2 == 0 else -1
             ln = rng.uniform(10, 19) * (1 - 0.25 * t)
-            shapes.append(xf(leaf_fill(ln, ln * rng.uniform(0.26, 0.34),
-                                       bend=side * 1.5, a=1.25),
+            # ورقة مدبّقة لا بيضاوية فجّة
+            shapes.append(xf(leaf_slim(ln, ln * rng.uniform(0.24, 0.32),
+                                       bend=side * 1.5),
                              th + side * math.radians(rng.uniform(48, 68))
                              + math.pi / 2, 1.0, (px, py)))
             # حلقات صغيرة مفرّغة متفرّقة
@@ -393,11 +446,14 @@ def build_unit(i):
         shapes.append(xf(diamond_fill(13), 0.0, 1.0, (0, 54)))
         title = "حلزونان وزهرة"
     elif i == 2:
+        # قرص مركزي يغطّي الفراغ بين قواعد البتلات،
+        # وبدونه تظهر نجمة بيضاء غير مقصودة في الوسط
+        shapes.append(DOT((0, 0), 23.0))
         shapes += flower_fill(66, 6, 0.0)
         for k in range(6):
             a = TAU * k / 6 + math.pi / 6
-            shapes.append(xf(leaf_fill(40, 12), a, 1.0,
-                             polar(30, a - math.pi / 2)))
+            shapes.append(xf(leaf_slim(42, 11), a, 1.0,
+                             polar(26, a - math.pi / 2)))
         title = "زهرة سداسية مصمتة"
     elif i == 3:
         shapes += xf_all(floret4_fill(34, math.radians(45)), 0.0, 1.0, (0, 0))

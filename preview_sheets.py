@@ -187,9 +187,12 @@ class Canvas:
 
     def fill_poly(self, pts):
         """
-        تعبئة مضلّع بطريقة المسح السطري وقاعدة الزوجي-الفردي.
-        ضرورية لمعاينة الزخرفة المصمتة — بلا هذا تظهر الأشكال المُعبّأة
-        كمحيطات فقط ولا يمكن الحكم على التصميم.
+        تعبئة مضلّع بالمسح السطري وقاعدة **nonzero** — وهي القاعدة
+        الافتراضية في SVG.
+
+        استخدام الزوجي-الفردي هنا كان خطأً يُظهر فراغات بيضاء عند تقاطع
+        الشكل مع نفسه (كالحلزون الملفوف)، مع أن الملف نفسه يُرسم مصمتاً
+        في أي عارض SVG. أي أن المعاينة كانت تكذب على الناظر.
         """
         if len(pts) < 3:
             return
@@ -203,16 +206,21 @@ class Canvas:
             for i in range(n):
                 x1, y1 = pts[i]
                 x2, y2 = pts[(i + 1) % n]
-                if (y1 <= yc < y2) or (y2 <= yc < y1):
-                    t = (yc - y1) / (y2 - y1)
-                    xs.append(x1 + t * (x2 - x1))
+                if y1 <= yc < y2:
+                    xs.append((x1 + (yc - y1) / (y2 - y1) * (x2 - x1), 1))
+                elif y2 <= yc < y1:
+                    xs.append((x1 + (yc - y1) / (y2 - y1) * (x2 - x1), -1))
             if not xs:
                 continue
             xs.sort()
             row = y * self.w
-            for i in range(0, len(xs) - 1, 2):
-                xa = max(0, int(math.ceil(xs[i] - 0.5)))
-                xb = min(self.w - 1, int(math.floor(xs[i + 1] - 0.5)))
+            wind = 0
+            for idx in range(len(xs) - 1):
+                wind += xs[idx][1]
+                if wind == 0:
+                    continue
+                xa = max(0, int(math.ceil(xs[idx][0] - 0.5)))
+                xb = min(self.w - 1, int(math.floor(xs[idx + 1][0] - 0.5)))
                 for x in range(xa, xb + 1):
                     self.buf[row + x] = 0
 
