@@ -405,7 +405,7 @@
   "title": "غصن رفيع",
   "family": "أغصان رفيعة",
   "wide": false,
-  "elements": 33
+  "elements": 18
  },
  {
   "num": 52,
@@ -445,7 +445,7 @@
   "title": "غصن رفيع",
   "family": "أغصان رفيعة",
   "wide": false,
-  "elements": 39
+  "elements": 20
  },
  {
   "num": 57,
@@ -469,7 +469,7 @@
   "title": "باقة صغيرة",
   "family": "باقات صغيرة",
   "wide": false,
-  "elements": 64
+  "elements": 69
  },
  {
   "num": 60,
@@ -477,7 +477,7 @@
   "title": "باقة صغيرة",
   "family": "باقات صغيرة",
   "wide": false,
-  "elements": 73
+  "elements": 82
  },
  {
   "num": 61,
@@ -485,7 +485,7 @@
   "title": "باقة صغيرة",
   "family": "باقات صغيرة",
   "wide": false,
-  "elements": 86
+  "elements": 95
  },
  {
   "num": 62,
@@ -493,7 +493,7 @@
   "title": "باقة صغيرة",
   "family": "باقات صغيرة",
   "wide": false,
-  "elements": 62
+  "elements": 69
  },
  {
   "num": 63,
@@ -501,7 +501,7 @@
   "title": "باقة صغيرة",
   "family": "باقات صغيرة",
   "wide": false,
-  "elements": 75
+  "elements": 82
  },
  {
   "num": 64,
@@ -509,7 +509,7 @@
   "title": "باقة صغيرة",
   "family": "باقات صغيرة",
   "wide": false,
-  "elements": 84
+  "elements": 95
  },
  {
   "num": 65,
@@ -517,7 +517,7 @@
   "title": "باقة صغيرة",
   "family": "باقات صغيرة",
   "wide": false,
-  "elements": 64
+  "elements": 69
  },
  {
   "num": 66,
@@ -525,7 +525,7 @@
   "title": "باقة صغيرة",
   "family": "باقات صغيرة",
   "wide": false,
-  "elements": 73
+  "elements": 82
  },
  {
   "num": 67,
@@ -533,7 +533,7 @@
   "title": "زهرة خمسية مفردة",
   "family": "زهور مفردة",
   "wide": false,
-  "elements": 21
+  "elements": 11
  },
  {
   "num": 68,
@@ -541,7 +541,7 @@
   "title": "أقحوانة مفردة",
   "family": "زهور مفردة",
   "wide": false,
-  "elements": 27
+  "elements": 24
  },
  {
   "num": 69,
@@ -549,7 +549,7 @@
   "title": "زهرة بطبقتين",
   "family": "زهور مفردة",
   "wide": false,
-  "elements": 19
+  "elements": 13
  },
  {
   "num": 70,
@@ -557,7 +557,7 @@
   "title": "زهرة ثمانية",
   "family": "زهور مفردة",
   "wide": false,
-  "elements": 25
+  "elements": 17
  },
  {
   "num": 71,
@@ -565,7 +565,7 @@
   "title": "زهرة بساق وورقتين",
   "family": "زهور مفردة",
   "wide": false,
-  "elements": 11
+  "elements": 16
  },
  {
   "num": 72,
@@ -573,7 +573,7 @@
   "title": "تشكيلة ثلاث زهور",
   "family": "زهور مفردة",
   "wide": false,
-  "elements": 33
+  "elements": 35
  },
  {
   "num": 73,

@@ -541,17 +541,22 @@ def build_sprig(i):
         shapes += leaves_along_arc(f, 0.22, 0.94, 10 + v, 17, 5.6, 54,
                                    taper=0.3)
         shapes += xf_all(flower5(19, 5, 4.0, dots=True), 0.0, 1.0, f(0.06))
-    elif style == 2:      # سنبلة أوراق صغيرة
+    elif style == 2:      # سنبلة أوراق متقابلة
+        # العدد السابق (16–19 زوجاً) كان يتراكب حتى يصير سلّماً مصمتاً.
+        # المسافة بين الأزواج يجب أن تتجاوز عرض الورقة.
+        n_pairs = 8 + v
         def f(t):
             return (0, L * 0.5 - L * t)
         shapes.append(P([f(k / 24) for k in range(25)], smooth=True, w=WO))
-        for k in range(16 + v * 3):
-            t = 0.05 + 0.88 * k / (15 + v * 3)
+        for k in range(n_pairs):
+            t = 0.08 + 0.80 * k / max(1, n_pairs - 1)
             px, py = f(t)
+            ln = 17 - 5 * t
             for side in (1, -1):
-                shapes += xf_all(tiny_leaf(13 - 3 * t, 4.6),
-                                 side * math.radians(48) + math.pi, 1.0,
+                shapes += xf_all(small_leaf(ln, ln * 0.33, vein=False),
+                                 side * math.radians(46) + math.pi, 1.0,
                                  (px, py))
+        shapes += xf_all(small_leaf(15, 5.0, vein=False), math.pi, 1.0, f(0.03))
     elif style == 3:      # غصن بحبّات
         def f(t):
             return (16 * math.sin(math.pi * t * 0.9), L * 0.5 - L * t)
@@ -590,24 +595,32 @@ def build_posy(i):
         u = (k - (n_stem - 1) / 2) / max(1, (n_stem - 1) / 2)
         ang = -math.pi / 2 + u * spread / 2
         L = 128 - 22 * abs(u)
+        bow = 13.0 * (1 if k % 2 == 0 else -1) * (0.45 + abs(u))
+        # القواعد متباعدة قليلاً لا كلها من نقطة واحدة (تُنتج شكل قدم الغراب)
+        bx = base[0] + u * 5.0
 
-        def f(t, ang=ang, L=L):
-            a = ang + u * 0.12 * math.sin(math.pi * t)
-            return (base[0] + L * t * math.cos(a), base[1] + L * t * math.sin(a))
+        def f(t, ang=ang, L=L, bw=bow, bx=bx):
+            r = L * t
+            px, py = bx + r * math.cos(ang), base[1] + r * math.sin(ang)
+            # إزاحة عرضية تتلاشى عند الطرفين = انحناء لطيف بدل خط مستقيم جافّ
+            d = bw * math.sin(math.pi * t)
+            return (px - d * math.sin(ang), py + d * math.cos(ang))
 
-        shapes.append(P([f(j / 20) for j in range(21)], smooth=True, w=WO))
+        shapes.append(P([f(j / 22) for j in range(23)], smooth=True, w=WO))
         if k in flower_at:
-            shapes += leaves_along_arc(f, 0.34, 0.80, 3, 14, 4.8, 56)
+            shapes += leaves_along_arc(f, 0.34, 0.78, 3, 14, 4.8, 56)
             shapes += xf_all(flower5(15 - abs(u) * 3, 5, 3.0, rot=k * 0.6),
                              0.0, 1.0, f(1.0))
         else:
-            shapes += leaves_along_arc(f, 0.30, 0.96, 5, 15, 5.2, 54,
+            shapes += leaves_along_arc(f, 0.30, 0.94, 5, 15, 5.2, 54,
                                        taper=0.2)
-    # رِباط الباقة
-    shapes.append(P([(-9, 74), (9, 74), (9, 83), (-9, 83)], closed=True,
-                    smooth=True, w=WO))
-    shapes.append(P([(-7, 86), (-13, 97)], smooth=True, w=WD))
-    shapes.append(P([(7, 86), (13, 97)], smooth=True, w=WD))
+            shapes += xf_all(small_leaf(13, 4.4), ang + math.pi / 2 + math.pi,
+                             1.0, f(1.0))
+    # رِباط الباقة: شريطان منحنيان وذيلان — لا صندوق بأرجل
+    for dy in (74.0, 81.0):
+        shapes.append(P([(-11, dy), (0, dy + 2.4), (11, dy)], smooth=True, w=WO))
+    shapes.append(P([(-4, 83), (-11, 92), (-9, 101)], smooth=True, w=WD))
+    shapes.append(P([(4, 83), (12, 91), (11, 100)], smooth=True, w=WD))
     return f"posy_{i + 1:02d}", "باقة صغيرة", shapes, (170, 200)
 
 
@@ -617,45 +630,49 @@ def build_posy(i):
 
 
 def build_single(i):
+    """
+    زهور مفردة نظيفة.
+    القاعدة التي خُرقت سابقاً: لا تُوضع أوراق *بين* البتلات ولا طبقة ثانية
+    تتقاطع مع الأولى — فذلك يُنتج تشابكاً. الأوراق تُوضع أسفل الزهرة فقط،
+    والطبقة الداخلية تبقى داخل نطاق قواعد البتلات الخارجية.
+    """
     shapes = []
-    if i == 0:
-        shapes += flower5(70, 5, 15, dots=True)
-        for k in range(5):
-            a = TAU * k / 5 + math.pi / 5
-            shapes += xf_all(small_leaf(30, 11), a, 1.0, polar(26, a - math.pi / 2))
+    if i == 0:                                   # خمسية كبيرة بسيطة
+        shapes += flower5(76, 5, 13, dots=True)
         title = "زهرة خمسية مفردة"
-    elif i == 1:
-        shapes += daisy(76, 13, 15)
-        for k in range(13):
-            a = TAU * k / 13
-            shapes.append(CIRC(polar(9, a), 2.0, w=WD))
+    elif i == 1:                                 # أقحوانة
+        shapes += daisy(78, 13, 14)
+        for k in range(10):
+            a = TAU * k / 10
+            shapes.append(CIRC(polar(8, a), 1.9, w=WD))
         title = "أقحوانة مفردة"
-    elif i == 2:
-        shapes += flower5(58, 6, 12, dots=True, rot=0.3)
-        shapes += flower5(36, 6, 0, rot=0.3 + math.pi / 6)
+    elif i == 2:                                 # طبقتان متداخلتان بانتظام
+        shapes += flower5(76, 6, 0, rot=0.0)
+        # الطبقة الداخلية أصغر من قواعد البتلات الخارجية (76·0.24 ≈ 18)
+        shapes += flower5(17, 6, 3.2, rot=math.pi / 6)
         title = "زهرة بطبقتين"
-    elif i == 3:
-        for k in range(8):
-            a = TAU * k / 8
-            shapes += xf_all(small_leaf(62, 20), a, 1.0, polar(16, a - math.pi / 2))
-        shapes.append(CIRC((0, 0), 14, w=WO))
+    elif i == 3:                                 # ثمانية ببتلات رفيعة
+        shapes += daisy(78, 8, 15)
         for k in range(8):
             a = TAU * k / 8 + math.pi / 8
-            shapes.append(CIRC(polar(8, a), 2.2, w=WD))
+            shapes.append(CIRC(polar(9, a), 2.2, w=WD))
         title = "زهرة ثمانية"
-    elif i == 4:
-        shapes += flower5(64, 5, 13)
-        shapes += xf_all(small_leaf(44, 15), math.radians(150), 1.0, (10, 44))
-        shapes += xf_all(small_leaf(38, 13), math.radians(-150), 1.0, (-8, 52))
-        shapes.append(P([(0, 20), (4, 58), (0, 96)], smooth=True, w=WO))
+    elif i == 4:                                 # زهرة بساق وورقتين
+        shapes += flower5(58, 5, 11, dots=True)
+        shapes.append(P([(0, 14), (5, 58), (0, 104)], smooth=True, w=WO))
+        # الأوراق على الساق أسفل الزهرة — لا تلامس البتلات
+        shapes += xf_all(small_leaf(40, 14), math.radians(126), 1.0, (4, 56))
+        shapes += xf_all(small_leaf(34, 12), math.radians(-126), 1.0, (2, 76))
         title = "زهرة بساق وورقتين"
-    else:
-        shapes += flower5(46, 5, 10, dots=True)
-        shapes += xf_all(flower5(22, 5, 5), 0.0, 1.0, (46, -34))
-        shapes += xf_all(flower5(17, 5, 4), 0.0, 1.0, (-42, -28))
-        shapes += xf_all(small_leaf(34, 12), math.radians(40), 1.0, (-26, 30))
-        shapes += xf_all(small_leaf(30, 11), math.radians(-50), 1.0, (28, 34))
-        shapes += xf_all(berry_sprig(3, 2.8, 9), math.radians(-20), 1.0, (-46, 6))
+    else:                                        # تشكيلة ثلاث زهور متباعدة
+        shapes += flower5(44, 5, 9, dots=True)
+        shapes += xf_all(flower5(26, 5, 5.4, rot=0.5), 0.0, 1.0, (58, -40))
+        shapes += xf_all(flower5(21, 5, 4.4, rot=1.1), 0.0, 1.0, (-54, -34))
+        shapes.append(P([(0, 0), (34, -26), (58, -40)], smooth=True, w=WD))
+        shapes.append(P([(0, 0), (-32, -22), (-54, -34)], smooth=True, w=WD))
+        shapes += xf_all(small_leaf(32, 11), math.radians(58), 1.0, (-22, 24))
+        shapes += xf_all(small_leaf(28, 10), math.radians(-58), 1.0, (24, 28))
+        shapes += xf_all(berry_sprig(3, 2.8, 9), math.radians(96), 1.0, (0, 34))
         title = "تشكيلة ثلاث زهور"
     return f"single_{i + 1:02d}", title, shapes, SQUARE
 

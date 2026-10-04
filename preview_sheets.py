@@ -126,24 +126,31 @@ def load_svg(path):
 
     out = []
 
-    def emit(el, sw):
+    def emit(el, sw, filled=False):
         tag = el.tag.replace(NS, "")
         if tag == "path":
             for poly in parse_d(el.get("d", "")):
-                out.append(([(x * s + tx, y * s + ty) for x, y in poly], sw * s))
+                pts = [(x * s + tx, y * s + ty) for x, y in poly]
+                # الشكل المُعبّأ يُحاكى بخط سميك على محيطه
+                out.append((pts, (sw * s) if not filled else max(2.0, sw * s)))
         elif tag == "circle":
             cx, cy, r = (float(el.get("cx")), float(el.get("cy")),
                          float(el.get("r")))
             cx, cy, r = cx * s + tx, cy * s + ty, r * s
-            out.append(([(cx + r * math.cos(math.tau * k / 64),
-                          cy + r * math.sin(math.tau * k / 64))
-                         for k in range(65)], sw * s))
+            if filled:
+                # نقطة مُعبّأة: تُرسم كقرص مصمت بسماكة تساوي قطرها
+                out.append(([(cx, cy), (cx + 0.01, cy)], r * 2))
+            else:
+                out.append(([(cx + r * math.cos(math.tau * k / 64),
+                              cy + r * math.sin(math.tau * k / 64))
+                             for k in range(65)], sw * s))
 
     for child in g:
         if child.tag.replace(NS, "") == "g":
             sub_sw = float(child.get("stroke-width", root_sw) or root_sw)
+            is_filled = (child.get("fill") or "none") != "none"
             for el in child.iter():
-                emit(el, sub_sw)
+                emit(el, sub_sw, is_filled)
         else:
             emit(child, root_sw)
     return out, vw, vh
@@ -239,10 +246,31 @@ def main():
     for old in OUT.glob("*.png"):
         old.unlink()
     data = json.loads(INDEX.read_text(encoding="utf-8"))
-    squares = [d["file"] for d in data if not d["wide"]]
+    talls = [d["file"] for d in data if d.get("tall")]
+    squares = [d["file"] for d in data if not d["wide"] and not d.get("tall")]
     wides = [d["file"] for d in data if d["wide"]]
 
     made = []
+
+    # الأشرطة الرأسية تُعرض في صف واحد بخلايا طويلة
+    per = 8
+    for n, i in enumerate(range(0, len(talls), per), start=1):
+        grp = talls[i:i + per]
+        p = OUT / f"sheet_tall_{n}.png"
+        w, h = build_sheet(grp, len(grp), 145, 640, p)
+        made.append((p.name, w, h, len(grp)))
+        print(f"{p.name}  {w}x{h}")
+
+    # في المجموعة الرأسية تكون "wide" ألواحاً طويلة لا أشرطة أفقية
+    if talls:
+        per = 4
+        for n, i in enumerate(range(0, len(wides), per), start=1):
+            grp = wides[i:i + per]
+            p = OUT / f"sheet_panel_{n}.png"
+            w, h = build_sheet(grp, len(grp), 290, 640, p)
+            made.append((p.name, w, h, len(grp)))
+            print(f"{p.name}  {w}x{h}")
+        wides = []
     # المجموعات الصغيرة تُعرض بخلايا أكبر لتُرى التفاصيل،
     # مع البقاء دائماً تحت 2000 بكسل في كل بُعد.
     if len(squares) <= 90:

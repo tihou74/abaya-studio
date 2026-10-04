@@ -161,6 +161,67 @@ INTRO_TRACE2 = """
 """
 
 
+INTRO_BANDS = """
+<div class="note">
+<h1>المجموعة الثالثة — أشرطة أطراف رأسية</h1>
+<p>مبنية على المراجع التي أرسلتها: <b>صيغة رأسية</b> تناسب طرف العباية الأمامي،
+بنقاط مُعبّأة سوداء، وأوراق محشوّة بخطوط (تطريز ساتان)، وسلاسل معلّقة،
+ووريدات صغيرة مزخرفة.</p>
+<ul>
+<li><b>الأشرطة الرأسية</b> كل شريط بطول صفحة A4 تقريباً. لطرف أطول:
+اطبع الصفحة مرتين أو ثلاثاً وصِلها — النمط مُصمَّم ليستمر.</li>
+<li><b>ألواح السلاسل</b> تُستخدم كمساحة كاملة (الكتف أو الظهر أو عرض الطرف).</li>
+<li><b>الوريدات والعناقيد</b> عناصر منفردة تُوزَّع كما تشاء.</li>
+<li>النقاط السوداء تُطرَّز <b>عُقَد فرنسية</b> (French knots) أو خرزاً.</li>
+<li>الخطوط داخل الأوراق تُطرَّز <b>ساتان</b> — وهي دليل اتجاه الإبرة.</li>
+</ul>
+</div>
+"""
+
+
+def build_bands(name, heading, intro_html, per_page=2):
+    """صفحات الأشرطة الرأسية: شريطان في صفحة A4 بطول الصفحة كاملاً."""
+    data = json.loads((ROOT / "index_bands.json").read_text(encoding="utf-8"))
+    talls = [d for d in data if d.get("tall")]
+    rest = [d for d in data if not d.get("tall")]
+
+    def strip_page(items, pageno, total):
+        cells = "".join(
+            f'<div class="cell" style="flex:1;min-width:0">'
+            f'<img src="../bands/{it["file"]}" '
+            f'style="height:235mm;width:auto;margin:0 auto;display:block">'
+            f'<div class="cap"><b>{it["num"]:03d}</b> — {it["title"]}</div></div>'
+            for it in items)
+        return (f'<section class="page">'
+                f'<div class="head"><b>{heading}</b>'
+                f'<span>صفحة {pageno} من {total}</span></div>'
+                f'<div style="display:flex;gap:6mm;justify-content:center;'
+                f'align-items:flex-start">{cells}</div>'
+                f'<div class="foot"><span>أشرطة أطراف رأسية</span>'
+                f'<span>SVG متجهي</span></div></section>')
+
+    tall_pages = chunk(talls, per_page)
+    rest_pages = chunk(rest, 4)
+    total = len(tall_pages) + len(rest_pages)
+    body = [intro_html]
+    n = 0
+    for grp in tall_pages:
+        n += 1
+        body.append(strip_page(grp, n, total))
+    for grp in rest_pages:
+        n += 1
+        for d in grp:
+            d["_dir"] = "bands"
+        body.append(page(grp, 2, f"{heading} — ألواح وعناصر", n, total))
+
+    html = (f'<!DOCTYPE html>\n<html lang="ar" dir="rtl">\n<head>\n'
+            f'<meta charset="utf-8">\n<title>{heading}</title>\n'
+            f"<style>{CSS}</style>\n</head>\n<body>\n"
+            + "\n".join(body) + "\n</body>\n</html>\n")
+    (OUT / name).write_text(html, encoding="utf-8")
+    return total
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     a = build("catalog.html", 20, 4, 5, "فهرس الرسومات", INTRO_CATALOG)
@@ -169,10 +230,12 @@ def main():
               INTRO_CATALOG2, "index_art.json", "art")
     d = build("trace2.html", 4, 2, 2, "المجموعة الثانية — النقل",
               INTRO_TRACE2, "index_art.json", "art")
+    e = build_bands("bands.html", "أشرطة أطراف رأسية", INTRO_BANDS)
     print(f"print/catalog.html  — {a} صفحة  (المجموعة الأولى)")
     print(f"print/trace.html    — {b} صفحة")
     print(f"print/catalog2.html — {c} صفحة  (المجموعة الثانية)")
     print(f"print/trace2.html   — {d} صفحة")
+    print(f"print/bands.html    — {e} صفحة  (المجموعة الثالثة)")
 
 
 if __name__ == "__main__":

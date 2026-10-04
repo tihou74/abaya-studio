@@ -38,6 +38,18 @@ def CIRC(c, r, w=W_MAIN):
     return {"kind": "circle", "c": (float(c[0]), float(c[1])), "r": float(r), "w": w}
 
 
+def DOT(c, r):
+    """نقطة مُعبّأة سوداء — الحبّات والخرز في نقوش التطريز تكون مصمتة."""
+    return {"kind": "dot", "c": (float(c[0]), float(c[1])), "r": float(r),
+            "w": W_MAIN}
+
+
+def FILLED(points, smooth=True):
+    """شكل مغلق مُعبّأ (للأوراق المصمتة والعناصر الصغيرة)."""
+    return {"kind": "fill", "pts": [(float(x), float(y)) for x, y in points],
+            "closed": True, "smooth": smooth, "w": W_MAIN}
+
+
 def LINE(p1, p2, w=W_MAIN):
     return P([p1, p2], closed=False, smooth=False, w=w)
 
@@ -88,7 +100,7 @@ def xf_pts(pts, ang=0.0, scale=1.0, at=(0.0, 0.0), flip=1):
 
 
 def xf(shape, ang=0.0, scale=1.0, at=(0.0, 0.0), flip=1):
-    if shape["kind"] == "path":
+    if shape["kind"] in ("path", "fill"):
         s = dict(shape)
         s["pts"] = xf_pts(shape["pts"], ang, scale, at, flip)
         return s
@@ -145,6 +157,12 @@ def ribbon(axis, half, n=96, w=W_MAIN, closed=True):
     if half(0.0) < 1e-6:
         tail = tail[:-1]
     return P(pts + tail, closed=closed, smooth=True, w=w)
+
+
+def _profile_norm(a, b):
+    """أقصى قيمة لـ t^a·(1-t)^b تحدث عند t = a/(a+b) — للمعايرة إلى 1."""
+    t0 = a / (a + b)
+    return t0 ** a * (1 - t0) ** b
 
 
 def taper_fn(width, a=0.6, b=0.9, ruffle=0.0, waves=5, phase=0.0,
@@ -242,6 +260,48 @@ def petal_curled(length, width, curl=0.55, side=1, ruffle=0.0, waves=4,
     return ribbon(axis, taper_fn(width, 0.80, 1.0, ruffle, waves), n=n, w=w)
 
 
+def leaf_hatched(length, width, a=0.68, b=0.95, bend=2.0, lines=9,
+                 reach=0.90, midrib=True, w=W_MAIN, wh=W_FINE, n=72,
+                 lean=0.13):
+    """
+    ورقة محشوّة بخطوط متوازية — مظهر تطريز الساتان (satin stitch).
+
+    الخطوط تمتدّ من العِرق الأوسط إلى الحافة وتميل نحو القمة بمقدار `lean`،
+    وهو ما يمنحها إحساس الخياطة لا إحساس التظليل الهندسي.
+    """
+    norm = _profile_norm(a, b)
+
+    def mid(t):
+        return (bend * math.sin(math.pi * t), -length * t)
+
+    def half(t):
+        t = min(1.0, max(0.0, t))
+        return width * (t ** a * (1 - t) ** b) / norm
+
+    def nrm(t):
+        e = 1e-3
+        p0, p1 = mid(max(0.0, t - e)), mid(min(1.0, t + e))
+        dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+        m = math.hypot(dx, dy) or 1.0
+        return (-dy / m, dx / m)
+
+    out = [ribbon(mid, half, n=n, w=w)]
+    if midrib:
+        out.append(P([mid(0.04 + 0.92 * i / 18) for i in range(19)],
+                     smooth=True, w=wh))
+    for k in range(lines):
+        t = 0.10 + 0.80 * k / max(1, lines - 1)
+        te = min(0.985, t + lean)
+        bx, by = mid(t)
+        ex, ey = mid(te)
+        nx, ny = nrm(te)
+        he = half(te) * reach
+        for side in (1, -1):
+            out.append(P([(bx, by), (ex + side * nx * he, ey + side * ny * he)],
+                         smooth=False, w=wh))
+    return out
+
+
 def petal_edge(r_in, r_out, ang, spread, bulge=1.03, ruffle=0.0, waves=3,
                w=W_MID, n=30):
     """
@@ -317,18 +377,25 @@ def write_svg(path, shapes, canvas=(200, 200), margin=15, stroke=2.3, title=""):
     W, H = canvas
 
     prepared = []          # (w, kind, payload)
+    filled = []            # عناصر مُعبّأة (نقاط وأشكال مصمتة)
     xs, ys = [], []
     for sh in shapes:
-        if sh["kind"] == "circle":
-            prepared.append((sh["w"], "circle", sh))
+        if sh["kind"] in ("circle", "dot"):
             cx, cy, r = sh["c"][0], sh["c"][1], sh["r"]
+            if sh["kind"] == "dot":
+                filled.append(("circle", sh))
+            else:
+                prepared.append((sh["w"], "circle", sh))
             xs += [cx - r, cx + r]
             ys += [cy - r, cy + r]
         else:
             d = shape_d(sh)
             if not d:
                 continue
-            prepared.append((sh["w"], "path", d))
+            if sh["kind"] == "fill":
+                filled.append(("path", d))
+            else:
+                prepared.append((sh["w"], "path", d))
             nums = [float(v) for v in _NUM.findall(d)]
             if len(nums) % 2:
                 nums = nums[:-1]
@@ -349,6 +416,16 @@ def write_svg(path, shapes, canvas=(200, 200), margin=15, stroke=2.3, title=""):
     for wt in sorted(groups, reverse=True):
         body.append(f'    <g stroke-width="{stroke * wt / s:.4f}">')
         for kind, payload in groups[wt]:
+            if kind == "circle":
+                body.append(f'      <circle cx="{fmt(payload["c"][0])}" '
+                            f'cy="{fmt(payload["c"][1])}" r="{fmt(payload["r"])}"/>')
+            else:
+                body.append(f'      <path d="{payload}"/>')
+        body.append("    </g>")
+
+    if filled:
+        body.append('    <g fill="#000000" stroke="none">')
+        for kind, payload in filled:
             if kind == "circle":
                 body.append(f'      <circle cx="{fmt(payload["c"][0])}" '
                             f'cy="{fmt(payload["c"][1])}" r="{fmt(payload["r"])}"/>')
