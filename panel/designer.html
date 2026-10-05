@@ -263,6 +263,9 @@
           <label class="f">Garment measurements (inch)</label>
           <table id="measTable" style="width:100%;border-collapse:collapse;
                  font-size:12px"></table>
+          <div id="measWarn" style="display:none;margin-top:7px;padding:7px 9px;
+               background:#fff6e5;border:1px solid #e0b35c;border-radius:7px;
+               font-size:11.5px;line-height:1.6;color:#8a6412"></div>
         </div>
 
         <label class="f">Or upload your own cut image</label>
@@ -476,6 +479,14 @@ const IMG_CUTS = [{
     length: 58, chest: 24, shoulder: 15, hem: 120,
     sleeveLength: 24, sleeveWidth: 12
   },
+  /* هل الرقم محيط أم عرض مفروش؟ الفرق ضعف، ويقلب كل القياسات.
+     المستخدمة قالت الصدر والذيل محيطان. والذيل متّسق: 120 محيطاً =
+     60 مفروشاً، أوسع من الصدر — طبيعي لكلوش.
+     أما الصدر فـ24 محيطاً = 12 مفروشاً، وهو أضيق من الأكتاف (15)
+     وذلك مستحيل هندسياً: الصدر لا يكون أنحف من الكتفين. فالافتراض
+     هنا أنه مفروش (= 48 محيطاً)، ويبقى المفتاح ظاهراً لتقلبه هي
+     وترى الأثر بنفسها بدل أن نحسم نحن. */
+  circ: { chest: false, hem: true, sleeve: true },
   pieces: [
     { id: "front",  name: "Front",         kind: "image",
       src: "cuts/closh-front.png", w: 403, h: 1026 },
@@ -483,10 +494,54 @@ const IMG_CUTS = [{
       src: "cuts/closh-back.png",  w: 412, h: 1018 },
     // الكُمّ مستطيل مسطّح بناءً على طلب المستخدمة. العرض = نصف
     // المحيط المعطى (12 إنش محيطاً ← 6 إنش مفروشاً).
-    { id: "sleeve", name: "Sleeve (flat)", kind: "rect",
-      wIn: 6, hIn: 24 }
+    { id: "sleeve", name: "Sleeve (flat)", kind: "rect" },
+    // قطعة بالنسب الحقيقية: شبه منحرف من الصدر المفروش إلى الذيل
+    // المفروش على كامل الطول. الرسمة الفنية تُظهر الذيل أضيق بكثير
+    // من دورانه الحقيقي، فهذه القطعة هي الصحيحة لأشرطة الذيل
+    // والتوزيع الكامل.
+    { id: "flat", name: "Flat panel (true scale)", kind: "trap" }
   ]
 }];
+
+/* أبعاد القطع المشتقّة من المقاسات — تُحسب حياً فتتبع أي تغيير */
+function pieceGeom(cutObj, pc) {
+  if (pc.kind === "rect") {
+    return { wIn: flatOf(cutObj, "sleeveWidth"),
+             hIn: cutObj.measures.sleeveLength };
+  }
+  if (pc.kind === "trap") {
+    return { topIn: flatOf(cutObj, "chest"),
+             botIn: flatOf(cutObj, "hem"),
+             wIn: Math.max(flatOf(cutObj, "chest"), flatOf(cutObj, "hem")),
+             hIn: cutObj.measures.length };
+  }
+  return { wIn: pc.w / cutObj.pxPerInch, hIn: pc.h / cutObj.pxPerInch };
+}
+
+/* العرض المفروش لمقاس ما — نصفه إن كان محيطاً */
+function flatOf(cutObj, key) {
+  const v = cutObj.measures[key];
+  const isCirc = cutObj.circ && cutObj.circ[
+    key === "sleeveWidth" ? "sleeve" : key];
+  return isCirc ? v / 2 : v;
+}
+
+/* هل المقاسات متّسقة هندسياً؟ الصدر المفروش لا يكون أنحف من الأكتاف */
+function measureWarning(cutObj) {
+  const chestFlat = flatOf(cutObj, "chest");
+  const sh = cutObj.measures.shoulder;
+  if (chestFlat < sh) {
+    return `Chest flat (${chestFlat}″) is narrower than the shoulders `
+         + `(${sh}″), which is not possible on a garment. `
+         + `Try switching chest to "flat width".`;
+  }
+  const hemFlat = flatOf(cutObj, "hem");
+  if (hemFlat < chestFlat) {
+    return `Hem flat (${hemFlat}″) is narrower than the chest `
+         + `(${chestFlat}″). Check the hem reading.`;
+  }
+  return null;
+}
 
 function imgCut() { return IMG_CUTS.find(c => c.id === state.cut) || null; }
 
@@ -500,8 +555,7 @@ function curPiece() {
 function pieceInches() {
   const c = imgCut(), pc = curPiece();
   if (!c || !pc) return null;
-  if (pc.kind === "rect") return { wIn: pc.wIn, hIn: pc.hIn };
-  return { wIn: pc.w / c.pxPerInch, hIn: pc.h / c.pxPerInch };
+  return pieceGeom(c, pc);
 }
 
 /* عرض القطعة بالوحدات الداخلية — ارتفاعها دائماً ABAYA_UNITS،
@@ -680,6 +734,13 @@ function draw() {
       });
       im2.setAttribute("style", "mix-blend-mode:multiply");
       g.appendChild(im2);
+    } else if (pc.kind === "trap") {
+      const k = wU / pi.wIn;                  // وحدة لكل إنش أفقياً
+      const t = pi.topIn * k / 2, b = pi.botIn * k / 2;
+      g.appendChild(el("path", {
+        d: `M${-t},0 L${t},0 L${b},${ABAYA_UNITS} L${-b},${ABAYA_UNITS} Z`,
+        fill: state.abayaColor, stroke: "#111", "stroke-width": 3
+      }));
     } else {
       g.appendChild(el("rect", {
         x: -wU / 2, y: 0, width: wU, height: ABAYA_UNITS,
@@ -1064,18 +1125,45 @@ function renderPieces() {
     `This piece: ${pi.wIn.toFixed(1)}″ wide × ${pi.hIn.toFixed(1)}″ tall`;
 
   const M = c.measures;
+  // المقاسات التي قد تكون محيطاً تُعرض مع مفتاح، ويُعرض بجانبها
+  // العرض المفروش المستخدَم فعلاً في الحساب
   const rows = [
-    ["Length (shoulder → hem)", M.length],
-    ["Chest", M.chest],
-    ["Shoulder", M.shoulder],
-    ["Hem", M.hem],
-    ["Sleeve length", M.sleeveLength],
-    ["Sleeve width", M.sleeveWidth],
+    ["Length (shoulder → hem)", M.length, null],
+    ["Chest", M.chest, "chest"],
+    ["Shoulder", M.shoulder, null],
+    ["Hem", M.hem, "hem"],
+    ["Sleeve length", M.sleeveLength, null],
+    ["Sleeve width", M.sleeveWidth, "sleeve"],
   ];
-  $("#measTable").innerHTML = rows.map(([k, v]) =>
-    `<tr><td style="padding:2px 0;color:var(--muted)">${k}</td>
-     <td style="padding:2px 0;text-align:right;font-weight:700">${v}″</td></tr>`
-  ).join("");
+  $("#measTable").innerHTML = rows.map(([k, v, key]) => {
+    if (!key) {
+      return `<tr><td style="padding:3px 0;color:var(--muted)">${k}</td>
+        <td style="padding:3px 0;text-align:right;font-weight:700"
+            colspan="2">${v}″</td></tr>`;
+    }
+    const isC = !!c.circ[key];
+    const flat = isC ? v / 2 : v;
+    return `<tr><td style="padding:3px 0;color:var(--muted)">${k}</td>
+      <td style="padding:3px 0;text-align:right;font-weight:700">${v}″</td>
+      <td style="padding:3px 0;text-align:right">
+        <button class="chip" data-circ="${key}"
+          style="padding:1px 6px;font-size:11px"
+          title="Tap to switch between circumference and flat width"
+          >${isC ? "circ → " + flat + "″ flat" : "flat"}</button></td></tr>`;
+  }).join("");
+
+  $("#measTable").querySelectorAll("[data-circ]").forEach(b => {
+    b.onclick = () => {
+      const key = b.dataset.circ;
+      c.circ[key] = !c.circ[key];
+      syncPieceLength();
+      renderPieces(); draw(); syncProps(); renderList(); save();
+    };
+  });
+
+  const warn = measureWarning(c);
+  $("#measWarn").textContent = warn || "";
+  $("#measWarn").style.display = warn ? "block" : "none";
 }
 
 function renderChips() {
@@ -1387,6 +1475,7 @@ const KEY = "abaya-panel-v1";
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify({
     cut: state.cut, piece: state.piece,
+    circ: IMG_CUTS.map(c => ({ id: c.id, circ: { ...c.circ } })),
     lenCm: state.lenCm, widIn: state.widIn,
     abayaColor: state.abayaColor,
     items: state.items, uidSeq
@@ -1400,6 +1489,10 @@ function load() {
     if (s.lenCm) state.lenCm = s.lenCm;
     if (s.widIn) state.widIn = s.widIn;
     if (s.piece) state.piece = s.piece;
+    if (Array.isArray(s.circ)) s.circ.forEach(r => {
+      const c = IMG_CUTS.find(x => x.id === r.id);
+      if (c && r.circ) Object.assign(c.circ, r.circ);
+    });
     if (s.abayaColor) state.abayaColor = s.abayaColor;
     if (Array.isArray(s.items))
       state.items = s.items.filter(i => motifById(i.mid));
