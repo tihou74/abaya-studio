@@ -89,10 +89,13 @@
   #board{display:block;margin:14px auto;background:#fff;
     box-shadow:0 4px 22px rgba(0,0,0,.12);border-radius:4px;
     height:calc(100vh - 118px);width:auto;max-width:96%}
-  .motif-wrap{cursor:move}
+  /* touch-action:none ضروري للمس: بدونه يُفسّر المتصفّح سحب النقشة
+     تمريراً للصفحة، فتتحرّك الصفحة ولا تتحرّك النقشة على الجوال. */
+  .motif-wrap{cursor:move;touch-action:none}
   .selbox{fill:none;stroke:#2563eb;stroke-width:2;stroke-dasharray:6 4;
     pointer-events:none;vector-effect:non-scaling-stroke}
-  .handle{fill:#2563eb;stroke:#fff;stroke-width:1.5;cursor:nwse-resize}
+  .handle{fill:#2563eb;stroke:#fff;stroke-width:1.5;
+    cursor:nwse-resize;touch-action:none}
   .dimline{stroke:#2563eb;stroke-width:1;vector-effect:non-scaling-stroke}
 
   /* ================= قائمة العناصر ================= */
@@ -132,6 +135,18 @@
     .side,.side.left{width:100%;border:none;border-top:1px solid var(--line)}
     .stage{min-height:420px}
     body{overflow:auto}
+    /* على الجوال يُقاس اللوح بالعرض لا بالطول: ارتفاع 100vh يجعل
+       العباية أطول من الشاشة فلا تُرى كاملة ولا يُمكن وضع النقشة. */
+    #board{height:auto;width:100%;max-width:100%;margin:8px auto}
+    .scroll{max-height:none}
+  }
+  @media (max-width:560px){
+    /* أزرار وحقول بمقاس يسهل لمسه بالإصبع */
+    .btn{padding:9px 12px;font-size:14px}
+    input[type=number],input[type=color],select{min-height:38px}
+    input[type=range]{height:30px}
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .topbar{flex-wrap:wrap;gap:6px}
   }
 
   /* ========== عرض الطباعة ==========
@@ -163,6 +178,12 @@
     border-top:.4mm dashed #2563eb;text-align:center}
   #printRoot .olap span{font-size:2.6mm;color:#2563eb;background:#fff;
     padding:0 2mm}
+  /* علامة محاذاة رأسية — للنقشة المقسّمة على عدة أعمدة */
+  #printRoot .olapv{position:absolute;top:-7mm;bottom:-7mm;
+    border-right:.4mm dashed #2563eb;writing-mode:vertical-rl;
+    text-align:center}
+  #printRoot .olapv span{font-size:2.6mm;color:#2563eb;background:#fff;
+    padding:2mm 0}
   #printRoot .intro{width:194mm;background:#fff;margin:0 auto 7mm;padding:11mm;
     font-size:3.4mm;line-height:1.85;page-break-after:always;break-after:page}
   #printRoot .intro h1{font-size:6mm;margin:0 0 4mm}
@@ -219,11 +240,17 @@
           <input type="range" id="bgOpacity" min="10" max="100" value="100">
         </div>
 
-        <label class="f">طول العباية (سم) — من الكتف إلى الأسفل</label>
+        <label class="f">طول العباية (إنش) — من الكتف إلى الأسفل</label>
         <div class="row">
-          <input type="number" id="lenCm" value="140" min="60" max="200" step="1">
+          <input type="number" id="lenIn" value="56" min="24" max="80" step="0.5">
+          <span class="hint" style="margin:0" id="lenCmEcho">= 142.2 سم</span>
+        </div>
+        <label class="f">عرض العباية (إنش) — عند الصدر، مفروشة</label>
+        <div class="row">
+          <input type="number" id="widIn" value="24" min="10" max="60" step="0.5">
           <button class="btn ghost" id="btnShowDim">إظهار القياس</button>
         </div>
+        <div class="hint" id="hemEcho" style="margin:4px 0 0"></div>
 
         <label class="f">لون العباية</label>
         <div class="swatches" id="abayaSwatches"></div>
@@ -236,6 +263,15 @@
 
       <div class="sec" style="padding-bottom:6px">
         <h2>٢ · اختر النقشة</h2>
+        <label class="f">أو ارفعي نقشة من عندك (SVG أو صورة)</label>
+        <div class="row">
+          <input type="file" id="myMotif" accept=".svg,image/*" multiple
+                 style="font-size:12px">
+        </div>
+        <div class="row" id="myRow" style="display:none;margin-top:6px">
+          <button class="btn ghost" id="myClear">حذف نقشاتي</button>
+          <span class="hint" style="margin:0" id="myCount"></span>
+        </div>
         <div class="chips" id="famChips"></div>
       </div>
       <div class="scroll sec" style="border-bottom:none;padding-top:0">
@@ -390,7 +426,8 @@ const MOTIF_COLORS = ["#c9a227","#d4af37","#e8d9a0","#ffffff","#f0ece5",
 /* ---------------------- الحالة ---------------------- */
 const state = {
   cut: CUTS[0].id,
-  lenCm: 140,
+  lenCm: 56 * 2.54,          // 56 إنش — مقاس العباية المعتاد
+  widIn: 24,                 // أوسع نقطة في الجسم (لا الأكمام)
   abayaColor: "#1c1c22",
   showDim: true,
   bg: null, bgOpacity: 1,
@@ -403,46 +440,128 @@ let uidSeq = 1;
 const cmPerUnit = () => state.lenCm / ABAYA_UNITS;
 const motifById = id => MOTIFS.find(m => m.id === id);
 
+/* ------------------- الإنش والسنتيمتر -------------------
+   مقاس العباية يُقال بالإنش (56 × 24)، والطباعة تُقاس بالملّيمتر.
+   fmtLen تُظهر المقاسين معاً حتى تُقاس النتيجة بأي مسطرة. */
+const CM_PER_INCH = 2.54;
+const cmToIn = cm => cm / CM_PER_INCH;
+const inToCm = inch => inch * CM_PER_INCH;
+const fmtLen = cm => `${cmToIn(cm).toFixed(1)}″ (${cm.toFixed(1)} سم)`;
+
+/* ------------------- عرض العباية -------------------
+   الوحدة الداخلية موحّدة: 1000 وحدة = طول العباية. فتبقى النقشة
+   غير مشوّهة لأن مقاسها يُحسب بمعامل واحد (cmPerUnit) في الاتجاهين.
+
+   أما العرض المطلوب فيُطبَّق على *رسمة القصّة وحدها* كتمديد أفقي،
+   حتى تبدو العباية بنسبتها الحقيقية (56 × 24) دون أن يُشوّه ذلك
+   حساب مقاس النقشة. */
+const unitsPerInch = () => ABAYA_UNITS / cmToIn(state.lenCm);
+
+/* العرض يُقاس عند الصدر (خطّ الكتف)، وهو عُرف الخياطة: العباية
+   مفروشة ومقيسة من طرف إلى طرف عند الصدر.
+
+   ولا يُقاس عند أوسع نقطة، لأن ربطه بالذيل يسحق القصّات الواسعة:
+   القصّة الملكية ذيلها 350 وحدة طبيعياً، فإلزامها بـ24 إنش عند الذيل
+   يُعطي تمديداً 0.61 فتفقد اتساعها وتصير أنحف من المستقيمة — والذيل
+   في القصّة الواسعة يتّسع عن الصدر بطبيعته. */
+function bodyHalfUnits(p) {
+  return p.shW;
+}
+
+// عرض الذيل الناتج — يتبع اتساع القصّة نفسها
+function hemWidthIn() {
+  const p = cut().p;
+  return (p.hemW * xStretch() * 2) / unitsPerInch();
+}
+
+function xStretch() {
+  const p = cut().p;
+  const target = (state.widIn / 2) * unitsPerInch();
+  return target / bodyHalfUnits(p);
+}
+
+/* ------------------- عدد أوراق A4 اللازمة -------------------
+   يُحسب بنفس منطق الطباعة بالضبط (التداخل ومكان الترويسة)،
+   حتى لا يُخبرها الحساب بورقة ثم تُطبع ورقتان. */
+function sheetGrid(wCm, hCm) {
+  const wMM = wCm * 10, hMM = hCm * 10;
+  const overlap = 10;
+  const usableH = PAGE_H - 16, usableW = PAGE_W;
+  const n = (total, usable) => total <= usable ? 1
+    : Math.ceil((total - overlap) / (usable - overlap));
+  const rows = n(hMM, usableH), cols = n(wMM, usableW);
+  return { rows, cols, total: rows * cols };
+}
+
+function sheetsFor(wCm, hCm) {
+  const g = sheetGrid(wCm, hCm);
+  if (g.total === 1) return "تُطبع في ورقة A4 واحدة";
+  const shape = g.cols > 1 && g.rows > 1
+    ? ` (${g.cols} عرضاً × ${g.rows} طولاً)` : "";
+  return `تحتاج ${g.total} ورقة A4${shape} — تُلصق بعلامات المحاذاة`;
+}
+
 /* ---------------------- بناء المسرح ---------------------- */
 const board = $("#board");
-board.setAttribute("viewBox", `0 0 ${BOARD_W} ${BOARD_H}`);
-board.setAttribute("width", BOARD_W);
-board.setAttribute("height", BOARD_H);
+// الـ viewBox تضبطه draw() حسب اتساع القصّة الفعلي
+board.setAttribute("viewBox", `${-BOARD_W / 2} ${-TOP} ${BOARD_W} ${BOARD_H}`);
 
 function cut() { return CUTS.find(c => c.id === state.cut); }
 
+/* نصف العرض الذي تحتاجه اللوحة فعلاً.
+
+   كان العرض ثابتاً (760 وحدة)، وبعد ربط العرض بالصدر صار التمديد ‏1.5
+   تقريباً فتخرج الأكمام عن الإطار وتُقصّ في كل القصّات (الأكمام الواسعة
+   تحتاج 919 وحدة). فيُحسب الإطار من الرسمة لا بقيمة ثابتة. */
+function boardHalf() {
+  const p = cut().p, sx = xStretch();
+  const reach = Math.max(p.cuffX, p.hemW, p.hipW, p.shW) * sx;
+  return Math.max(BOARD_W / 2, reach * 1.07);
+}
+
+let mainG = null;
+
 function draw() {
   board.innerHTML = "";
-  const g = el("g", { transform: `translate(${BOARD_W / 2},${TOP})` });
+  const half = boardHalf();
+  board.setAttribute("viewBox",
+    `${-half} ${-TOP} ${half * 2} ${BOARD_H}`);
+  const g = el("g");
+  mainG = g;
 
   if (state.bg) {
     const im = el("image", {
-      href: state.bg, x: -BOARD_W / 2 + 20, y: -TOP + 10,
-      width: BOARD_W - 40, height: BOARD_H - 30,
+      href: state.bg, x: -half + 20, y: -TOP + 10,
+      width: half * 2 - 40, height: BOARD_H - 30,
       preserveAspectRatio: "xMidYMid meet", opacity: state.bgOpacity
     });
     g.appendChild(im);
   }
 
   const c = cut();
-  const body = el("path", {
+
+  // رسمة القصّة تُمدّد أفقياً لتطابق العرض المطلوب (24 إنش مثلاً).
+  // النقشات تُضاف *خارج* هذه المجموعة حتى لا يُشوّهها التمديد —
+  // فلو وُضعت داخلها لصارت النقشة المطبوعة أعرض أو أنحف من قياسها.
+  const gb = el("g", { transform: `scale(${xStretch()},1)` });
+  gb.appendChild(el("path", {
     d: abayaOutline(c.p), fill: state.abayaColor,
     stroke: "#00000022", "stroke-width": 1
-  });
-  g.appendChild(body);
+  }));
 
   // فتحة أمامية + فتحة الرقبة
   if (c.front) {
-    g.appendChild(el("line", {
+    gb.appendChild(el("line", {
       x1: 0, y1: c.p.neckD, x2: 0, y2: ABAYA_UNITS,
       stroke: "#ffffff38", "stroke-width": 2, "stroke-dasharray": "10 7"
     }));
   }
-  g.appendChild(el("path", {
+  gb.appendChild(el("path", {
     d: `M${-c.p.neckW} 0 C${-c.p.neckW * .6} ${c.p.neckD * 1.5},`
        + `${c.p.neckW * .6} ${c.p.neckD * 1.5},${c.p.neckW} 0`,
     fill: "none", stroke: "#ffffff30", "stroke-width": 2
   }));
+  g.appendChild(gb);
 
   // النقشات
   state.items.forEach(it => g.appendChild(renderItem(it)));
@@ -455,7 +574,7 @@ function draw() {
 
 function dimension() {
   const g = el("g");
-  const x = -BOARD_W / 2 + 34;
+  const x = -boardHalf() + 34;
   g.appendChild(el("line", { x1: x, y1: 0, x2: x, y2: ABAYA_UNITS,
     class: "dimline" }));
   [0, ABAYA_UNITS].forEach(y => g.appendChild(el("line",
@@ -464,8 +583,20 @@ function dimension() {
     fill: "#2563eb", "font-size": 22, "font-weight": "700",
     transform: `rotate(-90 ${x + 14} ${ABAYA_UNITS / 2})`,
     "text-anchor": "middle" });
-  t.textContent = `${state.lenCm} سم`;
+  t.textContent = `الطول ${cmToIn(state.lenCm).toFixed(0)}″`;
   g.appendChild(t);
+
+  // خط العرض عند الذيل — ليُرى أثر العرض المطلوب على القصّة
+  const halfW = bodyHalfUnits(cut().p) * xStretch();
+  const yw = ABAYA_UNITS + 34;
+  g.appendChild(el("line", { x1: -halfW, y1: yw, x2: halfW, y2: yw,
+    class: "dimline" }));
+  [-halfW, halfW].forEach(xx => g.appendChild(el("line",
+    { x1: xx, y1: yw - 8, x2: xx, y2: yw + 8, class: "dimline" })));
+  const tw = el("text", { x: 0, y: yw + 26, fill: "#2563eb",
+    "font-size": 22, "font-weight": "700", "text-anchor": "middle" });
+  tw.textContent = `العرض ${state.widIn}″`;
+  g.appendChild(tw);
   return g;
 }
 
@@ -515,11 +646,20 @@ function renderItem(it) {
 }
 
 /* ---------------------- السحب والتحجيم ---------------------- */
+/* تحويل نقطة المؤشّر إلى إحداثيات العباية بمصفوفة SVG.
+
+   الحساب اليدوي السابق كان يقسم على عرض الإطار، وهو يخطئ متى اختلفت
+   نسبة الإطار عن نسبة الـ viewBox: المتصفّح يُضيف هامشاً أعلى وأسفل
+   (xMidYMid meet) فينزاح ما تسحبه عن موضع إصبعها — ويزيد الخطأ على
+   الجوال حيث يتغيّر شكل الإطار. getScreenCTM يحسب التحويل الفعلي
+   المُطبَّق، فيصحّ مع أي مقاس أو viewBox. */
 function boardPoint(e) {
-  const r = board.getBoundingClientRect();
-  const sx = BOARD_W / r.width, sy = BOARD_H / r.height;
-  return { x: (e.clientX - r.left) * sx - BOARD_W / 2,
-           y: (e.clientY - r.top) * sy - TOP };
+  const m = (mainG || board).getScreenCTM();
+  if (!m) return { x: 0, y: 0 };
+  const p = board.createSVGPoint();
+  p.x = e.clientX; p.y = e.clientY;
+  const q = p.matrixTransform(m.inverse());
+  return { x: q.x, y: q.y };
 }
 
 let drag = null;
@@ -599,18 +739,21 @@ function syncProps() {
 
     <div class="readout">
       <div class="lbl">المقاس الحقيقي على العباية</div>
-      <div class="big"><span id="roW">${wCm.toFixed(1)}</span> ×
-        <span id="roH">${hCm.toFixed(1)}</span> سم</div>
-      <div class="lbl">العرض × الطول</div>
+      <div class="big"><span id="roW">${cmToIn(wCm).toFixed(1)}</span> ×
+        <span id="roH">${cmToIn(hCm).toFixed(1)}</span> إنش</div>
+      <div class="lbl"><span id="roWc">${wCm.toFixed(1)}</span> ×
+        <span id="roHc">${hCm.toFixed(1)}</span> سم — العرض × الطول</div>
+      <div class="lbl" style="margin-top:4px;color:#2563eb;font-weight:700">
+        🖨 <span id="roSheets">${sheetsFor(wCm, hCm)}</span></div>
     </div>
 
     <label class="f">الحجم</label>
     <input type="range" id="pScale" min="1" max="100"
            value="${Math.round(it.scale / 3 * 100)}">
     <div class="row">
-      <input type="number" id="pHcm" value="${hCm.toFixed(1)}" step="0.5"
-             min="0.5">
-      <span class="hint" style="margin:0;white-space:nowrap">طول بالسم</span>
+      <input type="number" id="pHin" value="${cmToIn(hCm).toFixed(1)}"
+             step="0.25" min="0.25">
+      <span class="hint" style="margin:0;white-space:nowrap">طول بالإنش</span>
     </div>
 
     <label class="f">تدوير (${it.rot}°)</label>
@@ -622,6 +765,9 @@ function syncProps() {
     <input type="range" id="pGap" min="0" max="120" value="${it.gap || 0}">
 
     <label class="f">لون النقشة</label>
+    ${m.raster ? `<div class="hint" style="margin:0 0 6px;color:#9a6b00">
+      هذه صورة مرفوعة (PNG/JPG) فألوانها ثابتة داخلها ولا يمكن تغييرها.
+      للتلوين ارفعيها بصيغة SVG.</div>` : ""}
     <div class="swatches" id="motifSwatches"></div>
     <div class="row" style="margin-top:7px">
       <input type="color" id="pColor" value="${it.color}"
@@ -653,13 +799,14 @@ function syncProps() {
     it.scale = Math.max(.02, e.target.value / 100 * 3);
     draw(); syncProps(); renderList(); save();
   };
-  $("#pHcm").onchange = e => {
-    const want = parseFloat(e.target.value);
-    if (!(want > 0)) return;
+  // إدخال الطول بالإنش مباشرة — أدقّ من السحب بالمؤشّر
+  $("#pHin").onchange = e => {
+    const wantIn = parseFloat(e.target.value);
+    if (!(wantIn > 0)) return;
     const m2 = motifById(it.mid);
     const n = it.repeat || 1;
     const unitsPerScale = m2.h * n + (it.gap || 0) * (n - 1);
-    it.scale = want / cmPerUnit() / unitsPerScale;
+    it.scale = inToCm(wantIn) / cmPerUnit() / unitsPerScale;
     draw(); syncProps(); renderList(); save();
   };
   $("#pRot").oninput = e => { it.rot = +e.target.value; draw(); syncProps(); save(); };
@@ -697,7 +844,7 @@ function renderList() {
     d.className = "item" + (state.sel === it.uid ? " on" : "");
     d.innerHTML = `<span class="sw" style="background:${it.color}"></span>
       <span class="nm">${m.name}</span>
-      <span class="sz">${(sz.w * k).toFixed(1)}×${(sz.h * k).toFixed(1)} سم</span>`;
+      <span class="sz">${fmtLen(sz.w * k)} × ${fmtLen(sz.h * k)}</span>`;
     d.onclick = () => select(it.uid);
     box.appendChild(d);
   });
@@ -730,6 +877,125 @@ function renderLib() {
     c.onclick = () => addMotif(m.id);
     box.appendChild(c);
   });
+}
+
+/* ---------------------- نقشاتي المرفوعة ----------------------
+   تُضاف إلى المكتبة نفسها فتعمل معها كل الأدوات: التحجيم، التدوير،
+   قراءة المقاس الحقيقي، والطباعة على ورق A4.
+
+   ملاحظة مهمة: ملف SVG يقبل التلوين (يُحوّل الأسود إلى currentColor)،
+   أما الصورة النقطية (PNG/JPG) فتُطبع بألوانها كما هي — لا يمكن
+   تلوينها، فاللون المحفوظ فيها ثابت. */
+const MY_FAM = "نقشاتي";
+const MY_KEY = "fatima_my_motifs_v1";
+const MY_MAX_PX = 1400;        // تصغير الصور الكبيرة قبل الحفظ
+
+function loadMine() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(MY_KEY) || "[]");
+    arr.forEach(m => { if (!motifById(m.id)) MOTIFS.push(m); });
+  } catch (e) { console.warn("تعذّر استرجاع نقشاتي", e); }
+}
+
+function saveMine() {
+  const mine = MOTIFS.filter(m => m.fam === MY_FAM);
+  try {
+    localStorage.setItem(MY_KEY, JSON.stringify(mine));
+  } catch (e) {
+    alert("مساحة الحفظ في المتصفح امتلأت، فلن تبقى نقشاتك بعد إغلاق "
+        + "الصفحة. احذفي بعض النقشات المرفوعة أو ارفعي صوراً أصغر.");
+  }
+  const n = mine.length;
+  $("#myRow").style.display = n ? "flex" : "none";
+  $("#myCount").textContent = n ? `${n} نقشة من عندك` : "";
+}
+
+function svgToMotif(text, name, id) {
+  const vb = /viewBox="([\d.\-\s]+)"/.exec(text);
+  const doc = new DOMParser().parseFromString(text, "image/svg+xml");
+  const root = doc.documentElement;
+  if (!root || root.tagName.toLowerCase() !== "svg") throw new Error("ملف SVG غير سليم");
+  let w, h;
+  if (vb) {
+    const p = vb[1].trim().split(/\s+/).map(Number);
+    w = p[2]; h = p[3];
+  } else {
+    w = parseFloat(root.getAttribute("width")) || 100;
+    h = parseFloat(root.getAttribute("height")) || 100;
+  }
+  let body = root.innerHTML
+    .replace(/<title[\s\S]*?<\/title>/g, "")
+    .replace(/(stroke|fill)="#0{3,6}"/gi, '$1="currentColor"')
+    .replace(/(stroke|fill)="black"/gi, '$1="currentColor"');
+  return { id, file: name, name, fam: MY_FAM, set: "mine",
+           w: +w.toFixed(1), h: +h.toFixed(1), svg: body, raster: false };
+}
+
+function rasterToMotif(dataURL, w, h, name, id) {
+  const esc = dataURL.replace(/&/g, "&amp;");
+  return { id, file: name, name, fam: MY_FAM, set: "mine",
+           w, h,
+           svg: `<image href="${esc}" x="0" y="0" width="${w}" height="${h}"
+                   preserveAspectRatio="none"/>`,
+           raster: true };
+}
+
+function shrinkImage(dataURL) {
+  // الصورة الكبيرة تُثقل الحفظ وتُبطئ الرسم، وتصغيرها لا يضرّ
+  // لأن الطباعة تعتمد المقاس بالملّيمتر لا عدد البكسل.
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const long = Math.max(img.width, img.height);
+      const f = long > MY_MAX_PX ? MY_MAX_PX / long : 1;
+      const w = Math.max(1, Math.round(img.width * f));
+      const h = Math.max(1, Math.round(img.height * f));
+      if (f === 1) return res({ url: dataURL, w: img.width, h: img.height });
+      const cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(img, 0, 0, w, h);
+      res({ url: cv.toDataURL("image/png"), w, h });
+    };
+    img.onerror = () => rej(new Error("تعذّر قراءة الصورة"));
+    img.src = dataURL;
+  });
+}
+
+let mySeq = 1;
+function nextMyId() {
+  while (motifById("M" + String(mySeq).padStart(3, "0"))) mySeq++;
+  return "M" + String(mySeq).padStart(3, "0");
+}
+
+async function addMyFiles(files) {
+  let added = 0, failed = [];
+  for (const f of files) {
+    try {
+      const isSvg = /\.svg$/i.test(f.name) || f.type === "image/svg+xml";
+      const name = f.name.replace(/\.[^.]+$/, "");
+      const id = nextMyId();
+      if (isSvg) {
+        MOTIFS.push(svgToMotif(await f.text(), name, id));
+      } else {
+        const url = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.onerror = () => rej(new Error("تعذّر قراءة الملف"));
+          r.readAsDataURL(f);
+        });
+        const im = await shrinkImage(url);
+        MOTIFS.push(rasterToMotif(im.url, im.w, im.h, name, id));
+      }
+      added++;
+    } catch (e) {
+      failed.push(`${f.name}: ${e.message}`);
+    }
+  }
+  saveMine();
+  state.fam = MY_FAM;
+  renderChips(); renderLib();
+  if (failed.length) alert("لم تُضَف:\n" + failed.join("\n"));
+  return added;
 }
 
 /* ---------------------- الطباعة بالمقاس الحقيقي ---------------------- */
@@ -769,43 +1035,65 @@ function printMotifs(items) {
         width="${r2(wMM)}mm" height="${r2(hMM)}mm"
         style="color:#000;display:block">${reps}</svg>`;
 
-    const overlap = 10;                       // مم تداخل بين الصفحات
+    // تقسيم على شبكة أوراق في الاتجاهين.
+    //
+    // كان التقسيم رأسياً فقط، فالنقشة الأعرض من الورقة تُقتطع بصمت:
+    // لوح متدلّيات عرضه 460 وحدة على عباية 56 إنش = 654 مم، أي أربعة
+    // أضعاف عرض الورقة القابل للطباعة (194 مم) — فيُطبع ربعها ويضيع
+    // الباقي بلا أي تحذير.
+    const overlap = 10;                       // مم تداخل بين الأوراق
     const usableH = PAGE_H - 16;              // مكان للعنوان والعلامات
-    const tiles = hMM <= usableH ? 1
-      : Math.ceil((hMM - overlap) / (usableH - overlap));
+    const usableW = PAGE_W;
+    const nTiles = (total, usable) => total <= usable ? 1
+      : Math.ceil((total - overlap) / (usable - overlap));
+    const rows_ = nTiles(hMM, usableH);
+    const cols_ = nTiles(wMM, usableW);
+    const sheets = rows_ * cols_;
 
-    for (let t = 0; t < tiles; t++) {
-      totalPages++;
-      const offset = t * (usableH - overlap);
-      const sliceH = Math.min(usableH, hMM - offset);
-      pages += `
+    for (let ty = 0; ty < rows_; ty++) {
+      for (let tx = 0; tx < cols_; tx++) {
+        totalPages++;
+        const offY = ty * (usableH - overlap);
+        const offX = tx * (usableW - overlap);
+        const sliceH = Math.min(usableH, hMM - offY);
+        const sliceW = Math.min(usableW, wMM - offX);
+        const pos = sheets > 1
+          ? ` · ورقة ${ty * cols_ + tx + 1} من ${sheets}`
+          + (cols_ > 1 ? ` (صفّ ${ty + 1}، عمود ${tx + 1})` : "")
+          : "";
+        pages += `
       <section class="pg">
         <div class="ph">
           <b>${m.name}</b>
           <span>${m.id} · المقاس الحقيقي
-            ${(sz.w * k).toFixed(1)} × ${(sz.h * k).toFixed(1)} سم
-            ${tiles > 1 ? ` · قطعة ${t + 1} من ${tiles}` : ""}</span>
+            ${fmtLen(sz.w * k)} × ${fmtLen(sz.h * k)}${pos}</span>
         </div>
-        <div class="winwrap" style="width:${wMM}mm;height:${sliceH}mm">
-          <div class="win" style="width:${wMM}mm;height:${sliceH}mm">
-            <div style="transform:translateY(-${offset}mm)">${svg}</div>
+        <div class="winwrap" style="width:${r2(sliceW)}mm;height:${r2(sliceH)}mm">
+          <div class="win" style="width:${r2(sliceW)}mm;height:${r2(sliceH)}mm">
+            <div style="transform:translate(-${r2(offX)}mm,-${r2(offY)}mm)">${svg}</div>
           </div>
-          ${t > 0 ? `<div class="olap" style="top:${overlap}mm">
-            <span>▲ ضعي هذا الخط فوق خط القصّ في الصفحة السابقة</span>
+          ${ty > 0 ? `<div class="olap" style="top:${overlap}mm">
+            <span>▲ ضعي هذا الخط فوق خط القصّ في ورقة الصفّ السابق</span>
+          </div>` : ""}
+          ${tx > 0 ? `<div class="olapv" style="right:${overlap}mm">
+            <span>ضعي هذا الخط فوق خط القصّ في ورقة العمود السابق</span>
           </div>` : ""}
         </div>
-        ${t < tiles - 1 ? `<div class="cut">✂ قُصّي عند هذا الخط
-          (تداخل ${overlap} مم مع الصفحة التالية)</div>` : ""}
+        ${ty < rows_ - 1 ? `<div class="cut">✂ قُصّي عند هذا الخط
+          (تداخل ${overlap} مم مع ورقة الصفّ التالي)</div>` : ""}
+        ${tx < cols_ - 1 ? `<div class="cut">✂ يتبع يساراً: عمود ${tx + 2}
+          (تداخل ${overlap} مم)</div>` : ""}
       </section>`;
+      }
     }
   }
 
   const intro = `
     <div class="intro">
       <h1>طباعة النقشات بالمقاس الحقيقي</h1>
-      <p>طول العباية في التصميم: <b>${state.lenCm} سم</b> ·
+      <p>مقاس العباية: <b>${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″</b> (${state.lenCm.toFixed(1)} سم طولاً) ·
          عدد النقشات: <b>${items.length}</b> ·
-         عدد الصفحات: <b>${totalPages}</b></p>
+         عدد الأوراق: <b>${totalPages}</b></p>
       <div class="warn">
         <b>قبل الطباعة — مهم جداً:</b>
         <ul>
@@ -823,7 +1111,7 @@ function printMotifs(items) {
          عند اللصق.</p>
     </div>`;
   showPrint(intro + pages,
-    `${items.length} نقشة · ${totalPages} صفحة · طول العباية ${state.lenCm} سم`);
+    `${items.length} نقشة · ${totalPages} ورقة · العباية ${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″`);
 }
 
 /* طباعة صورة التصميم كمرجع */
@@ -834,14 +1122,14 @@ function printDesign() {
   const rows = state.items.map(it => {
     const m = motifById(it.mid), sz = itemSize(it);
     return `<tr><td>${m.id}</td><td>${m.name}</td>
-      <td>${(sz.w * k).toFixed(1)} × ${(sz.h * k).toFixed(1)} سم</td>
+      <td>${fmtLen(sz.w * k)} × ${fmtLen(sz.h * k)}</td>
       <td><span style="display:inline-block;width:4mm;height:4mm;
         background:${it.color};border:.2mm solid #999"></span></td></tr>`;
   }).join("");
   const html = `
     <div class="intro design">
       <h1>تصميم عباية — ${cut().name}</h1>
-      <p>طول العباية: <b>${state.lenCm} سم</b> ·
+      <p>مقاس العباية: <b>${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″</b> ·
          عدد النقشات: <b>${state.items.length}</b></p>
       ${clone.outerHTML}
       <table><thead><tr><th>الرمز</th><th>النقشة</th>
@@ -856,7 +1144,8 @@ function printDesign() {
 const KEY = "abaya-panel-v1";
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify({
-    cut: state.cut, lenCm: state.lenCm, abayaColor: state.abayaColor,
+    cut: state.cut, lenCm: state.lenCm, widIn: state.widIn,
+    abayaColor: state.abayaColor,
     items: state.items, uidSeq
   })); } catch (e) {}
 }
@@ -866,6 +1155,7 @@ function load() {
     if (!s) return;
     if (s.cut && CUTS.some(c => c.id === s.cut)) state.cut = s.cut;
     if (s.lenCm) state.lenCm = s.lenCm;
+    if (s.widIn) state.widIn = s.widIn;
     if (s.abayaColor) state.abayaColor = s.abayaColor;
     if (Array.isArray(s.items))
       state.items = s.items.filter(i => motifById(i.mid));
@@ -882,7 +1172,8 @@ function initUI() {
     sel.appendChild(o);
   });
   sel.value = state.cut;
-  sel.onchange = e => { state.cut = e.target.value; draw(); save(); };
+  sel.onchange = e => {
+    state.cut = e.target.value; echoHem(); draw(); save(); };
 
   const asw = $("#abayaSwatches");
   ABAYA_COLORS.forEach(c => {
@@ -901,10 +1192,28 @@ function initUI() {
   $("#abayaColor").oninput = e => {
     state.abayaColor = e.target.value; draw(); save(); };
 
-  $("#lenCm").value = state.lenCm;
-  $("#lenCm").oninput = e => {
+  const echoLen = () => {
+    $("#lenCmEcho").textContent = `= ${state.lenCm.toFixed(1)} سم`;
+  };
+  const echoHem = () => {
+    $("#hemEcho").textContent =
+      `عرض الذيل الناتج من هذه القصّة ≈ ${hemWidthIn().toFixed(1)}″`;
+  };
+  $("#lenIn").value = +cmToIn(state.lenCm).toFixed(1);
+  $("#lenIn").oninput = e => {
     const v = parseFloat(e.target.value);
-    if (v > 0) { state.lenCm = v; draw(); syncProps(); renderList(); save(); }
+    if (v > 0) {
+      state.lenCm = inToCm(v);
+      echoLen(); draw(); syncProps(); renderList(); save();
+    }
+  };
+  echoLen();
+  echoHem();
+
+  $("#widIn").value = state.widIn;
+  $("#widIn").oninput = e => {
+    const v = parseFloat(e.target.value);
+    if (v > 0) { state.widIn = v; echoHem(); draw(); save(); }
   };
   $("#btnShowDim").onclick = () => { state.showDim = !state.showDim; draw(); };
 
@@ -937,6 +1246,31 @@ function initUI() {
     draw(); syncProps(); renderList(); save();
   };
 
+  // رفع نقشات من عندها
+  $("#myMotif").onchange = async e => {
+    const files = [...e.target.files];
+    e.target.value = "";
+    if (!files.length) return;
+    const n = await addMyFiles(files);
+    if (n) alert(`أُضيفت ${n} نقشة إلى «${MY_FAM}» — انقري عليها لوضعها `
+               + `على العباية.`);
+  };
+  $("#myClear").onclick = () => {
+    const mine = MOTIFS.filter(m => m.fam === MY_FAM).map(m => m.id);
+    if (!mine.length) return;
+    if (!confirm(`حذف ${mine.length} نقشة مرفوعة؟ `
+               + `(النقشات المستخدمة في التصميم ستُحذف أيضاً)`)) return;
+    state.items = state.items.filter(it => !mine.includes(it.mid));
+    for (let i = MOTIFS.length - 1; i >= 0; i--) {
+      if (MOTIFS[i].fam === MY_FAM) MOTIFS.splice(i, 1);
+    }
+    mySeq = 1;
+    localStorage.removeItem(MY_KEY);
+    state.fam = "الكل"; state.sel = null;
+    saveMine(); renderChips(); renderLib();
+    draw(); syncProps(); renderList(); save();
+  };
+
   document.addEventListener("keydown", e => {
     const it = selItem();
     if (!it) return;
@@ -965,8 +1299,10 @@ if (!window.MOTIFS || !window.MOTIFS.length) {
     <p>وإن كنتِ فتحتِ الصفحة من داخل ملف مضغوط (ZIP)، فُكّي الضغط أولاً
        ثم افتحي الصفحة.</p></div>`;
 } else {
+  loadMine();        // نقشاتها المرفوعة تُضاف للمكتبة قبل بناء الواجهة
   load();
   initUI();
+  saveMine();        // يُظهر عدّاد نقشاتي إن وُجدت
   renderChips();
   renderLib();
   draw();
