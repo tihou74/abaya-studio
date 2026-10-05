@@ -87,8 +87,8 @@ def main():
 # نسخة الملف الواحد — للجوال
 # ---------------------------------------------------------------------------
 
-PANEL_SRC = "لوحة-فاطمة.html"
-PANEL_ONE = "لوحة-فاطمة-ملف-واحد.html"
+PANEL_SRC = "designer.html"
+PANEL_ONE = "designer-single-file.html"
 DATA_TAG = '<script src="motifs-data.js"></script>'
 
 

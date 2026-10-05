@@ -2,8 +2,8 @@
  {
   "num": 1,
   "file": "B001_band_vine_01.svg",
-  "title": "شريط رأسي — ساق بأوراق وعناقيد",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — stem with leaves & clusters",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 45
@@ -11,8 +11,8 @@
  {
   "num": 2,
   "file": "B002_band_vine_02.svg",
-  "title": "شريط رأسي — ساق متموّج بأوراق وحبّات",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — wavy stem with leaves & beads",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 48
@@ -20,8 +20,8 @@
  {
   "num": 3,
   "file": "B003_band_vine_03.svg",
-  "title": "شريط رأسي — أوراق متقابلة وثلاثيات نقاط",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — opposite leaves & dot triads",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 89
@@ -29,8 +29,8 @@
  {
   "num": 4,
   "file": "B004_band_vine_04.svg",
-  "title": "شريط رأسي — أوراق ومحالق حلزونية",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — leaves & spiral tendrils",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 37
@@ -38,8 +38,8 @@
  {
   "num": 5,
   "file": "B005_band_vine_05.svg",
-  "title": "شريط رأسي — ساق زجزاج بأوراق وحبّات",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — zigzag stem with leaves & beads",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 50
@@ -47,8 +47,8 @@
  {
   "num": 6,
   "file": "B006_band_vine_06.svg",
-  "title": "شريط رأسي — أوراق مصمتة وعناقيد",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — solid leaves & clusters",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 48
@@ -56,8 +56,8 @@
  {
   "num": 7,
   "file": "B007_band_vine_07.svg",
-  "title": "شريط رأسي — ساق بأوراق وعناقيد — أوراق محشوّة",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — stem with leaves & clusters — filled leaves",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 185
@@ -65,8 +65,8 @@
  {
   "num": 8,
   "file": "B008_band_vine_08.svg",
-  "title": "شريط رأسي — ساق متموّج بأوراق وحبّات — أوراق محشوّة",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — wavy stem with leaves & beads — filled leaves",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 208
@@ -74,8 +74,8 @@
  {
   "num": 9,
   "file": "B009_band_vine_09.svg",
-  "title": "شريط رأسي — أوراق متقابلة وثلاثيات نقاط — أوراق محشوّة",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — opposite leaves & dot triads — filled leaves",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 401
@@ -83,8 +83,8 @@
  {
   "num": 10,
   "file": "B010_band_vine_10.svg",
-  "title": "شريط رأسي — أوراق ومحالق حلزونية — أوراق محشوّة",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — leaves & spiral tendrils — filled leaves",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 181
@@ -92,8 +92,8 @@
  {
   "num": 11,
   "file": "B011_band_vine_11.svg",
-  "title": "شريط رأسي — ساق زجزاج بأوراق وحبّات — أوراق محشوّة",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — zigzag stem with leaves & beads — filled leaves",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 246
@@ -101,8 +101,8 @@
  {
   "num": 12,
   "file": "B012_band_vine_12.svg",
-  "title": "شريط رأسي — أوراق مصمتة وعناقيد — أوراق محشوّة",
-  "family": "أشرطة رأسية بأوراق وحبّات",
+  "title": "Vertical band — solid leaves & clusters — filled leaves",
+  "family": "Vertical bands — leaves & beads",
   "wide": false,
   "tall": true,
   "elements": 48
@@ -110,8 +110,8 @@
  {
   "num": 13,
   "file": "B013_strand_01.svg",
-  "title": "سلسلة معلّقة بعناصر",
-  "family": "سلاسل معلّقة",
+  "title": "Hanging strand with motifs",
+  "family": "Hanging strands",
   "wide": false,
   "tall": true,
   "elements": 87
@@ -119,8 +119,8 @@
  {
   "num": 14,
   "file": "B014_strand_02.svg",
-  "title": "سلسلة معلّقة بعناصر",
-  "family": "سلاسل معلّقة",
+  "title": "Hanging strand with motifs",
+  "family": "Hanging strands",
   "wide": false,
   "tall": true,
   "elements": 93
@@ -128,8 +128,8 @@
  {
   "num": 15,
   "file": "B015_strand_03.svg",
-  "title": "سلسلة معلّقة بعناصر",
-  "family": "سلاسل معلّقة",
+  "title": "Hanging strand with motifs",
+  "family": "Hanging strands",
   "wide": false,
   "tall": true,
   "elements": 88
@@ -137,8 +137,8 @@
  {
   "num": 16,
   "file": "B016_strand_04.svg",
-  "title": "سلسلة معلّقة بعناصر",
-  "family": "سلاسل معلّقة",
+  "title": "Hanging strand with motifs",
+  "family": "Hanging strands",
   "wide": false,
   "tall": true,
   "elements": 71
@@ -146,8 +146,8 @@
  {
   "num": 17,
   "file": "B017_strand_05.svg",
-  "title": "سلسلة معلّقة بعناصر",
-  "family": "سلاسل معلّقة",
+  "title": "Hanging strand with motifs",
+  "family": "Hanging strands",
   "wide": false,
   "tall": true,
   "elements": 98
@@ -155,8 +155,8 @@
  {
   "num": 18,
   "file": "B018_strand_06.svg",
-  "title": "سلسلة معلّقة بعناصر",
-  "family": "سلاسل معلّقة",
+  "title": "Hanging strand with motifs",
+  "family": "Hanging strands",
   "wide": false,
   "tall": true,
   "elements": 112
@@ -164,8 +164,8 @@
  {
   "num": 19,
   "file": "B019_strand_07.svg",
-  "title": "سلسلة معلّقة بعناصر",
-  "family": "سلاسل معلّقة",
+  "title": "Hanging strand with motifs",
+  "family": "Hanging strands",
   "wide": false,
   "tall": true,
   "elements": 71
@@ -173,8 +173,8 @@
  {
   "num": 20,
   "file": "B020_strand_08.svg",
-  "title": "سلسلة معلّقة بعناصر",
-  "family": "سلاسل معلّقة",
+  "title": "Hanging strand with motifs",
+  "family": "Hanging strands",
   "wide": false,
   "tall": true,
   "elements": 88
@@ -182,8 +182,8 @@
  {
   "num": 21,
   "file": "B021_panel_01.svg",
-  "title": "لوح سلاسل متجاورة",
-  "family": "ألواح سلاسل",
+  "title": "Panel of parallel strands",
+  "family": "Strand panels",
   "wide": true,
   "tall": false,
   "elements": 426
@@ -191,8 +191,8 @@
  {
   "num": 22,
   "file": "B022_panel_02.svg",
-  "title": "لوح سلاسل متجاورة",
-  "family": "ألواح سلاسل",
+  "title": "Panel of parallel strands",
+  "family": "Strand panels",
   "wide": true,
   "tall": false,
   "elements": 439
@@ -200,8 +200,8 @@
  {
   "num": 23,
   "file": "B023_panel_03.svg",
-  "title": "لوح سلاسل متجاورة",
-  "family": "ألواح سلاسل",
+  "title": "Panel of parallel strands",
+  "family": "Strand panels",
   "wide": true,
   "tall": false,
   "elements": 450
@@ -209,8 +209,8 @@
  {
   "num": 24,
   "file": "B024_panel_04.svg",
-  "title": "لوح سلاسل متجاورة",
-  "family": "ألواح سلاسل",
+  "title": "Panel of parallel strands",
+  "family": "Strand panels",
   "wide": true,
   "tall": false,
   "elements": 406
@@ -218,8 +218,8 @@
  {
   "num": 25,
   "file": "B025_rosette_01.svg",
-  "title": "وريدة صغيرة مزخرفة",
-  "family": "وريدات صغيرة",
+  "title": "Small ornate rosette",
+  "family": "Small rosettes",
   "wide": false,
   "tall": false,
   "elements": 29
@@ -227,8 +227,8 @@
  {
   "num": 26,
   "file": "B026_rosette_02.svg",
-  "title": "وريدة صغيرة مزخرفة",
-  "family": "وريدات صغيرة",
+  "title": "Small ornate rosette",
+  "family": "Small rosettes",
   "wide": false,
   "tall": false,
   "elements": 53
@@ -236,8 +236,8 @@
  {
   "num": 27,
   "file": "B027_rosette_03.svg",
-  "title": "وريدة صغيرة مزخرفة",
-  "family": "وريدات صغيرة",
+  "title": "Small ornate rosette",
+  "family": "Small rosettes",
   "wide": false,
   "tall": false,
   "elements": 24
@@ -245,8 +245,8 @@
  {
   "num": 28,
   "file": "B028_rosette_04.svg",
-  "title": "وريدة صغيرة مزخرفة",
-  "family": "وريدات صغيرة",
+  "title": "Small ornate rosette",
+  "family": "Small rosettes",
   "wide": false,
   "tall": false,
   "elements": 65
@@ -254,8 +254,8 @@
  {
   "num": 29,
   "file": "B029_rosette_05.svg",
-  "title": "وريدة صغيرة مزخرفة",
-  "family": "وريدات صغيرة",
+  "title": "Small ornate rosette",
+  "family": "Small rosettes",
   "wide": false,
   "tall": false,
   "elements": 33
@@ -263,8 +263,8 @@
  {
   "num": 30,
   "file": "B030_rosette_06.svg",
-  "title": "وريدة صغيرة مزخرفة",
-  "family": "وريدات صغيرة",
+  "title": "Small ornate rosette",
+  "family": "Small rosettes",
   "wide": false,
   "tall": false,
   "elements": 28
@@ -272,8 +272,8 @@
  {
   "num": 31,
   "file": "B031_rosette_07.svg",
-  "title": "وريدة صغيرة مزخرفة",
-  "family": "وريدات صغيرة",
+  "title": "Small ornate rosette",
+  "family": "Small rosettes",
   "wide": false,
   "tall": false,
   "elements": 41
@@ -281,8 +281,8 @@
  {
   "num": 32,
   "file": "B032_rosette_08.svg",
-  "title": "وريدة صغيرة مزخرفة",
-  "family": "وريدات صغيرة",
+  "title": "Small ornate rosette",
+  "family": "Small rosettes",
   "wide": false,
   "tall": false,
   "elements": 77
@@ -290,8 +290,8 @@
  {
   "num": 33,
   "file": "B033_cluster_01.svg",
-  "title": "ثلاث أوراق محشوّة وعنقود",
-  "family": "عناقيد وعناصر",
+  "title": "Three filled leaves & a cluster",
+  "family": "Clusters & single motifs",
   "wide": false,
   "tall": false,
   "elements": 58
@@ -299,8 +299,8 @@
  {
   "num": 34,
   "file": "B034_cluster_02.svg",
-  "title": "ورقتان متقابلتان محشوّتان",
-  "family": "عناقيد وعناصر",
+  "title": "Two opposite filled leaves",
+  "family": "Clusters & single motifs",
   "wide": false,
   "tall": false,
   "elements": 54
@@ -308,8 +308,8 @@
  {
   "num": 35,
   "file": "B035_cluster_03.svg",
-  "title": "زهرة خمسية بوريدة",
-  "family": "عناقيد وعناصر",
+  "title": "Five-petal flower with rosette",
+  "family": "Clusters & single motifs",
   "wide": false,
   "tall": false,
   "elements": 28
@@ -317,8 +317,8 @@
  {
   "num": 36,
   "file": "B036_cluster_04.svg",
-  "title": "زهرة على ساق بورقتين",
-  "family": "عناقيد وعناصر",
+  "title": "Flower on a stem with two leaves",
+  "family": "Clusters & single motifs",
   "wide": false,
   "tall": false,
   "elements": 53
@@ -326,8 +326,8 @@
  {
   "num": 37,
   "file": "B037_cluster_05.svg",
-  "title": "عنقود حبّات بورقتين",
-  "family": "عناقيد وعناصر",
+  "title": "Bead cluster with two leaves",
+  "family": "Clusters & single motifs",
   "wide": false,
   "tall": false,
   "elements": 14
@@ -335,8 +335,8 @@
  {
   "num": 38,
   "file": "B038_cluster_06.svg",
-  "title": "وريدة بأربع أوراق",
-  "family": "عناقيد وعناصر",
+  "title": "Four-leaf rosette",
+  "family": "Clusters & single motifs",
   "wide": false,
   "tall": false,
   "elements": 44
@@ -344,8 +344,8 @@
  {
   "num": 39,
   "file": "B039_cluster_07.svg",
-  "title": "سعفة لوتس بمعيّن",
-  "family": "عناقيد وعناصر",
+  "title": "Lotus palmette with diamond",
+  "family": "Clusters & single motifs",
   "wide": false,
   "tall": false,
   "elements": 11
@@ -353,8 +353,8 @@
  {
   "num": 40,
   "file": "B040_cluster_08.svg",
-  "title": "غصن بمحلقين وحبّات",
-  "family": "عناقيد وعناصر",
+  "title": "Sprig with two tendrils & beads",
+  "family": "Clusters & single motifs",
   "wide": false,
   "tall": false,
   "elements": 8

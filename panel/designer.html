@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>لوحة تصميم العبايات — السيدة فاطمة</title>
+<title>Abaya Design Studio — Fatima</title>
 <style>
   :root{
     --bg:#f3f1ee; --panel:#ffffff; --ink:#1d1b19; --muted:#6f6a64;
@@ -232,67 +232,67 @@
 
   <header>
     <div>
-      <h1>لوحة تصميم العبايات</h1>
-      <div class="sub">السيدة فاطمة · ٨٠ نقشة جاهزة</div>
+      <h1>Abaya Design Studio</h1>
+      <div class="sub">Fatima · 80 ready-made motifs</div>
     </div>
     <div class="spacer"></div>
-    <button class="btn" id="btnReset">↺ تصميم جديد</button>
+    <button class="btn" id="btnReset">↺ New design</button>
     <button class="btn" id="btnPrintDesign"
-            title="ورقة مرجعية فيها رسم العباية وجدول النقشات — للعرض لا للتطريز"
-            >🖼 صورة العباية (مرجع)</button>
+            title="A reference sheet with the abaya drawing and a motif table — for viewing, not for stitching"
+            >🖼 Abaya image (reference)</button>
     <button class="btn primary" id="btnPrintAll"
-            title="النقشات وحدها بمقاسها الحقيقي على ورق A4 — بلا العباية"
-            >📄 طباعة النقشات فقط (A4)</button>
+            title="The motifs alone at true size on A4 paper — without the abaya"
+            >📄 Print motifs only (A4)</button>
   </header>
 
   <div class="main">
 
-    <!-- ============ يمين: العباية والمكتبة ============ -->
+    <!-- ============ Left: abaya and library ============ -->
     <aside class="side">
       <div class="sec">
-        <h2>١ · قصّة العباية</h2>
+        <h2>1 · Abaya cut</h2>
         <select id="cut"></select>
 
-        <label class="f">أو ارفع صورة قصّة عندك</label>
+        <label class="f">Or upload your own cut image</label>
         <div class="row">
           <input type="file" id="bgFile" accept="image/*" style="font-size:12px">
         </div>
         <div class="row" id="bgRow" style="display:none;margin-top:7px">
-          <button class="btn ghost" id="bgClear">حذف الصورة</button>
-          <label class="f" style="margin:0">شفافية</label>
+          <button class="btn ghost" id="bgClear">Remove image</button>
+          <label class="f" style="margin:0">Opacity</label>
           <input type="range" id="bgOpacity" min="10" max="100" value="100">
         </div>
 
-        <label class="f">طول العباية (إنش) — من الكتف إلى الأسفل</label>
+        <label class="f">Abaya length (inch) — shoulder to hem</label>
         <div class="row">
           <input type="number" id="lenIn" value="56" min="24" max="80" step="0.5">
-          <span class="hint" style="margin:0" id="lenCmEcho">= 142.2 سم</span>
+          <span class="hint" style="margin:0" id="lenCmEcho">= 142.2 cm</span>
         </div>
-        <label class="f">عرض العباية (إنش) — عند الصدر، مفروشة</label>
+        <label class="f">Abaya width (inch) — at chest, laid flat</label>
         <div class="row">
           <input type="number" id="widIn" value="24" min="10" max="60" step="0.5">
-          <button class="btn ghost" id="btnShowDim">إظهار القياس</button>
+          <button class="btn ghost" id="btnShowDim">Show measurements</button>
         </div>
         <div class="hint" id="hemEcho" style="margin:4px 0 0"></div>
 
-        <label class="f">لون العباية</label>
+        <label class="f">Abaya colour</label>
         <div class="swatches" id="abayaSwatches"></div>
         <div class="row" style="margin-top:7px">
           <input type="color" id="abayaColor" value="#1c1c22"
                  style="width:46px;height:34px;padding:2px;border-radius:8px">
-          <span class="hint" style="margin:0">لون مخصّص</span>
+          <span class="hint" style="margin:0">Custom colour</span>
         </div>
       </div>
 
       <div class="sec" style="padding-bottom:6px">
-        <h2>٢ · اختر النقشة</h2>
-        <label class="f">أو ارفعي نقشة من عندك (SVG أو صورة)</label>
+        <h2>2 · Choose a motif</h2>
+        <label class="f">Or upload your own motif (SVG or image)</label>
         <div class="row">
           <input type="file" id="myMotif" accept=".svg,image/*" multiple
                  style="font-size:12px">
         </div>
         <div class="row" id="myRow" style="display:none;margin-top:6px">
-          <button class="btn ghost" id="myClear">حذف نقشاتي</button>
+          <button class="btn ghost" id="myClear">Delete my motifs</button>
           <span class="hint" style="margin:0" id="myCount"></span>
         </div>
         <div class="chips" id="famChips"></div>
@@ -302,33 +302,34 @@
       </div>
     </aside>
 
-    <!-- ============ الوسط: المسرح ============ -->
+    <!-- ============ Centre: stage ============ -->
     <div class="stage" id="stage">
       <svg id="board" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
-    <!-- ============ يسار: خصائص النقشة ============ -->
+    <!-- ============ Right: motif properties ============ -->
     <aside class="side left">
       <div class="sec">
-        <h2>٣ · النقشة المحدّدة</h2>
+        <h2>3 · Selected motif</h2>
         <div id="props">
           <div class="empty">
-            اضغط على نقشة من المكتبة لإضافتها،<br>ثم اسحبها إلى موضعها على العباية.
+            Tap a motif in the library to add it,<br>then drag it into place on the abaya.
           </div>
         </div>
       </div>
 
       <div class="sec">
-        <h2>النقشات على العباية</h2>
+        <h2>Motifs on the abaya</h2>
         <div class="items" id="itemList"></div>
       </div>
 
       <div class="sec" style="border-bottom:none">
         <p class="hint">
-          <b>المقاس الحقيقي</b> يُحسب تلقائياً من طول العباية: كل نقشة
-          يُعرض عرضها وطولها بالسنتيمتر فوراً وأنت تكبّرينها.<br><br>
-          <b>الطباعة</b>: النقشة تُطبع بمقاسها الحقيقي. لو كانت أطول من
-          صفحة A4 تُقسَّم على عدة صفحات بعلامات محاذاة لتوصيلها.
+          <b>True size</b> is worked out automatically from the abaya
+          measurements: each motif shows its width and height in inches and
+          centimetres as you resize it.<br><br>
+          <b>Printing</b>: the motif prints at true size. If it is larger than
+          an A4 sheet it is split across several sheets with alignment marks.
         </p>
       </div>
     </aside>
@@ -338,8 +339,8 @@
 
 <div id="printView" hidden>
   <div class="pv-bar">
-    <button class="btn primary" id="pvPrint">🖨 اطبعي الآن</button>
-    <button class="btn" id="pvBack">← رجوع للتصميم</button>
+    <button class="btn primary" id="pvPrint">🖨 Print now</button>
+    <button class="btn" id="pvBack">← Back to design</button>
     <span id="pvMode" style="font-size:13px;font-weight:700;
           padding:5px 10px;border-radius:7px"></span>
     <span class="info" id="pvInfo"></span>
@@ -421,22 +422,22 @@ function abayaOutline(p) {
    الأكمام مرسومة منسدلة بجانب الجسم (لا مفروشة أفقياً) لتبدو كعباية
    ملبوسة. */
 const CUTS = [
-  { id:"straight", name:"عباية مستقيمة كلاسيكية",
+  { id:"straight", name:"Classic straight abaya",
     p:{neckW:56,neckD:38,shW:142,shDrop:12,cuffX:272,cuffY:400,cuffW:76,
        cuffTilt:10,armX:124,armY:232,hipW:156,hemW:182}, front:true },
-  { id:"aline", name:"عباية بقصّة A",
+  { id:"aline", name:"A-line abaya",
     p:{neckW:54,neckD:36,shW:138,shDrop:12,cuffX:266,cuffY:396,cuffW:72,
        cuffTilt:10,armX:120,armY:228,hipW:200,hemW:290}, front:true },
-  { id:"kimono", name:"عباية كيمونو (أكمام متّصلة)",
+  { id:"kimono", name:"Kimono abaya (attached sleeves)",
     p:{neckW:60,neckD:40,shW:150,shDrop:8,cuffX:300,cuffY:350,cuffW:120,
        cuffTilt:26,armX:150,armY:300,hipW:196,hemW:236}, front:true },
-  { id:"bell", name:"عباية بأكمام واسعة",
+  { id:"bell", name:"Bell-sleeve abaya",
     p:{neckW:54,neckD:36,shW:140,shDrop:12,cuffX:300,cuffY:420,cuffW:140,
        cuffTilt:30,armX:122,armY:234,hipW:170,hemW:220}, front:true },
-  { id:"royal", name:"عباية واسعة ملكية",
+  { id:"royal", name:"Royal flared abaya",
     p:{neckW:58,neckD:42,shW:146,shDrop:12,cuffX:284,cuffY:414,cuffW:96,
        cuffTilt:18,armX:130,armY:240,hipW:246,hemW:350}, front:true },
-  { id:"closed", name:"عباية مغلقة (بلا فتحة أمامية)",
+  { id:"closed", name:"Closed abaya (no front opening)",
     p:{neckW:56,neckD:38,shW:142,shDrop:12,cuffX:270,cuffY:398,cuffW:76,
        cuffTilt:10,armX:124,armY:232,hipW:160,hemW:190}, front:false }
 ];
@@ -458,7 +459,7 @@ const state = {
   bg: null, bgOpacity: 1,
   items: [],          // {uid, mid, x, y, scale, rot, flip, color, repeat, gap}
   sel: null,
-  fam: "الكل"
+  fam: "All"
 };
 let uidSeq = 1;
 
@@ -471,7 +472,7 @@ const motifById = id => MOTIFS.find(m => m.id === id);
 const CM_PER_INCH = 2.54;
 const cmToIn = cm => cm / CM_PER_INCH;
 const inToCm = inch => inch * CM_PER_INCH;
-const fmtLen = cm => `${cmToIn(cm).toFixed(1)}″ (${cm.toFixed(1)} سم)`;
+const fmtLen = cm => `${cmToIn(cm).toFixed(1)}″ (${cm.toFixed(1)} cm)`;
 
 /* ------------------- عرض العباية -------------------
    الوحدة الداخلية موحّدة: 1000 وحدة = طول العباية. فتبقى النقشة
@@ -520,10 +521,10 @@ function sheetGrid(wCm, hCm) {
 
 function sheetsFor(wCm, hCm) {
   const g = sheetGrid(wCm, hCm);
-  if (g.total === 1) return "تُطبع في ورقة A4 واحدة";
+  if (g.total === 1) return "Fits on one A4 sheet";
   const shape = g.cols > 1 && g.rows > 1
-    ? ` (${g.cols} عرضاً × ${g.rows} طولاً)` : "";
-  return `تحتاج ${g.total} ورقة A4${shape} — تُلصق بعلامات المحاذاة`;
+    ? ` (${g.cols} across × ${g.rows} down)` : "";
+  return `Needs ${g.total} A4 sheets${shape} — join using the alignment marks`;
 }
 
 /* ---------------------- بناء المسرح ---------------------- */
@@ -608,7 +609,7 @@ function dimension() {
     fill: "#2563eb", "font-size": 22, "font-weight": "700",
     transform: `rotate(-90 ${x + 14} ${ABAYA_UNITS / 2})`,
     "text-anchor": "middle" });
-  t.textContent = `الطول ${cmToIn(state.lenCm).toFixed(0)}″`;
+  t.textContent = `Length ${cmToIn(state.lenCm).toFixed(0)}″`;
   g.appendChild(t);
 
   // خط العرض عند الذيل — ليُرى أثر العرض المطلوب على القصّة
@@ -620,7 +621,7 @@ function dimension() {
     { x1: xx, y1: yw - 8, x2: xx, y2: yw + 8, class: "dimline" })));
   const tw = el("text", { x: 0, y: yw + 26, fill: "#2563eb",
     "font-size": 22, "font-weight": "700", "text-anchor": "middle" });
-  tw.textContent = `العرض ${state.widIn}″`;
+  tw.textContent = `Width ${state.widIn}″`;
   g.appendChild(tw);
   return g;
 }
@@ -749,8 +750,8 @@ function syncProps() {
   const it = selItem();
   const box = $("#props");
   if (!it) {
-    box.innerHTML = `<div class="empty">اضغط على نقشة من المكتبة لإضافتها،<br>
-      ثم اسحبها إلى موضعها على العباية.</div>`;
+    box.innerHTML = `<div class="empty">Tap a motif in the library to add it,<br>
+      then drag it into place on the abaya.</div>`;
     return;
   }
   const m = motifById(it.mid);
@@ -763,51 +764,51 @@ function syncProps() {
     <div class="cid" style="font-size:11px;color:var(--muted)">${m.id}</div>
 
     <div class="readout">
-      <div class="lbl">المقاس الحقيقي على العباية</div>
+      <div class="lbl">True size on the abaya</div>
       <div class="big"><span id="roW">${cmToIn(wCm).toFixed(1)}</span> ×
-        <span id="roH">${cmToIn(hCm).toFixed(1)}</span> إنش</div>
+        <span id="roH">${cmToIn(hCm).toFixed(1)}</span> inch</div>
       <div class="lbl"><span id="roWc">${wCm.toFixed(1)}</span> ×
-        <span id="roHc">${hCm.toFixed(1)}</span> سم — العرض × الطول</div>
+        <span id="roHc">${hCm.toFixed(1)}</span> cm — width × height</div>
       <div class="lbl" style="margin-top:4px;color:#2563eb;font-weight:700">
         🖨 <span id="roSheets">${sheetsFor(wCm, hCm)}</span></div>
     </div>
 
-    <label class="f">الحجم</label>
+    <label class="f">Size</label>
     <input type="range" id="pScale" min="1" max="100"
            value="${Math.round(it.scale / 3 * 100)}">
     <div class="row">
       <input type="number" id="pHin" value="${cmToIn(hCm).toFixed(1)}"
              step="0.25" min="0.25">
-      <span class="hint" style="margin:0;white-space:nowrap">طول بالإنش</span>
+      <span class="hint" style="margin:0;white-space:nowrap">Height in inches</span>
     </div>
 
-    <label class="f">تدوير (${it.rot}°)</label>
+    <label class="f">Rotate (${it.rot}°)</label>
     <input type="range" id="pRot" min="-180" max="180" value="${it.rot}">
 
-    <label class="f">تكرار رأسي (${it.repeat || 1})</label>
+    <label class="f">Repeat down (${it.repeat || 1})</label>
     <input type="range" id="pRep" min="1" max="12" value="${it.repeat || 1}">
-    <label class="f">مسافة بين التكرارات</label>
+    <label class="f">Gap between repeats</label>
     <input type="range" id="pGap" min="0" max="120" value="${it.gap || 0}">
 
-    <label class="f">لون النقشة</label>
+    <label class="f">Motif colour</label>
     ${m.raster ? `<div class="hint" style="margin:0 0 6px;color:#9a6b00">
-      هذه صورة مرفوعة (PNG/JPG) فألوانها ثابتة داخلها ولا يمكن تغييرها.
-      للتلوين ارفعيها بصيغة SVG.</div>` : ""}
+      This is an uploaded image (PNG/JPG), so its colours are baked in and
+      cannot be changed. Upload it as SVG if you want to recolour it.</div>` : ""}
     <div class="swatches" id="motifSwatches"></div>
     <div class="row" style="margin-top:7px">
       <input type="color" id="pColor" value="${it.color}"
              style="width:46px;height:34px;padding:2px;border-radius:8px">
-      <span class="hint" style="margin:0">لون مخصّص</span>
+      <span class="hint" style="margin:0">Custom colour</span>
     </div>
 
     <div class="btns" style="margin-top:12px">
-      <button class="btn" id="pFlip">↔ قلب</button>
-      <button class="btn" id="pCenter">⊕ توسيط</button>
-      <button class="btn" id="pDup">⧉ نسخ</button>
-      <button class="btn danger" id="pDel">🗑 حذف</button>
+      <button class="btn" id="pFlip">↔ Flip</button>
+      <button class="btn" id="pCenter">⊕ Centre</button>
+      <button class="btn" id="pDup">⧉ Duplicate</button>
+      <button class="btn danger" id="pDel">🗑 Delete</button>
     </div>
     <button class="btn primary block" id="pPrint" style="margin-top:9px">
-      📄 طباعة هذه النقشة وحدها (A4)
+      📄 Print this motif alone (A4)
     </button>
   `;
 
@@ -858,7 +859,7 @@ function renderList() {
   const box = $("#itemList");
   box.innerHTML = "";
   if (!state.items.length) {
-    box.innerHTML = `<div class="empty" style="padding:10px">لا توجد نقشات بعد</div>`;
+    box.innerHTML = `<div class="empty" style="padding:10px">No motifs yet</div>`;
     return;
   }
   const k = cmPerUnit();
@@ -877,13 +878,13 @@ function renderList() {
 
 /* ---------------------- المكتبة ---------------------- */
 function renderChips() {
-  const fams = ["الكل", ...new Set(MOTIFS.map(m => m.fam))];
+  const fams = ["All", ...new Set(MOTIFS.map(m => m.fam))];
   const box = $("#famChips");
   box.innerHTML = "";
   fams.forEach(f => {
     const b = document.createElement("button");
     b.className = "chip" + (state.fam === f ? " on" : "");
-    b.textContent = f === "الكل" ? `الكل (${MOTIFS.length})` : f;
+    b.textContent = f === "All" ? `All (${MOTIFS.length})` : f;
     b.onclick = () => { state.fam = f; renderChips(); renderLib(); };
     box.appendChild(b);
   });
@@ -891,7 +892,7 @@ function renderChips() {
 function renderLib() {
   const box = $("#lib");
   box.innerHTML = "";
-  MOTIFS.filter(m => state.fam === "الكل" || m.fam === state.fam)
+  MOTIFS.filter(m => state.fam === "All" || m.fam === state.fam)
         .forEach(m => {
     const c = document.createElement("div");
     c.className = "card";
@@ -911,7 +912,7 @@ function renderLib() {
    ملاحظة مهمة: ملف SVG يقبل التلوين (يُحوّل الأسود إلى currentColor)،
    أما الصورة النقطية (PNG/JPG) فتُطبع بألوانها كما هي — لا يمكن
    تلوينها، فاللون المحفوظ فيها ثابت. */
-const MY_FAM = "نقشاتي";
+const MY_FAM = "My motifs";
 const MY_KEY = "fatima_my_motifs_v1";
 const MY_MAX_PX = 1400;        // تصغير الصور الكبيرة قبل الحفظ
 
@@ -919,7 +920,7 @@ function loadMine() {
   try {
     const arr = JSON.parse(localStorage.getItem(MY_KEY) || "[]");
     arr.forEach(m => { if (!motifById(m.id)) MOTIFS.push(m); });
-  } catch (e) { console.warn("تعذّر استرجاع نقشاتي", e); }
+  } catch (e) { console.warn("Could not restore your motifs", e); }
 }
 
 function saveMine() {
@@ -927,19 +928,20 @@ function saveMine() {
   try {
     localStorage.setItem(MY_KEY, JSON.stringify(mine));
   } catch (e) {
-    alert("مساحة الحفظ في المتصفح امتلأت، فلن تبقى نقشاتك بعد إغلاق "
-        + "الصفحة. احذفي بعض النقشات المرفوعة أو ارفعي صوراً أصغر.");
+    alert("Browser storage is full, so your motifs will not survive "
+        + "closing the page. Delete some uploaded motifs, or upload "
+        + "smaller images.");
   }
   const n = mine.length;
   $("#myRow").style.display = n ? "flex" : "none";
-  $("#myCount").textContent = n ? `${n} نقشة من عندك` : "";
+  $("#myCount").textContent = n ? `${n} of your own motifs` : "";
 }
 
 function svgToMotif(text, name, id) {
   const vb = /viewBox="([\d.\-\s]+)"/.exec(text);
   const doc = new DOMParser().parseFromString(text, "image/svg+xml");
   const root = doc.documentElement;
-  if (!root || root.tagName.toLowerCase() !== "svg") throw new Error("ملف SVG غير سليم");
+  if (!root || root.tagName.toLowerCase() !== "svg") throw new Error("Not a valid SVG file");
   let w, h;
   if (vb) {
     const p = vb[1].trim().split(/\s+/).map(Number);
@@ -981,7 +983,7 @@ function shrinkImage(dataURL) {
       cv.getContext("2d").drawImage(img, 0, 0, w, h);
       res({ url: cv.toDataURL("image/png"), w, h });
     };
-    img.onerror = () => rej(new Error("تعذّر قراءة الصورة"));
+    img.onerror = () => rej(new Error("Could not read the image"));
     img.src = dataURL;
   });
 }
@@ -1005,7 +1007,7 @@ async function addMyFiles(files) {
         const url = await new Promise((res, rej) => {
           const r = new FileReader();
           r.onload = () => res(r.result);
-          r.onerror = () => rej(new Error("تعذّر قراءة الملف"));
+          r.onerror = () => rej(new Error("Could not read the file"));
           r.readAsDataURL(f);
         });
         const im = await shrinkImage(url);
@@ -1019,7 +1021,7 @@ async function addMyFiles(files) {
   saveMine();
   state.fam = MY_FAM;
   renderChips(); renderLib();
-  if (failed.length) alert("لم تُضَف:\n" + failed.join("\n"));
+  if (failed.length) alert("Not added:\n" + failed.join("\n"));
   return added;
 }
 
@@ -1032,11 +1034,11 @@ function showPrint(html, info, mode) {
   // العباية» يُهدر ورقاً وحبراً، ولا يُكتشف إلا بعد الطباعة.
   const tag = $("#pvMode");
   if (mode === "design") {
-    tag.textContent = "🖼 صورة العباية — مرجع للعرض، ليست للتطريز";
+    tag.textContent = "🖼 Abaya image — reference only, not for stitching";
     tag.style.background = "#fff6e5";
     tag.style.color = "#8a6412";
   } else {
-    tag.textContent = "✓ النقشات وحدها — بلا العباية";
+    tag.textContent = "✓ Motifs only — no abaya";
     tag.style.background = "#e7f5ef";
     tag.style.color = "#1d6b4f";
   }
@@ -1048,7 +1050,7 @@ function showPrint(html, info, mode) {
 }
 
 function printMotifs(items) {
-  if (!items.length) { alert("لا توجد نقشات على العباية لطباعتها."); return; }
+  if (!items.length) { alert("There are no motifs on the abaya to print."); return; }
   const k = cmPerUnit();
   let pages = "";
   let totalPages = 0;
@@ -1095,14 +1097,14 @@ function printMotifs(items) {
         const sliceH = Math.min(usableH, hMM - offY);
         const sliceW = Math.min(usableW, wMM - offX);
         const pos = sheets > 1
-          ? ` · ورقة ${ty * cols_ + tx + 1} من ${sheets}`
-          + (cols_ > 1 ? ` (صفّ ${ty + 1}، عمود ${tx + 1})` : "")
+          ? ` · sheet ${ty * cols_ + tx + 1} of ${sheets}`
+          + (cols_ > 1 ? ` (row ${ty + 1}, column ${tx + 1})` : "")
           : "";
         pages += `
       <section class="pg">
         <div class="ph">
           <b>${m.name}</b>
-          <span>${m.id} · المقاس الحقيقي
+          <span>${m.id} · true size
             ${fmtLen(sz.w * k)} × ${fmtLen(sz.h * k)}${pos}</span>
         </div>
         <div class="winwrap" style="width:${r2(sliceW)}mm;height:${r2(sliceH)}mm">
@@ -1110,16 +1112,16 @@ function printMotifs(items) {
             <div style="transform:translate(-${r2(offX)}mm,-${r2(offY)}mm)">${svg}</div>
           </div>
           ${ty > 0 ? `<div class="olap" style="top:${overlap}mm">
-            <span>▲ ضعي هذا الخط فوق خط القصّ في ورقة الصفّ السابق</span>
+            <span>▲ Lay this line over the cut line on the sheet in the row above</span>
           </div>` : ""}
           ${tx > 0 ? `<div class="olapv" style="right:${overlap}mm">
-            <span>ضعي هذا الخط فوق خط القصّ في ورقة العمود السابق</span>
+            <span>Lay this line over the cut line on the sheet in the previous column</span>
           </div>` : ""}
         </div>
-        ${ty < rows_ - 1 ? `<div class="cut">✂ قُصّي عند هذا الخط
-          (تداخل ${overlap} مم مع ورقة الصفّ التالي)</div>` : ""}
-        ${tx < cols_ - 1 ? `<div class="cut">✂ يتبع يساراً: عمود ${tx + 2}
-          (تداخل ${overlap} مم)</div>` : ""}
+        ${ty < rows_ - 1 ? `<div class="cut">✂ Cut along this line
+          (${overlap} mm overlap with the sheet in the next row)</div>` : ""}
+        ${tx < cols_ - 1 ? `<div class="cut">✂ Continues right: column ${tx + 2}
+          (${overlap} mm overlap)</div>` : ""}
       </section>`;
       }
     }
@@ -1127,30 +1129,30 @@ function printMotifs(items) {
 
   const intro = `
     <div class="intro">
-      <h1>النقشات وحدها — بالمقاس الحقيقي</h1>
-      <p><b>هذه الصفحات تحتوي النقشة وحدها، بلا رسم العباية</b> —
-         جاهزة للتطريز أو القصّ أو الاستنسل.</p>
-      <p>مقاس العباية: <b>${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″</b> (${state.lenCm.toFixed(1)} سم طولاً) ·
-         عدد النقشات: <b>${items.length}</b> ·
-         عدد الأوراق: <b>${totalPages}</b></p>
+      <h1>Motifs only — at true size</h1>
+      <p><b>These pages contain the motif alone, without the abaya
+         drawing</b> — ready for stitching, cutting or stencilling.</p>
+      <p>Abaya size: <b>${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″</b> (${state.lenCm.toFixed(1)} cm long) ·
+         Motifs: <b>${items.length}</b> ·
+         Sheets: <b>${totalPages}</b></p>
       <div class="warn">
-        <b>قبل الطباعة — مهم جداً:</b>
+        <b>Before printing — very important:</b>
         <ul>
-          <li>اختاري مقاس الورق <b>A4</b>.</li>
-          <li>اجعلي المقياس <b>100%</b> وعطّلي خيار
-              «تحجيم لملاءمة الصفحة» (Fit to page / Shrink to fit).</li>
-          <li>لو تُرك مفعّلاً سيتغيّر المقاس على الورق ولن تناسب النقشة
-              الموضع الذي اخترتيه على العباية.</li>
+          <li>Choose paper size <b>A4</b>.</li>
+          <li>Set the scale to <b>100%</b> and turn off
+              <b>Fit to page</b> / <b>Shrink to fit</b>.</li>
+          <li>If it is left on, the printed size will change and the motif
+              will no longer fit the position you chose on the abaya.</li>
         </ul>
-        <b>للتأكد:</b> قيسي بالمسطرة بعد الطباعة — المقاس المكتوب أعلى كل
-        صفحة يجب أن يطابق المقاس الفعلي على الورق.
+        <b>To check:</b> measure with a ruler after printing — the size printed at the top of
+        each sheet must match the actual size on the paper.
       </div>
-      <p>النقشة الأطول من الصفحة تُقسَّم على عدة قطع بتداخل
-         <b>${10} مم</b>، وفي كل قطعة علامتان على الحافتين للمحاذاة
-         عند اللصق.</p>
+      <p>A motif larger than one sheet is split across several sheets with a
+         <b>${10} mm</b> overlap, and each sheet carries alignment marks on
+         its edges for joining.</p>
     </div>`;
   showPrint(intro + pages,
-    `${items.length} نقشة · ${totalPages} ورقة · العباية ${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″`, "motifs");
+    `${items.length} motifs · ${totalPages} sheets · abaya ${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″`, "motifs");
 }
 
 /* طباعة صورة التصميم كمرجع */
@@ -1167,16 +1169,16 @@ function printDesign() {
   }).join("");
   const html = `
     <div class="intro design">
-      <h1>تصميم عباية — ${cut().name}</h1>
-      <p>مقاس العباية: <b>${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″</b> ·
-         عدد النقشات: <b>${state.items.length}</b></p>
+      <h1>Abaya design — ${cut().name}</h1>
+      <p>Abaya size: <b>${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″</b> ·
+         Motifs: <b>${state.items.length}</b></p>
       ${clone.outerHTML}
-      <table><thead><tr><th>الرمز</th><th>النقشة</th>
-        <th>المقاس الحقيقي</th><th>اللون</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="4">لا توجد نقشات</td></tr>'}</tbody>
+      <table><thead><tr><th>Code</th><th>Motif</th>
+        <th>True size</th><th>Colour</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4">No motifs</td></tr>'}</tbody>
       </table>
     </div>`;
-  showPrint(html, `صورة العباية · ${state.items.length} نقشة`, "design");
+  showPrint(html, `Abaya image · ${state.items.length} motifs`, "design");
 }
 
 /* ---------------------- الحفظ التلقائي ---------------------- */
@@ -1232,11 +1234,11 @@ function initUI() {
     state.abayaColor = e.target.value; draw(); save(); };
 
   const echoLen = () => {
-    $("#lenCmEcho").textContent = `= ${state.lenCm.toFixed(1)} سم`;
+    $("#lenCmEcho").textContent = `= ${state.lenCm.toFixed(1)} cm`;
   };
   const echoHem = () => {
     $("#hemEcho").textContent =
-      `عرض الذيل الناتج من هذه القصّة ≈ ${hemWidthIn().toFixed(1)}″`;
+      `Resulting hem width for this cut ≈ ${hemWidthIn().toFixed(1)}″`;
   };
   $("#lenIn").value = +cmToIn(state.lenCm).toFixed(1);
   $("#lenIn").oninput = e => {
@@ -1280,7 +1282,7 @@ function initUI() {
     $("#printRoot").innerHTML = "";
   };
   $("#btnReset").onclick = () => {
-    if (!confirm("حذف التصميم الحالي والبدء من جديد؟")) return;
+    if (!confirm("Delete the current design and start over?")) return;
     state.items = []; state.sel = null;
     draw(); syncProps(); renderList(); save();
   };
@@ -1291,21 +1293,21 @@ function initUI() {
     e.target.value = "";
     if (!files.length) return;
     const n = await addMyFiles(files);
-    if (n) alert(`أُضيفت ${n} نقشة إلى «${MY_FAM}» — انقري عليها لوضعها `
-               + `على العباية.`);
+    if (n) alert(`Added ${n} motif(s) to "${MY_FAM}" — tap one to place it `
+               + `on the abaya.`);
   };
   $("#myClear").onclick = () => {
     const mine = MOTIFS.filter(m => m.fam === MY_FAM).map(m => m.id);
     if (!mine.length) return;
-    if (!confirm(`حذف ${mine.length} نقشة مرفوعة؟ `
-               + `(النقشات المستخدمة في التصميم ستُحذف أيضاً)`)) return;
+    if (!confirm(`Delete ${mine.length} uploaded motifs? `
+               + `(Motifs used in the design will be removed too)`)) return;
     state.items = state.items.filter(it => !mine.includes(it.mid));
     for (let i = MOTIFS.length - 1; i >= 0; i--) {
       if (MOTIFS[i].fam === MY_FAM) MOTIFS.splice(i, 1);
     }
     mySeq = 1;
     localStorage.removeItem(MY_KEY);
-    state.fam = "الكل"; state.sel = null;
+    state.fam = "All"; state.sel = null;
     saveMine(); renderChips(); renderLib();
     draw(); syncProps(); renderList(); save();
   };
@@ -1333,10 +1335,11 @@ function initUI() {
 if (!window.MOTIFS || !window.MOTIFS.length) {
   document.body.innerHTML = `<div style="padding:40px;font-family:Tahoma;
     direction:rtl;line-height:2">
-    <h2>لم يتم تحميل ملف النقشات</h2>
-    <p>تأكّدي أن الملف <b>motifs-data.js</b> موجود في نفس مجلد هذه الصفحة.</p>
-    <p>وإن كنتِ فتحتِ الصفحة من داخل ملف مضغوط (ZIP)، فُكّي الضغط أولاً
-       ثم افتحي الصفحة.</p></div>`;
+    <h2>The motif data file did not load</h2>
+    <p>Make sure <b>motifs-data.js</b> sits in the same folder as this page.</p>
+    <p>If you opened this page from inside a ZIP archive, extract the archive
+       first, then open the page.</p>
+    <p>Or use the single-file version, which needs no other file.</p></div>`;
 } else {
   loadMine();        // نقشاتها المرفوعة تُضاف للمكتبة قبل بناء الواجهة
   load();

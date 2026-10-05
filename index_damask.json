@@ -2,8 +2,8 @@
  {
   "num": 1,
   "file": "D001_vine_01.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 51
@@ -11,8 +11,8 @@
  {
   "num": 2,
   "file": "D002_vine_02.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 59
@@ -20,8 +20,8 @@
  {
   "num": 3,
   "file": "D003_vine_03.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 67
@@ -29,8 +29,8 @@
  {
   "num": 4,
   "file": "D004_vine_04.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 51
@@ -38,8 +38,8 @@
  {
   "num": 5,
   "file": "D005_vine_05.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 59
@@ -47,8 +47,8 @@
  {
   "num": 6,
   "file": "D006_vine_06.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 67
@@ -56,8 +56,8 @@
  {
   "num": 7,
   "file": "D007_vine_07.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 51
@@ -65,8 +65,8 @@
  {
   "num": 8,
   "file": "D008_vine_08.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 59
@@ -74,8 +74,8 @@
  {
   "num": 9,
   "file": "D009_vine_09.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 67
@@ -83,8 +83,8 @@
  {
   "num": 10,
   "file": "D010_vine_10.svg",
-  "title": "فرع زهري مصمت",
-  "family": "فروع زهرية مصمتة",
+  "title": "Solid floral sprig",
+  "family": "Solid floral sprigs",
   "wide": false,
   "tall": true,
   "elements": 51
@@ -92,8 +92,8 @@
  {
   "num": 11,
   "file": "D011_classic_01.svg",
-  "title": "شريط كلاسيكي — شبكة زهرات رباعية",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — quatrefoil lattice",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 114
@@ -101,8 +101,8 @@
  {
   "num": 12,
   "file": "D012_classic_02.svg",
-  "title": "شريط كلاسيكي — أرابيسك متناظر",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — symmetrical arabesque",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 56
@@ -110,8 +110,8 @@
  {
   "num": 13,
   "file": "D013_classic_03.svg",
-  "title": "شريط كلاسيكي — سلسلة حلقات متشابكة",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — interlocking rings",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 40
@@ -119,8 +119,8 @@
  {
   "num": 14,
   "file": "D014_classic_04.svg",
-  "title": "شريط كلاسيكي — مراوح نخيلية متكرّرة",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — repeating palmettes",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 72
@@ -128,8 +128,8 @@
  {
   "num": 15,
   "file": "D015_classic_05.svg",
-  "title": "شريط كلاسيكي — مفتاح يوناني",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — Greek key",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 7
@@ -137,8 +137,8 @@
  {
   "num": 16,
   "file": "D016_classic_06.svg",
-  "title": "شريط كلاسيكي — فرط لولبي مربّع",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — square spiral meander",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 15
@@ -146,8 +146,8 @@
  {
   "num": 17,
   "file": "D017_classic_07.svg",
-  "title": "شريط كلاسيكي — معيّنات وورقات متناوبة",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — alternating diamonds & leaves",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 44
@@ -155,8 +155,8 @@
  {
   "num": 18,
   "file": "D018_classic_08.svg",
-  "title": "شريط كلاسيكي — شبكة زهرات رباعية",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — quatrefoil lattice",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 100
@@ -164,8 +164,8 @@
  {
   "num": 19,
   "file": "D019_classic_09.svg",
-  "title": "شريط كلاسيكي — أرابيسك متناظر",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — symmetrical arabesque",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 50
@@ -173,8 +173,8 @@
  {
   "num": 20,
   "file": "D020_classic_10.svg",
-  "title": "شريط كلاسيكي — سلسلة حلقات متشابكة",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — interlocking rings",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 34
@@ -182,8 +182,8 @@
  {
   "num": 21,
   "file": "D021_classic_11.svg",
-  "title": "شريط كلاسيكي — مراوح نخيلية متكرّرة",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — repeating palmettes",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 62
@@ -191,8 +191,8 @@
  {
   "num": 22,
   "file": "D022_classic_12.svg",
-  "title": "شريط كلاسيكي — مفتاح يوناني",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — Greek key",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 7
@@ -200,8 +200,8 @@
  {
   "num": 23,
   "file": "D023_classic_13.svg",
-  "title": "شريط كلاسيكي — فرط لولبي مربّع",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — square spiral meander",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 15
@@ -209,8 +209,8 @@
  {
   "num": 24,
   "file": "D024_classic_14.svg",
-  "title": "شريط كلاسيكي — معيّنات وورقات متناوبة",
-  "family": "أشرطة كلاسيكية",
+  "title": "Classic border — alternating diamonds & leaves",
+  "family": "Classic borders",
   "wide": false,
   "tall": true,
   "elements": 38
@@ -218,8 +218,8 @@
  {
   "num": 25,
   "file": "D025_hanging_01.svg",
-  "title": "متدلّيات نباتية",
-  "family": "متدلّيات",
+  "title": "Botanical pendants",
+  "family": "Pendants",
   "wide": true,
   "tall": false,
   "elements": 169
@@ -227,8 +227,8 @@
  {
   "num": 26,
   "file": "D026_hanging_02.svg",
-  "title": "متدلّيات نباتية",
-  "family": "متدلّيات",
+  "title": "Botanical pendants",
+  "family": "Pendants",
   "wide": true,
   "tall": false,
   "elements": 183
@@ -236,8 +236,8 @@
  {
   "num": 27,
   "file": "D027_hanging_03.svg",
-  "title": "متدلّيات نباتية",
-  "family": "متدلّيات",
+  "title": "Botanical pendants",
+  "family": "Pendants",
   "wide": true,
   "tall": false,
   "elements": 199
@@ -245,8 +245,8 @@
  {
   "num": 28,
   "file": "D028_hanging_04.svg",
-  "title": "متدلّيات نباتية",
-  "family": "متدلّيات",
+  "title": "Botanical pendants",
+  "family": "Pendants",
   "wide": true,
   "tall": false,
   "elements": 224
@@ -254,8 +254,8 @@
  {
   "num": 29,
   "file": "D029_hanging_05.svg",
-  "title": "متدلّيات نباتية",
-  "family": "متدلّيات",
+  "title": "Botanical pendants",
+  "family": "Pendants",
   "wide": true,
   "tall": false,
   "elements": 163
@@ -263,8 +263,8 @@
  {
   "num": 30,
   "file": "D030_hanging_06.svg",
-  "title": "متدلّيات نباتية",
-  "family": "متدلّيات",
+  "title": "Botanical pendants",
+  "family": "Pendants",
   "wide": true,
   "tall": false,
   "elements": 167
@@ -272,8 +272,8 @@
  {
   "num": 31,
   "file": "D031_hanging_07.svg",
-  "title": "متدلّيات نباتية",
-  "family": "متدلّيات",
+  "title": "Botanical pendants",
+  "family": "Pendants",
   "wide": true,
   "tall": false,
   "elements": 190
@@ -281,8 +281,8 @@
  {
   "num": 32,
   "file": "D032_hanging_08.svg",
-  "title": "متدلّيات نباتية",
-  "family": "متدلّيات",
+  "title": "Botanical pendants",
+  "family": "Pendants",
   "wide": true,
   "tall": false,
   "elements": 207
@@ -290,8 +290,8 @@
  {
   "num": 33,
   "file": "D033_unit_01.svg",
-  "title": "مروحة نخيلية مصمتة",
-  "family": "عناصر داماسك",
+  "title": "Solid palmette",
+  "family": "Damask units",
   "wide": false,
   "tall": false,
   "elements": 11
@@ -299,8 +299,8 @@
  {
   "num": 34,
   "file": "D034_unit_02.svg",
-  "title": "حلزونان وزهرة",
-  "family": "عناصر داماسك",
+  "title": "Two scrolls & a flower",
+  "family": "Damask units",
   "wide": false,
   "tall": false,
   "elements": 13
@@ -308,8 +308,8 @@
  {
   "num": 35,
   "file": "D035_unit_03.svg",
-  "title": "زهرة سداسية مصمتة",
-  "family": "عناصر داماسك",
+  "title": "Solid six-petal flower",
+  "family": "Damask units",
   "wide": false,
   "tall": false,
   "elements": 14
@@ -317,8 +317,8 @@
  {
   "num": 36,
   "file": "D036_unit_04.svg",
-  "title": "زهرة رباعية ومعيّنات",
-  "family": "عناصر داماسك",
+  "title": "Quatrefoil & diamonds",
+  "family": "Damask units",
   "wide": false,
   "tall": false,
   "elements": 8
@@ -326,8 +326,8 @@
  {
   "num": 37,
   "file": "D037_unit_05.svg",
-  "title": "حلزون مصمت بأوراق",
-  "family": "عناصر داماسك",
+  "title": "Solid scroll with leaves",
+  "family": "Damask units",
   "wide": false,
   "tall": false,
   "elements": 10
@@ -335,8 +335,8 @@
  {
   "num": 38,
   "file": "D038_unit_06.svg",
-  "title": "فرعان متناظران بزهرة",
-  "family": "عناصر داماسك",
+  "title": "Two symmetrical sprigs with a flower",
+  "family": "Damask units",
   "wide": false,
   "tall": false,
   "elements": 25
@@ -344,8 +344,8 @@
  {
   "num": 39,
   "file": "D039_unit_07.svg",
-  "title": "مروحتان متقابلتان",
-  "family": "عناصر داماسك",
+  "title": "Two opposed palmettes",
+  "family": "Damask units",
   "wide": false,
   "tall": false,
   "elements": 17
@@ -353,8 +353,8 @@
  {
   "num": 40,
   "file": "D040_unit_08.svg",
-  "title": "نجمة أوراق مصمتة",
-  "family": "عناصر داماسك",
+  "title": "Solid leaf star",
+  "family": "Damask units",
   "wide": false,
   "tall": false,
   "elements": 17

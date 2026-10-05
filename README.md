@@ -170,11 +170,14 @@ git checkout all-five-collections -- svg art botanical
 ## الفتح
 
 ```
-panel/لوحة-فاطمة.html      ← اضغط عليه مرتين
+panel/designer.html              ← اضغط عليه مرتين (كمبيوتر)
+panel/designer-single-file.html  ← ملف واحد مستقلّ (جوال)
 ```
 
 تعمل **بلا إنترنت وبلا تثبيت أي برنامج**. دليل الاستخدام المصوّر
-بالخطوات في `panel/كيف-أستخدم-اللوحة.md`.
+بالخطوات في `panel/HOW-TO-USE.md`.
+
+> واجهة اللوحة **بالإنجليزية**. وتعليقات الكود بالعربية.
 
 ## ما تفعله
 
@@ -224,5 +227,5 @@ panel/لوحة-فاطمة.html      ← اضغط عليه مرتين
 بعد أي تعديل على النقشات:
 
 ```bash
-python3 build_panel.py      # يُحدّث panel/motifs-data.js
+python3 build_panel.py      # يُحدّث motifs-data.js و designer-single-file.html
 ```
