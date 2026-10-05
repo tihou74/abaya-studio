@@ -28,16 +28,61 @@ NS = "{http://www.w3.org/2000/svg}"
 SS = 3            # معامل الإفراط في العيّنات (للتنعيم)
 NUM = re.compile(r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?")
 
+# حدّ صلب لأبعاد أي PNG يُنتجه المشروع.
+#
+# طلبات الصور المتعدّدة تُرفض إذا تجاوز أي بُعد 2000 بكسل، والرفض يأتي
+# *بعد* انتهاء العمل كله: الصورة تُرسم، ثم تُرفض قراءتها، فتضيع الجلسة
+# بأكملها. حدث ذلك فعلاً عند معاينة تخطيط 4.0×12.0 إنش بدقّة 300 DPI
+# (‏1200×3600 بكسل) — فالبُعد الطويل وحده كان 3600.
+#
+# لذلك الحدّ مفروض هنا، في `write_png`، وهي نقطة الاختناق التي يمرّ بها
+# كل PNG في المشروع. الحارس في `zoom_preview.py` كان اختيارياً وموضعياً،
+# فتجاوزه أول سكربت جديد لم يستعمله.
+MAX_PX = 2000
+
+
+def fit_rows(w, h, rows, limit=MAX_PX):
+    """
+    يُصغّر صورة رمادية (قائمة bytearray) لتدخل حدّ `limit` في كلّ بُعد.
+
+    يُعيد (w, h, rows) كما هي إن كانت داخل الحدّ أصلاً، وإلا يُصغّرها
+    بمتوسّط صندوقي بمعامل صحيح — فيبقى الخطّ الرفيع مرئياً بدل أن
+    يتقطّع كما يحدث مع أخذ العيّنة الأقرب.
+    """
+    if max(w, h) <= limit:
+        return w, h, rows
+    factor = -(-max(w, h) // limit)          # ceil
+    w2, h2 = max(1, w // factor), max(1, h // factor)
+    inv = 1.0 / (factor * factor)
+    out = []
+    for y in range(h2):
+        row = bytearray(w2)
+        src = rows[y * factor:y * factor + factor]
+        for x in range(w2):
+            x0 = x * factor
+            tot = 0
+            for r in src:
+                tot += sum(r[x0:x0 + factor])
+            row[x] = min(255, int(tot * inv))
+        out.append(row)
+    return w2, h2, out
+
 
 # --------------------------------------------------------------------------
 # كاتب PNG (رمادي 8-بت)
 # --------------------------------------------------------------------------
 
 
-def write_png(path, w, h, rows):
+def write_png(path, w, h, rows, limit=MAX_PX):
     def chunk(tag, data):
         c = tag + data
         return struct.pack(">I", len(data)) + c + struct.pack(">I", zlib.crc32(c))
+
+    if max(w, h) > limit:
+        ow, oh = w, h
+        w, h, rows = fit_rows(w, h, rows, limit)
+        print(f"   ! {path.name}: {ow}x{oh} يتجاوز {limit} بكسل "
+              f"— صُغِّرت إلى {w}x{h} لتكون قابلة للقراءة")
 
     raw = b"".join(b"\x00" + bytes(r) for r in rows)
     png = (b"\x89PNG\r\n\x1a\n"
@@ -45,6 +90,7 @@ def write_png(path, w, h, rows):
            + chunk(b"IDAT", zlib.compress(raw, 6))
            + chunk(b"IEND", b""))
     path.write_bytes(png)
+    return w, h
 
 
 # --------------------------------------------------------------------------
@@ -278,8 +324,9 @@ def build_sheet(files, cols, cell_w, cell_h, out_path, draw_frames=True):
         render_cell(cv, polys, vw, vh,
                     ox + pad, oy + pad, cell_w * SS - 2 * pad, cell_h * SS - 2 * pad)
     w2, h2, rows = cv.downsample(SS)
-    write_png(out_path, w2, h2, rows)
-    return w2, h2
+    # الأبعاد المُعادة هي ما كُتب فعلاً — `write_png` قد يُصغّر أكثر
+    # إن تجاوز المقاس حدّ MAX_PX.
+    return write_png(out_path, w2, h2, rows)
 
 
 def main():
