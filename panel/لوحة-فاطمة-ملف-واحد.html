@@ -31,10 +31,22 @@
   .spacer{flex:1}
   .main{display:flex;flex:1;min-height:0}
 
+  /* العمود الجانبي منطقة تمرير واحدة.
+
+     كان التمرير داخلياً في المكتبة وحدها (.scroll بـ flex:1)، وهذا
+     ينكسر متى طال محتوى الأقسام فوقها: على شاشة ارتفاعها 577 بكسل
+     يأخذ قسمَا القصّة والنقشة 714 بكسل، فلا يبقى للمكتبة إلا 12
+     بكسل — وتصير النقشات غير قابلة للوصول إطلاقاً لأن body عنده
+     overflow:hidden فلا الصفحة تتمرّر ولا المكتبة تُرى.
+
+     فيُمرَّر العمود كله بدل تعشيش منطقتي تمرير، ويبقى سليماً مهما
+     أُضيف من حقول. */
   .side{
     width:310px;background:var(--panel);border-inline-start:1px solid var(--line);
     display:flex;flex-direction:column;min-height:0;
+    overflow-y:auto;overscroll-behavior:contain;
   }
+  .sec{flex-shrink:0}
   .side.left{border-inline-start:none;border-inline-end:1px solid var(--line);width:290px}
   .stage{flex:1;min-width:0;position:relative;overflow:auto;background:
     repeating-conic-gradient(#eceae6 0% 25%, #f6f4f1 0% 50%) 50%/22px 22px}
@@ -42,7 +54,8 @@
   .sec{padding:12px 14px;border-bottom:1px solid var(--line)}
   .sec h2{font-size:13px;margin:0 0 9px;color:var(--accent);font-weight:700;
     letter-spacing:.2px}
-  .scroll{overflow-y:auto;min-height:0;flex:1}
+  /* المكتبة تأخذ طولها الطبيعي، والعمود الجانبي هو الذي يتمرّر */
+  .scroll{flex:0 0 auto;min-height:0}
 
   label.f{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
   .row{display:flex;gap:8px;align-items:center}
@@ -138,6 +151,12 @@
     /* على الجوال يُقاس اللوح بالعرض لا بالطول: ارتفاع 100vh يجعل
        العباية أطول من الشاشة فلا تُرى كاملة ولا يُمكن وضع النقشة. */
     #board{height:auto;width:100%;max-width:100%;margin:8px auto}
+
+    /* التمرير داخل العمود يصلح للكمبيوتر فقط. على الجوال تصطفّ
+       الأعمدة طولياً، فلو بقي لكلٍّ تمريره الخاص انسحق إلى 34 بكسل
+       ولم تتمرّر الصفحة، فتتعذّر الوصول إلى النقشات. فتأخذ الأعمدة
+       طولها الطبيعي وتتمرّر الصفحة كلها. */
+    .side,.side.left{overflow-y:visible;flex:0 0 auto}
     .scroll{max-height:none}
   }
   @media (max-width:560px){
