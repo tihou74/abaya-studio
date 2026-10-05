@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>لوحة تصميم العبايات — السيدة فاطمة</title>
+<style>
+  :root{
+    --bg:#f3f1ee; --panel:#ffffff; --ink:#1d1b19; --muted:#6f6a64;
+    --line:#dcd7d0; --accent:#8a6d3b; --accent2:#b99a63; --ok:#2f7d5d;
+    --shadow:0 2px 10px rgba(0,0,0,.07);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Segoe UI","Noto Sans Arabic",Tahoma,sans-serif;
+    background:var(--bg); color:var(--ink); overflow:hidden;
+  }
+  button,select,input{font-family:inherit;font-size:14px}
+  button{cursor:pointer}
+
+  /* ================= الهيكل ================= */
+  .app{display:flex;flex-direction:column;height:100%}
+  header{
+    display:flex;align-items:center;gap:14px;padding:10px 16px;
+    background:var(--panel);border-bottom:1px solid var(--line);
+    box-shadow:var(--shadow);z-index:5;flex-wrap:wrap;
+  }
+  header h1{font-size:17px;margin:0;font-weight:700}
+  header .sub{font-size:12px;color:var(--muted)}
+  .spacer{flex:1}
+  .main{display:flex;flex:1;min-height:0}
+
+  .side{
+    width:310px;background:var(--panel);border-inline-start:1px solid var(--line);
+    display:flex;flex-direction:column;min-height:0;
+  }
+  .side.left{border-inline-start:none;border-inline-end:1px solid var(--line);width:290px}
+  .stage{flex:1;min-width:0;position:relative;overflow:auto;background:
+    repeating-conic-gradient(#eceae6 0% 25%, #f6f4f1 0% 50%) 50%/22px 22px}
+
+  .sec{padding:12px 14px;border-bottom:1px solid var(--line)}
+  .sec h2{font-size:13px;margin:0 0 9px;color:var(--accent);font-weight:700;
+    letter-spacing:.2px}
+  .scroll{overflow-y:auto;min-height:0;flex:1}
+
+  label.f{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+  .row{display:flex;gap:8px;align-items:center}
+  .row>*{min-width:0}
+  select,input[type=number],input[type=text]{
+    width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:8px;
+    background:#fff;color:var(--ink);
+  }
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .btn{
+    padding:9px 12px;border:1px solid var(--line);border-radius:9px;
+    background:#fff;font-size:13px;display:inline-flex;align-items:center;
+    gap:6px;justify-content:center;
+  }
+  .btn:hover{border-color:var(--accent2);background:#fdfbf7}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;
+    font-weight:700}
+  .btn.primary:hover{background:#755c32}
+  .btn.ghost{background:transparent}
+  .btn.danger{color:#9b2c2c;border-color:#e7cfcf}
+  .btn.block{width:100%}
+  .btns{display:flex;gap:7px;flex-wrap:wrap}
+
+  /* ================= مكتبة النقشات ================= */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+  .chip{
+    padding:5px 10px;border:1px solid var(--line);border-radius:20px;
+    background:#fff;font-size:12px;
+  }
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .card{
+    border:1px solid var(--line);border-radius:10px;background:#fff;
+    padding:5px;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;gap:3px;transition:.12s;
+  }
+  .card:hover{border-color:var(--accent2);transform:translateY(-1px);
+    box-shadow:var(--shadow)}
+  .card svg{width:100%;height:76px;display:block;color:#2a2622}
+  .card .cid{font-size:9.5px;color:var(--muted)}
+
+  /* ================= المسرح ================= */
+  /* اللوحة تتسع لارتفاع الشاشة تلقائياً بدل إظهار أشرطة تمرير */
+  #board{display:block;margin:14px auto;background:#fff;
+    box-shadow:0 4px 22px rgba(0,0,0,.12);border-radius:4px;
+    height:calc(100vh - 118px);width:auto;max-width:96%}
+  .motif-wrap{cursor:move}
+  .selbox{fill:none;stroke:#2563eb;stroke-width:2;stroke-dasharray:6 4;
+    pointer-events:none;vector-effect:non-scaling-stroke}
+  .handle{fill:#2563eb;stroke:#fff;stroke-width:1.5;cursor:nwse-resize}
+  .dimline{stroke:#2563eb;stroke-width:1;vector-effect:non-scaling-stroke}
+
+  /* ================= قائمة العناصر ================= */
+  .items{display:flex;flex-direction:column;gap:6px}
+  .item{
+    display:flex;align-items:center;gap:8px;padding:7px 9px;
+    border:1px solid var(--line);border-radius:9px;background:#fff;
+    font-size:12px;cursor:pointer;
+  }
+  .item.on{border-color:var(--accent);background:#fdfbf7}
+  .item .sw{width:14px;height:14px;border-radius:4px;border:1px solid #0002;
+    flex:none}
+  .item .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .sz{color:var(--ok);font-weight:700;font-size:11px;white-space:nowrap;
+    font-variant-numeric:tabular-nums}
+
+  .swatches{display:flex;flex-wrap:wrap;gap:6px}
+  .sw-btn{width:26px;height:26px;border-radius:7px;border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--line);cursor:pointer}
+  .sw-btn.on{box-shadow:0 0 0 2px var(--accent)}
+
+  .readout{
+    background:#f7f5f1;border:1px solid var(--line);border-radius:10px;
+    padding:10px;margin-top:8px;
+  }
+  .readout .big{font-size:21px;font-weight:800;color:var(--ok);
+    font-variant-numeric:tabular-nums}
+  .readout .lbl{font-size:11px;color:var(--muted)}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.65;margin:8px 0 0}
+  .empty{padding:22px 14px;text-align:center;color:var(--muted);font-size:13px;
+    line-height:1.8}
+  .badge{background:#eef4ff;color:#2563eb;border-radius:6px;padding:1px 6px;
+    font-size:11px;font-weight:700}
+
+  @media (max-width:1100px){
+    .main{flex-direction:column;overflow:auto}
+    .side,.side.left{width:100%;border:none;border-top:1px solid var(--line)}
+    .stage{min-height:420px}
+    body{overflow:auto}
+  }
+
+  /* ========== عرض الطباعة ==========
+     يُبنى داخل الصفحة نفسها لا في نافذة منبثقة: المتصفحات تحجب
+     window.open كثيراً (ومانع النوافذ عند المستخدمة يُفشل الطباعة). */
+  #printView{position:fixed;inset:0;background:#e9e7e3;overflow:auto;z-index:50}
+  .pv-bar{position:sticky;top:0;display:flex;gap:10px;align-items:center;
+    padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);
+    z-index:2;box-shadow:var(--shadow);flex-wrap:wrap}
+  .pv-bar .info{font-size:12.5px;color:var(--muted)}
+  #printRoot{padding:14px 0}
+  #printRoot .pg{width:194mm;min-height:281mm;background:#fff;
+    margin:0 auto 7mm;page-break-after:always;break-after:page;
+    position:relative;display:flex;flex-direction:column;align-items:center;
+    padding:0}
+  #printRoot .pg:last-child{page-break-after:auto;break-after:auto}
+  #printRoot .ph{width:100%;display:flex;justify-content:space-between;
+    align-items:baseline;border-bottom:.3mm solid #111;padding-bottom:1.5mm;
+    margin-bottom:3mm;font-size:3mm}
+  #printRoot .ph b{font-size:3.6mm}
+  #printRoot .winwrap{position:relative;margin:0 auto}
+  #printRoot .win{overflow:hidden;margin:0 auto}
+  #printRoot .cut{margin-top:auto;border-top:.4mm dashed #888;width:100%;
+    text-align:center;font-size:2.8mm;color:#666;padding-top:1.5mm}
+  /* خط التطابق: يوضع فوق خط القصّ من الصفحة السابقة.
+     موضعه ثابت من أعلى القطعة (مقدار التداخل) فيتطابق دائماً،
+     بخلاف علامات على الحافة يتغيّر موضعها بتغيّر ارتفاع القطعة. */
+  #printRoot .olap{position:absolute;left:-7mm;right:-7mm;
+    border-top:.4mm dashed #2563eb;text-align:center}
+  #printRoot .olap span{font-size:2.6mm;color:#2563eb;background:#fff;
+    padding:0 2mm}
+  #printRoot .intro{width:194mm;background:#fff;margin:0 auto 7mm;padding:11mm;
+    font-size:3.4mm;line-height:1.85;page-break-after:always;break-after:page}
+  #printRoot .intro h1{font-size:6mm;margin:0 0 4mm}
+  #printRoot .intro li{margin-bottom:2mm}
+  #printRoot .warn{background:#fff6e5;border:.3mm solid #e0b35c;padding:4mm;
+    border-radius:2mm;margin-top:4mm}
+  #printRoot table{width:100%;border-collapse:collapse;font-size:3.2mm;
+    margin-top:5mm}
+  #printRoot th,#printRoot td{border:.2mm solid #bbb;padding:1.6mm;
+    text-align:right}
+  #printRoot th{background:#f2efea}
+  #printRoot .design svg{width:120mm;height:auto;display:block;margin:0 auto}
+  @media screen{#printRoot .pg,#printRoot .intro{box-shadow:0 1mm 5mm #0002}}
+  @media print{
+    @page{size:A4 portrait;margin:8mm}
+    html,body{overflow:visible;background:#fff}
+    .app,.pv-bar{display:none !important}
+    #printView{position:static;background:#fff;overflow:visible}
+    #printRoot{padding:0}
+    #printRoot .pg,#printRoot .intro{margin:0;box-shadow:none;width:auto;
+      min-height:0}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div>
+      <h1>لوحة تصميم العبايات</h1>
+      <div class="sub">السيدة فاطمة · ٨٠ نقشة جاهزة</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" id="btnReset">↺ تصميم جديد</button>
+    <button class="btn" id="btnPrintDesign">🖼 طباعة التصميم</button>
+    <button class="btn primary" id="btnPrintAll">📄 طباعة كل النقشات PDF</button>
+  </header>
+
+  <div class="main">
+
+    <!-- ============ يمين: العباية والمكتبة ============ -->
+    <aside class="side">
+      <div class="sec">
+        <h2>١ · قصّة العباية</h2>
+        <select id="cut"></select>
+
+        <label class="f">أو ارفع صورة قصّة عندك</label>
+        <div class="row">
+          <input type="file" id="bgFile" accept="image/*" style="font-size:12px">
+        </div>
+        <div class="row" id="bgRow" style="display:none;margin-top:7px">
+          <button class="btn ghost" id="bgClear">حذف الصورة</button>
+          <label class="f" style="margin:0">شفافية</label>
+          <input type="range" id="bgOpacity" min="10" max="100" value="100">
+        </div>
+
+        <label class="f">طول العباية (سم) — من الكتف إلى الأسفل</label>
+        <div class="row">
+          <input type="number" id="lenCm" value="140" min="60" max="200" step="1">
+          <button class="btn ghost" id="btnShowDim">إظهار القياس</button>
+        </div>
+
+        <label class="f">لون العباية</label>
+        <div class="swatches" id="abayaSwatches"></div>
+        <div class="row" style="margin-top:7px">
+          <input type="color" id="abayaColor" value="#1c1c22"
+                 style="width:46px;height:34px;padding:2px;border-radius:8px">
+          <span class="hint" style="margin:0">لون مخصّص</span>
+        </div>
+      </div>
+
+      <div class="sec" style="padding-bottom:6px">
+        <h2>٢ · اختر النقشة</h2>
+        <div class="chips" id="famChips"></div>
+      </div>
+      <div class="scroll sec" style="border-bottom:none;padding-top:0">
+        <div class="grid" id="lib"></div>
+      </div>
+    </aside>
+
+    <!-- ============ الوسط: المسرح ============ -->
+    <div class="stage" id="stage">
+      <svg id="board" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <!-- ============ يسار: خصائص النقشة ============ -->
+    <aside class="side left">
+      <div class="sec">
+        <h2>٣ · النقشة المحدّدة</h2>
+        <div id="props">
+          <div class="empty">
+            اضغط على نقشة من المكتبة لإضافتها،<br>ثم اسحبها إلى موضعها على العباية.
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h2>النقشات على العباية</h2>
+        <div class="items" id="itemList"></div>
+      </div>
+
+      <div class="sec" style="border-bottom:none">
+        <p class="hint">
+          <b>المقاس الحقيقي</b> يُحسب تلقائياً من طول العباية: كل نقشة
+          يُعرض عرضها وطولها بالسنتيمتر فوراً وأنت تكبّرينها.<br><br>
+          <b>الطباعة</b>: النقشة تُطبع بمقاسها الحقيقي. لو كانت أطول من
+          صفحة A4 تُقسَّم على عدة صفحات بعلامات محاذاة لتوصيلها.
+        </p>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<div id="printView" hidden>
+  <div class="pv-bar">
+    <button class="btn primary" id="pvPrint">🖨 اطبعي الآن</button>
+    <button class="btn" id="pvBack">← رجوع للتصميم</button>
+    <span class="info" id="pvInfo"></span>
+  </div>
+  <div id="printRoot"></div>
+</div>
+
+<script src="motifs-data.js"></script>
+<script>
+/* =======================================================================
+   لوحة تصميم العبايات — تعمل بلا إنترنت وبلا خادم.
+   المقاس: الرسم الداخلي بوحدات ثابتة (ارتفاع العباية = 1000 وحدة)،
+   فيكون  سم لكل وحدة = طول العباية ÷ 1000.
+   ======================================================================= */
+
+const MM_PER_CM = 10;
+const ABAYA_UNITS = 1000;          // ارتفاع العباية بالوحدات الداخلية
+const BOARD_W = 760, BOARD_H = 1180;
+const TOP = 70;                    // موضع خط الكتف على اللوحة
+
+const $ = s => document.querySelector(s);
+const svgNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs = {}) {
+  const n = document.createElementNS(svgNS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+}
+
+/* ---------------------- قصّات العبايات ---------------------- */
+/* يُبنى النصف الأيمن كقائمة نقاط، ثم يُعكَس بعكس إشارة x وقلب الترتيب.
+   عكس *منحنيات* بيزييه يدوياً يتطلّب قلب نقاط التحكّم مع العُقَد، وأي
+   خطأ فيه يُنتج شكلاً مشوّهاً (ظهرت فتحة مثلثة تحت الكُمّ). العمل على
+   النقاط فقط يجعل التناظر مضموناً. */
+function catmullPath(pts) {
+  if (pts.length < 2) return "";
+  const n = pts.length;
+  const get = i => pts[Math.max(0, Math.min(n - 1, i))];
+  const r = v => Math.round(v * 10) / 10;
+  let d = `M${r(pts[0][0])} ${r(pts[0][1])}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += `C${r(c1[0])} ${r(c1[1])} ${r(c2[0])} ${r(c2[1])} `
+       + `${r(p2[0])} ${r(p2[1])}`;
+  }
+  return d;
+}
+
+function abayaHalf(p) {
+  const H = ABAYA_UNITS;
+  return [
+    [0, p.neckD],                                    // منتصف فتحة الرقبة
+    [p.neckW * .72, p.neckD * .5],
+    [p.neckW, 0],                                    // حدّ الرقبة عند الكتف
+    [p.shW, p.shDrop],                               // طرف الكتف
+    [p.shW + (p.cuffX - p.shW) * .55, p.shDrop + p.cuffY * .40],
+    [p.cuffX, p.cuffY],                              // خارج الأسوَرة
+    [p.cuffX - p.cuffW, p.cuffY + p.cuffTilt],       // داخل الأسوَرة
+    [p.armX + (p.cuffX - p.cuffW - p.armX) * .45,
+     p.armY + (p.cuffY - p.armY) * .50],             // باطن الكُمّ
+    [p.armX, p.armY],                                // الإبط
+    [p.hipW, p.armY + (H - p.armY) * .50],           // الخَصر/الورك
+    [p.hemW, H],                                     // طرف الذيل
+    [p.hemW * .55, H],                               // نقطة وسطية تُسوّي الذيل
+    [0, H]                                           // منتصف الذيل
+  ];
+}
+
+function abayaOutline(p) {
+  const right = abayaHalf(p);
+  // النقطتان الأولى والأخيرة على محور التناظر فلا تُكرّران
+  const left = right.slice(1, -1).reverse().map(q => [-q[0], q[1]]);
+  return catmullPath(right.concat(left, [right[0]])) + " Z";
+}
+
+/* الأبعاد بوحدات ارتفاعها 1000 = طول العباية.
+   لعباية 140 سم: الوحدة ≈ 0.14 سم، فـ 7.14 وحدة ≈ 1 سم.
+   الأكمام مرسومة منسدلة بجانب الجسم (لا مفروشة أفقياً) لتبدو كعباية
+   ملبوسة. */
+const CUTS = [
+  { id:"straight", name:"عباية مستقيمة كلاسيكية",
+    p:{neckW:56,neckD:38,shW:142,shDrop:12,cuffX:272,cuffY:400,cuffW:76,
+       cuffTilt:10,armX:124,armY:232,hipW:156,hemW:182}, front:true },
+  { id:"aline", name:"عباية بقصّة A",
+    p:{neckW:54,neckD:36,shW:138,shDrop:12,cuffX:266,cuffY:396,cuffW:72,
+       cuffTilt:10,armX:120,armY:228,hipW:200,hemW:290}, front:true },
+  { id:"kimono", name:"عباية كيمونو (أكمام متّصلة)",
+    p:{neckW:60,neckD:40,shW:150,shDrop:8,cuffX:300,cuffY:350,cuffW:120,
+       cuffTilt:26,armX:150,armY:300,hipW:196,hemW:236}, front:true },
+  { id:"bell", name:"عباية بأكمام واسعة",
+    p:{neckW:54,neckD:36,shW:140,shDrop:12,cuffX:300,cuffY:420,cuffW:140,
+       cuffTilt:30,armX:122,armY:234,hipW:170,hemW:220}, front:true },
+  { id:"royal", name:"عباية واسعة ملكية",
+    p:{neckW:58,neckD:42,shW:146,shDrop:12,cuffX:284,cuffY:414,cuffW:96,
+       cuffTilt:18,armX:130,armY:240,hipW:246,hemW:350}, front:true },
+  { id:"closed", name:"عباية مغلقة (بلا فتحة أمامية)",
+    p:{neckW:56,neckD:38,shW:142,shDrop:12,cuffX:270,cuffY:398,cuffW:76,
+       cuffTilt:10,armX:124,armY:232,hipW:160,hemW:190}, front:false }
+];
+
+const ABAYA_COLORS = ["#1c1c22","#2b2b36","#3c3730","#4a4039","#5b4b3f",
+                      "#6b5b4b","#8d7b67","#b9a68f","#d8cdbd","#f0ece5",
+                      "#2c3a45","#3c2f3d"];
+const MOTIF_COLORS = ["#c9a227","#d4af37","#e8d9a0","#ffffff","#f0ece5",
+                      "#111111","#8a6d3b","#a63d40","#2f6d5d","#355070",
+                      "#b76e79","#c0c0c0"];
+
+/* ---------------------- الحالة ---------------------- */
+const state = {
+  cut: CUTS[0].id,
+  lenCm: 140,
+  abayaColor: "#1c1c22",
+  showDim: true,
+  bg: null, bgOpacity: 1,
+  items: [],          // {uid, mid, x, y, scale, rot, flip, color, repeat, gap}
+  sel: null,
+  fam: "الكل"
+};
+let uidSeq = 1;
+
+const cmPerUnit = () => state.lenCm / ABAYA_UNITS;
+const motifById = id => MOTIFS.find(m => m.id === id);
+
+/* ---------------------- بناء المسرح ---------------------- */
+const board = $("#board");
+board.setAttribute("viewBox", `0 0 ${BOARD_W} ${BOARD_H}`);
+board.setAttribute("width", BOARD_W);
+board.setAttribute("height", BOARD_H);
+
+function cut() { return CUTS.find(c => c.id === state.cut); }
+
+function draw() {
+  board.innerHTML = "";
+  const g = el("g", { transform: `translate(${BOARD_W / 2},${TOP})` });
+
+  if (state.bg) {
+    const im = el("image", {
+      href: state.bg, x: -BOARD_W / 2 + 20, y: -TOP + 10,
+      width: BOARD_W - 40, height: BOARD_H - 30,
+      preserveAspectRatio: "xMidYMid meet", opacity: state.bgOpacity
+    });
+    g.appendChild(im);
+  }
+
+  const c = cut();
+  const body = el("path", {
+    d: abayaOutline(c.p), fill: state.abayaColor,
+    stroke: "#00000022", "stroke-width": 1
+  });
+  g.appendChild(body);
+
+  // فتحة أمامية + فتحة الرقبة
+  if (c.front) {
+    g.appendChild(el("line", {
+      x1: 0, y1: c.p.neckD, x2: 0, y2: ABAYA_UNITS,
+      stroke: "#ffffff38", "stroke-width": 2, "stroke-dasharray": "10 7"
+    }));
+  }
+  g.appendChild(el("path", {
+    d: `M${-c.p.neckW} 0 C${-c.p.neckW * .6} ${c.p.neckD * 1.5},`
+       + `${c.p.neckW * .6} ${c.p.neckD * 1.5},${c.p.neckW} 0`,
+    fill: "none", stroke: "#ffffff30", "stroke-width": 2
+  }));
+
+  // النقشات
+  state.items.forEach(it => g.appendChild(renderItem(it)));
+
+  // خط القياس
+  if (state.showDim) g.appendChild(dimension());
+
+  board.appendChild(g);
+}
+
+function dimension() {
+  const g = el("g");
+  const x = -BOARD_W / 2 + 34;
+  g.appendChild(el("line", { x1: x, y1: 0, x2: x, y2: ABAYA_UNITS,
+    class: "dimline" }));
+  [0, ABAYA_UNITS].forEach(y => g.appendChild(el("line",
+    { x1: x - 8, y1: y, x2: x + 8, y2: y, class: "dimline" })));
+  const t = el("text", { x: x + 14, y: ABAYA_UNITS / 2,
+    fill: "#2563eb", "font-size": 22, "font-weight": "700",
+    transform: `rotate(-90 ${x + 14} ${ABAYA_UNITS / 2})`,
+    "text-anchor": "middle" });
+  t.textContent = `${state.lenCm} سم`;
+  g.appendChild(t);
+  return g;
+}
+
+function itemSize(it) {
+  const m = motifById(it.mid);
+  const n = it.repeat || 1;
+  const gap = it.gap || 0;
+  return {
+    w: m.w * it.scale,
+    h: m.h * it.scale * n + gap * it.scale * (n - 1),
+    unitH: m.h * it.scale
+  };
+}
+
+function renderItem(it) {
+  const m = motifById(it.mid);
+  const sz = itemSize(it);
+  const wrap = el("g", { class: "motif-wrap", "data-uid": it.uid });
+  const inner = el("g", {
+    transform: `translate(${it.x},${it.y}) rotate(${it.rot}) `
+             + `scale(${it.flip ? -it.scale : it.scale},${it.scale})`
+  });
+  inner.setAttribute("style", `color:${it.color}`);
+  const n = it.repeat || 1;
+  for (let i = 0; i < n; i++) {
+    const rep = el("g", {
+      transform: `translate(${-m.w / 2},${-sz.h / it.scale / 2 + i * (m.h + (it.gap || 0))})`
+    });
+    rep.innerHTML = m.svg;
+    inner.appendChild(rep);
+  }
+  wrap.appendChild(inner);
+
+  if (state.sel === it.uid) {
+    const hw = sz.w / 2, hh = sz.h / 2;
+    const box = el("g", {
+      transform: `translate(${it.x},${it.y}) rotate(${it.rot})` });
+    box.appendChild(el("rect", { x: -hw, y: -hh, width: sz.w, height: sz.h,
+      class: "selbox" }));
+    const h = el("circle", { cx: hw, cy: hh, r: 9, class: "handle" });
+    h.addEventListener("pointerdown", e => startResize(e, it));
+    box.appendChild(h);
+    wrap.appendChild(box);
+  }
+  wrap.addEventListener("pointerdown", e => startDrag(e, it));
+  return wrap;
+}
+
+/* ---------------------- السحب والتحجيم ---------------------- */
+function boardPoint(e) {
+  const r = board.getBoundingClientRect();
+  const sx = BOARD_W / r.width, sy = BOARD_H / r.height;
+  return { x: (e.clientX - r.left) * sx - BOARD_W / 2,
+           y: (e.clientY - r.top) * sy - TOP };
+}
+
+let drag = null;
+function startDrag(e, it) {
+  e.preventDefault(); e.stopPropagation();
+  select(it.uid);
+  const p = boardPoint(e);
+  drag = { uid: it.uid, dx: it.x - p.x, dy: it.y - p.y };
+  board.setPointerCapture(e.pointerId);
+}
+let rez = null;
+function startResize(e, it) {
+  e.preventDefault(); e.stopPropagation();
+  const p = boardPoint(e);
+  const sz = itemSize(it);
+  rez = { uid: it.uid, start: Math.hypot(p.x - it.x, p.y - it.y),
+          scale0: it.scale, diag: Math.hypot(sz.w, sz.h) / 2 };
+  board.setPointerCapture(e.pointerId);
+}
+board.addEventListener("pointermove", e => {
+  if (drag) {
+    const it = state.items.find(i => i.uid === drag.uid);
+    const p = boardPoint(e);
+    it.x = Math.round(p.x + drag.dx);
+    it.y = Math.round(p.y + drag.dy);
+    draw(); syncProps();
+  } else if (rez) {
+    const it = state.items.find(i => i.uid === rez.uid);
+    const p = boardPoint(e);
+    const d = Math.hypot(p.x - it.x, p.y - it.y);
+    it.scale = Math.max(.04, Math.min(3, rez.scale0 * d / (rez.start || 1)));
+    draw(); syncProps();
+  }
+});
+["pointerup", "pointercancel"].forEach(ev =>
+  board.addEventListener(ev, () => { drag = null; rez = null; }));
+board.addEventListener("pointerdown", e => {
+  if (e.target === board || e.target.tagName === "path"
+      || e.target.tagName === "image") select(null);
+});
+
+/* ---------------------- إضافة وتحديد ---------------------- */
+function addMotif(mid) {
+  const m = motifById(mid);
+  // مقاس ابتدائي: ثلث طول العباية للأشرطة، وأصغر للعناصر
+  const targetUnits = m.h > 400 ? ABAYA_UNITS * .42 : ABAYA_UNITS * .13;
+  const it = {
+    uid: uidSeq++, mid,
+    x: 0, y: ABAYA_UNITS * .5,
+    scale: targetUnits / m.h, rot: 0, flip: false,
+    color: "#d4af37", repeat: 1, gap: 0
+  };
+  state.items.push(it);
+  select(it.uid);
+  draw(); renderList(); save();
+}
+function select(uid) { state.sel = uid; draw(); syncProps(); renderList(); }
+const selItem = () => state.items.find(i => i.uid === state.sel);
+
+/* ---------------------- لوحة الخصائص ---------------------- */
+function syncProps() {
+  const it = selItem();
+  const box = $("#props");
+  if (!it) {
+    box.innerHTML = `<div class="empty">اضغط على نقشة من المكتبة لإضافتها،<br>
+      ثم اسحبها إلى موضعها على العباية.</div>`;
+    return;
+  }
+  const m = motifById(it.mid);
+  const sz = itemSize(it);
+  const k = cmPerUnit();
+  const wCm = sz.w * k, hCm = sz.h * k;
+
+  box.innerHTML = `
+    <div style="font-size:13px;font-weight:700;margin-bottom:2px">${m.name}</div>
+    <div class="cid" style="font-size:11px;color:var(--muted)">${m.id}</div>
+
+    <div class="readout">
+      <div class="lbl">المقاس الحقيقي على العباية</div>
+      <div class="big"><span id="roW">${wCm.toFixed(1)}</span> ×
+        <span id="roH">${hCm.toFixed(1)}</span> سم</div>
+      <div class="lbl">العرض × الطول</div>
+    </div>
+
+    <label class="f">الحجم</label>
+    <input type="range" id="pScale" min="1" max="100"
+           value="${Math.round(it.scale / 3 * 100)}">
+    <div class="row">
+      <input type="number" id="pHcm" value="${hCm.toFixed(1)}" step="0.5"
+             min="0.5">
+      <span class="hint" style="margin:0;white-space:nowrap">طول بالسم</span>
+    </div>
+
+    <label class="f">تدوير (${it.rot}°)</label>
+    <input type="range" id="pRot" min="-180" max="180" value="${it.rot}">
+
+    <label class="f">تكرار رأسي (${it.repeat || 1})</label>
+    <input type="range" id="pRep" min="1" max="12" value="${it.repeat || 1}">
+    <label class="f">مسافة بين التكرارات</label>
+    <input type="range" id="pGap" min="0" max="120" value="${it.gap || 0}">
+
+    <label class="f">لون النقشة</label>
+    <div class="swatches" id="motifSwatches"></div>
+    <div class="row" style="margin-top:7px">
+      <input type="color" id="pColor" value="${it.color}"
+             style="width:46px;height:34px;padding:2px;border-radius:8px">
+      <span class="hint" style="margin:0">لون مخصّص</span>
+    </div>
+
+    <div class="btns" style="margin-top:12px">
+      <button class="btn" id="pFlip">↔ قلب</button>
+      <button class="btn" id="pCenter">⊕ توسيط</button>
+      <button class="btn" id="pDup">⧉ نسخ</button>
+      <button class="btn danger" id="pDel">🗑 حذف</button>
+    </div>
+    <button class="btn primary block" id="pPrint" style="margin-top:9px">
+      📄 طباعة هذه النقشة بمقاسها الحقيقي
+    </button>
+  `;
+
+  const sw = $("#motifSwatches");
+  MOTIF_COLORS.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "sw-btn" + (c === it.color ? " on" : "");
+    b.style.background = c;
+    b.onclick = () => { it.color = c; draw(); syncProps(); renderList(); save(); };
+    sw.appendChild(b);
+  });
+
+  $("#pScale").oninput = e => {
+    it.scale = Math.max(.02, e.target.value / 100 * 3);
+    draw(); syncProps(); renderList(); save();
+  };
+  $("#pHcm").onchange = e => {
+    const want = parseFloat(e.target.value);
+    if (!(want > 0)) return;
+    const m2 = motifById(it.mid);
+    const n = it.repeat || 1;
+    const unitsPerScale = m2.h * n + (it.gap || 0) * (n - 1);
+    it.scale = want / cmPerUnit() / unitsPerScale;
+    draw(); syncProps(); renderList(); save();
+  };
+  $("#pRot").oninput = e => { it.rot = +e.target.value; draw(); syncProps(); save(); };
+  $("#pRep").oninput = e => {
+    it.repeat = +e.target.value; draw(); syncProps(); renderList(); save(); };
+  $("#pGap").oninput = e => {
+    it.gap = +e.target.value; draw(); syncProps(); renderList(); save(); };
+  $("#pColor").oninput = e => {
+    it.color = e.target.value; draw(); syncProps(); renderList(); save(); };
+  $("#pFlip").onclick = () => { it.flip = !it.flip; draw(); save(); };
+  $("#pCenter").onclick = () => { it.x = 0; draw(); syncProps(); save(); };
+  $("#pDup").onclick = () => {
+    const cp = { ...it, uid: uidSeq++, x: it.x + 60 };
+    state.items.push(cp); select(cp.uid); renderList(); save();
+  };
+  $("#pDel").onclick = () => {
+    state.items = state.items.filter(i => i.uid !== it.uid);
+    select(null); renderList(); save();
+  };
+  $("#pPrint").onclick = () => printMotifs([it]);
+}
+
+function renderList() {
+  const box = $("#itemList");
+  box.innerHTML = "";
+  if (!state.items.length) {
+    box.innerHTML = `<div class="empty" style="padding:10px">لا توجد نقشات بعد</div>`;
+    return;
+  }
+  const k = cmPerUnit();
+  state.items.forEach(it => {
+    const m = motifById(it.mid);
+    const sz = itemSize(it);
+    const d = document.createElement("div");
+    d.className = "item" + (state.sel === it.uid ? " on" : "");
+    d.innerHTML = `<span class="sw" style="background:${it.color}"></span>
+      <span class="nm">${m.name}</span>
+      <span class="sz">${(sz.w * k).toFixed(1)}×${(sz.h * k).toFixed(1)} سم</span>`;
+    d.onclick = () => select(it.uid);
+    box.appendChild(d);
+  });
+}
+
+/* ---------------------- المكتبة ---------------------- */
+function renderChips() {
+  const fams = ["الكل", ...new Set(MOTIFS.map(m => m.fam))];
+  const box = $("#famChips");
+  box.innerHTML = "";
+  fams.forEach(f => {
+    const b = document.createElement("button");
+    b.className = "chip" + (state.fam === f ? " on" : "");
+    b.textContent = f === "الكل" ? `الكل (${MOTIFS.length})` : f;
+    b.onclick = () => { state.fam = f; renderChips(); renderLib(); };
+    box.appendChild(b);
+  });
+}
+function renderLib() {
+  const box = $("#lib");
+  box.innerHTML = "";
+  MOTIFS.filter(m => state.fam === "الكل" || m.fam === state.fam)
+        .forEach(m => {
+    const c = document.createElement("div");
+    c.className = "card";
+    c.title = m.name;
+    c.innerHTML = `<svg viewBox="0 0 ${m.w} ${m.h}"
+        preserveAspectRatio="xMidYMid meet">${m.svg}</svg>
+      <span class="cid">${m.id}</span>`;
+    c.onclick = () => addMotif(m.id);
+    box.appendChild(c);
+  });
+}
+
+/* ---------------------- الطباعة بالمقاس الحقيقي ---------------------- */
+const A4_W = 210, A4_H = 297, MARGIN = 8;
+const PAGE_W = A4_W - MARGIN * 2, PAGE_H = A4_H - MARGIN * 2;
+
+function showPrint(html, info) {
+  $("#printRoot").innerHTML = html;
+  $("#pvInfo").textContent = info;
+  $("#printView").hidden = false;
+  window.scrollTo(0, 0);
+  $("#printRoot").parentElement.scrollTop = 0;
+}
+
+function printMotifs(items) {
+  if (!items.length) { alert("لا توجد نقشات على العباية لطباعتها."); return; }
+  const k = cmPerUnit();
+  let pages = "";
+  let totalPages = 0;
+
+  for (const it of items) {
+    const m = motifById(it.mid);
+    const sz = itemSize(it);
+    const wMM = sz.w * k * MM_PER_CM;
+    const hMM = sz.h * k * MM_PER_CM;
+    const n = it.repeat || 1;
+    const innerH = m.h * n + (it.gap || 0) * (n - 1);
+
+    let reps = "";
+    for (let i = 0; i < n; i++) {
+      reps += `<g transform="translate(0,${i * (m.h + (it.gap || 0))})">
+                 ${m.svg}</g>`;
+    }
+    const r2 = v => Math.round(v * 100) / 100;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 ${m.w} ${innerH}"
+        width="${r2(wMM)}mm" height="${r2(hMM)}mm"
+        style="color:#000;display:block">${reps}</svg>`;
+
+    const overlap = 10;                       // مم تداخل بين الصفحات
+    const usableH = PAGE_H - 16;              // مكان للعنوان والعلامات
+    const tiles = hMM <= usableH ? 1
+      : Math.ceil((hMM - overlap) / (usableH - overlap));
+
+    for (let t = 0; t < tiles; t++) {
+      totalPages++;
+      const offset = t * (usableH - overlap);
+      const sliceH = Math.min(usableH, hMM - offset);
+      pages += `
+      <section class="pg">
+        <div class="ph">
+          <b>${m.name}</b>
+          <span>${m.id} · المقاس الحقيقي
+            ${(sz.w * k).toFixed(1)} × ${(sz.h * k).toFixed(1)} سم
+            ${tiles > 1 ? ` · قطعة ${t + 1} من ${tiles}` : ""}</span>
+        </div>
+        <div class="winwrap" style="width:${wMM}mm;height:${sliceH}mm">
+          <div class="win" style="width:${wMM}mm;height:${sliceH}mm">
+            <div style="transform:translateY(-${offset}mm)">${svg}</div>
+          </div>
+          ${t > 0 ? `<div class="olap" style="top:${overlap}mm">
+            <span>▲ ضعي هذا الخط فوق خط القصّ في الصفحة السابقة</span>
+          </div>` : ""}
+        </div>
+        ${t < tiles - 1 ? `<div class="cut">✂ قُصّي عند هذا الخط
+          (تداخل ${overlap} مم مع الصفحة التالية)</div>` : ""}
+      </section>`;
+    }
+  }
+
+  const intro = `
+    <div class="intro">
+      <h1>طباعة النقشات بالمقاس الحقيقي</h1>
+      <p>طول العباية في التصميم: <b>${state.lenCm} سم</b> ·
+         عدد النقشات: <b>${items.length}</b> ·
+         عدد الصفحات: <b>${totalPages}</b></p>
+      <div class="warn">
+        <b>قبل الطباعة — مهم جداً:</b>
+        <ul>
+          <li>اختاري مقاس الورق <b>A4</b>.</li>
+          <li>اجعلي المقياس <b>100%</b> وعطّلي خيار
+              «تحجيم لملاءمة الصفحة» (Fit to page / Shrink to fit).</li>
+          <li>لو تُرك مفعّلاً سيتغيّر المقاس على الورق ولن تناسب النقشة
+              الموضع الذي اخترتيه على العباية.</li>
+        </ul>
+        <b>للتأكد:</b> قيسي بالمسطرة بعد الطباعة — المقاس المكتوب أعلى كل
+        صفحة يجب أن يطابق المقاس الفعلي على الورق.
+      </div>
+      <p>النقشة الأطول من الصفحة تُقسَّم على عدة قطع بتداخل
+         <b>${10} مم</b>، وفي كل قطعة علامتان على الحافتين للمحاذاة
+         عند اللصق.</p>
+    </div>`;
+  showPrint(intro + pages,
+    `${items.length} نقشة · ${totalPages} صفحة · طول العباية ${state.lenCm} سم`);
+}
+
+/* طباعة صورة التصميم كمرجع */
+function printDesign() {
+  const clone = board.cloneNode(true);
+  clone.querySelectorAll(".selbox,.handle").forEach(n => n.remove());
+  const k = cmPerUnit();
+  const rows = state.items.map(it => {
+    const m = motifById(it.mid), sz = itemSize(it);
+    return `<tr><td>${m.id}</td><td>${m.name}</td>
+      <td>${(sz.w * k).toFixed(1)} × ${(sz.h * k).toFixed(1)} سم</td>
+      <td><span style="display:inline-block;width:4mm;height:4mm;
+        background:${it.color};border:.2mm solid #999"></span></td></tr>`;
+  }).join("");
+  const html = `
+    <div class="intro design">
+      <h1>تصميم عباية — ${cut().name}</h1>
+      <p>طول العباية: <b>${state.lenCm} سم</b> ·
+         عدد النقشات: <b>${state.items.length}</b></p>
+      ${clone.outerHTML}
+      <table><thead><tr><th>الرمز</th><th>النقشة</th>
+        <th>المقاس الحقيقي</th><th>اللون</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4">لا توجد نقشات</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  showPrint(html, `صورة التصميم · ${state.items.length} نقشة`);
+}
+
+/* ---------------------- الحفظ التلقائي ---------------------- */
+const KEY = "abaya-panel-v1";
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify({
+    cut: state.cut, lenCm: state.lenCm, abayaColor: state.abayaColor,
+    items: state.items, uidSeq
+  })); } catch (e) {}
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (!s) return;
+    if (s.cut && CUTS.some(c => c.id === s.cut)) state.cut = s.cut;
+    if (s.lenCm) state.lenCm = s.lenCm;
+    if (s.abayaColor) state.abayaColor = s.abayaColor;
+    if (Array.isArray(s.items))
+      state.items = s.items.filter(i => motifById(i.mid));
+    if (s.uidSeq) uidSeq = s.uidSeq;
+  } catch (e) {}
+}
+
+/* ---------------------- التهيئة ---------------------- */
+function initUI() {
+  const sel = $("#cut");
+  CUTS.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c.id; o.textContent = c.name;
+    sel.appendChild(o);
+  });
+  sel.value = state.cut;
+  sel.onchange = e => { state.cut = e.target.value; draw(); save(); };
+
+  const asw = $("#abayaSwatches");
+  ABAYA_COLORS.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "sw-btn" + (c === state.abayaColor ? " on" : "");
+    b.style.background = c;
+    b.onclick = () => {
+      state.abayaColor = c;
+      asw.querySelectorAll(".sw-btn").forEach(x => x.classList.remove("on"));
+      b.classList.add("on");
+      $("#abayaColor").value = c; draw(); save();
+    };
+    asw.appendChild(b);
+  });
+  $("#abayaColor").value = state.abayaColor;
+  $("#abayaColor").oninput = e => {
+    state.abayaColor = e.target.value; draw(); save(); };
+
+  $("#lenCm").value = state.lenCm;
+  $("#lenCm").oninput = e => {
+    const v = parseFloat(e.target.value);
+    if (v > 0) { state.lenCm = v; draw(); syncProps(); renderList(); save(); }
+  };
+  $("#btnShowDim").onclick = () => { state.showDim = !state.showDim; draw(); };
+
+  $("#bgFile").onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      state.bg = ev.target.result; $("#bgRow").style.display = "flex"; draw();
+    };
+    r.readAsDataURL(f);
+  };
+  $("#bgClear").onclick = () => {
+    state.bg = null; $("#bgFile").value = "";
+    $("#bgRow").style.display = "none"; draw();
+  };
+  $("#bgOpacity").oninput = e => {
+    state.bgOpacity = e.target.value / 100; draw(); };
+
+  $("#btnPrintAll").onclick = () => printMotifs(state.items);
+  $("#btnPrintDesign").onclick = printDesign;
+  $("#pvPrint").onclick = () => window.print();
+  $("#pvBack").onclick = () => {
+    $("#printView").hidden = true;
+    $("#printRoot").innerHTML = "";
+  };
+  $("#btnReset").onclick = () => {
+    if (!confirm("حذف التصميم الحالي والبدء من جديد؟")) return;
+    state.items = []; state.sel = null;
+    draw(); syncProps(); renderList(); save();
+  };
+
+  document.addEventListener("keydown", e => {
+    const it = selItem();
+    if (!it) return;
+    if (e.key === "Delete" || e.key === "Backspace") {
+      if (document.activeElement.tagName === "INPUT") return;
+      e.preventDefault();
+      state.items = state.items.filter(i => i.uid !== it.uid);
+      select(null); renderList(); save();
+    }
+    const step = e.shiftKey ? 20 : 5;
+    const moves = { ArrowUp:[0,-step], ArrowDown:[0,step],
+                    ArrowLeft:[-step,0], ArrowRight:[step,0] };
+    if (moves[e.key] && document.activeElement.tagName !== "INPUT") {
+      e.preventDefault();
+      it.x += moves[e.key][0]; it.y += moves[e.key][1];
+      draw(); syncProps(); save();
+    }
+  });
+}
+
+if (!window.MOTIFS || !window.MOTIFS.length) {
+  document.body.innerHTML = `<div style="padding:40px;font-family:Tahoma;
+    direction:rtl;line-height:2">
+    <h2>لم يتم تحميل ملف النقشات</h2>
+    <p>تأكّدي أن الملف <b>motifs-data.js</b> موجود في نفس مجلد هذه الصفحة.</p>
+    <p>وإن كنتِ فتحتِ الصفحة من داخل ملف مضغوط (ZIP)، فُكّي الضغط أولاً
+       ثم افتحي الصفحة.</p></div>`;
+} else {
+  load();
+  initUI();
+  renderChips();
+  renderLib();
+  draw();
+  syncProps();
+  renderList();
+}
+</script>
+</body>
+</html>

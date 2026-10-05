@@ -358,8 +358,45 @@ def petal_edge(r_in, r_out, ang, spread, bulge=1.03, ruffle=0.0, waves=3,
 
 
 def fmt(v):
-    s = f"{v:.2f}".rstrip("0").rstrip(".")
+    s = f"{v:.1f}".rstrip("0").rstrip(".")
     return "0" if s in ("-0", "", "-") else s
+
+
+def rdp(pts, eps=0.25):
+    """
+    تبسيط Ramer–Douglas–Peucker: يحذف النقاط التي لا تُغيّر الشكل
+    أكثر من `eps`.
+
+    لماذا: المُحوّل يُنتج منحنى بيزييه مكعّباً **لكل نقطة عيّنة**، فورقة
+    بمئة عيّنة تُنتج مئة منحنى حيث تكفي عشرون. النتيجة ملفات بمئات
+    الكيلوبايتات بلا أي فائدة بصرية.
+    """
+    n = len(pts)
+    if n < 3:
+        return list(pts)
+    keep = [False] * n
+    keep[0] = keep[-1] = True
+    stack = [(0, n - 1)]
+    while stack:
+        i, j = stack.pop()
+        if j <= i + 1:
+            continue
+        x1, y1 = pts[i]
+        x2, y2 = pts[j]
+        dx, dy = x2 - x1, y2 - y1
+        den = math.hypot(dx, dy)
+        best, bi = -1.0, -1
+        for k in range(i + 1, j):
+            x, y = pts[k]
+            d = (math.hypot(x - x1, y - y1) if den == 0
+                 else abs(dy * (x - x1) - dx * (y - y1)) / den)
+            if d > best:
+                best, bi = d, k
+        if best > eps:
+            keep[bi] = True
+            stack.append((i, bi))
+            stack.append((bi, j))
+    return [p for p, k in zip(pts, keep) if k]
 
 
 def _catmull(pts, closed):
@@ -392,9 +429,15 @@ def _polyline(pts, closed):
     return " ".join(d)
 
 
+SIMPLIFY_EPS = 0.3
+
+
 def shape_d(sh):
     pts = sh["pts"]
-    return _catmull(pts, sh["closed"]) if sh["smooth"] else _polyline(pts, sh["closed"])
+    if len(pts) > 6:
+        pts = rdp(pts, SIMPLIFY_EPS)
+    return (_catmull(pts, sh["closed"]) if sh["smooth"]
+            else _polyline(pts, sh["closed"]))
 
 
 _NUM = re.compile(r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?")
