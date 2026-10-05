@@ -80,6 +80,46 @@ def main():
     for f, c in fams.items():
         print(f"  - {f}: {c}")
 
+    build_single_file(payload)
+
+
+# ---------------------------------------------------------------------------
+# نسخة الملف الواحد — للجوال
+# ---------------------------------------------------------------------------
+
+PANEL_SRC = "لوحة-فاطمة.html"
+PANEL_ONE = "لوحة-فاطمة-ملف-واحد.html"
+DATA_TAG = '<script src="motifs-data.js"></script>'
+
+
+def build_single_file(payload: str):
+    """
+    يدمج البيانات داخل الصفحة فتصير ملفاً واحداً مستقلاً.
+
+    لماذا؟ النسخة العادية ملفان يجب أن يكونا بجوار بعضهما
+    (`لوحة-فاطمة.html` و `motifs-data.js`). وهذا يفشل كثيراً على
+    الجوال: تطبيقات الملفات تفتح الـ HTML في عارض معزول لا يُحمّل
+    الملف المجاور، فتظهر رسالة «لم يتم تحميل ملف النقشات» — وعلى
+    آيفون خاصةً. أما الملف الواحد فيُفتح ويُرسَل عبر واتساب بلا مشاكل.
+    """
+    src = OUT / PANEL_SRC
+    html = src.read_text(encoding="utf-8")
+    if DATA_TAG not in html:
+        raise ValueError(f"وسم البيانات غير موجود في {PANEL_SRC}")
+
+    # </script> داخل نصّ السكربت يُنهي الوسم مبكّراً فتتلف الصفحة،
+    # ولا يظهر ذلك إلا عند الفتح. ويُتفادى بتقسيم التسلسل.
+    safe = payload.replace("</", "<\\/")
+
+    inline = ("<script>\n"
+              "/* بيانات النقشات مدموجة — مُولّدة آلياً بـ build_panel.py */\n"
+              "window.MOTIFS = " + safe + ";\n"
+              "</script>")
+    out = OUT / PANEL_ONE
+    out.write_text(html.replace(DATA_TAG, inline, 1), encoding="utf-8")
+    print(f"ونسخة ملف واحد للجوال: {out.relative_to(ROOT)}"
+          f"  ({out.stat().st_size / 1024 / 1024:.1f} م.ب)")
+
 
 if __name__ == "__main__":
     main()
