@@ -253,6 +253,18 @@
         <h2>1 · Abaya cut</h2>
         <select id="cut"></select>
 
+        <div id="pieceWrap" style="display:none;margin-top:9px">
+          <label class="f">Piece — each is measured on its own</label>
+          <div class="chips" id="pieceChips"></div>
+          <div class="hint" id="pieceInfo" style="margin:6px 0 0"></div>
+        </div>
+
+        <div id="measWrap" style="display:none;margin-top:9px">
+          <label class="f">Garment measurements (inch)</label>
+          <table id="measTable" style="width:100%;border-collapse:collapse;
+                 font-size:12px"></table>
+        </div>
+
         <label class="f">Or upload your own cut image</label>
         <div class="row">
           <input type="file" id="bgFile" accept="image/*" style="font-size:12px">
@@ -263,6 +275,7 @@
           <input type="range" id="bgOpacity" min="10" max="100" value="100">
         </div>
 
+        <div id="manualDims">
         <label class="f">Abaya length (inch) — shoulder to hem</label>
         <div class="row">
           <input type="number" id="lenIn" value="56" min="24" max="80" step="0.5">
@@ -274,6 +287,7 @@
           <button class="btn ghost" id="btnShowDim">Show measurements</button>
         </div>
         <div class="hint" id="hemEcho" style="margin:4px 0 0"></div>
+        </div>
 
         <label class="f">Abaya colour</label>
         <div class="swatches" id="abayaSwatches"></div>
@@ -442,6 +456,67 @@ const CUTS = [
        cuffTilt:10,armX:124,armY:232,hipW:160,hemW:190}, front:false }
 ];
 
+/* ===================== قصّات قائمة على صور =====================
+   القصّة الحقيقية تأتي رسماً فنياً (تحديد أسود) لا معاملات هندسية،
+   ومعها مقاسات الخياطة. ولكل قصّة قطع تُعرض كلٌّ على حدة — الأمامي
+   والخلفي والكُمّ — فتوضع النقشة على القطعة وتُقاس بنسبتها الصحيحة.
+
+   معامل القياس يُشتقّ من الطول: ارتفاع صورة الوجه الأمامي يساوي طول
+   العباية. ومنه يُحسب عرض كل قطعة وطولها بالإنش.
+
+   تنبيه مهم على هذه الرسمة: هي رسم فني مُنمَّط (مرسوم كما يُلبَس) لا
+   باترون مفروش. الكتف يطابق المقاس المعطى تقريباً، أما الذيل فالرسم
+   يُظهره أضيق بكثير من دورانه الحقيقي. فالمقاس المطبوع صحيح دائماً،
+   لكن نسبة النقشة إلى عرض الذيل الحقيقي ليست كما تبدو في الرسم. */
+const IMG_CUTS = [{
+  id: "closh",
+  name: "Closh — flared (image)",
+  pxPerInch: 1026 / 58,          // ارتفاع الوجه الأمامي = الطول
+  measures: {                     // إنش، كما وردت من المستخدمة
+    length: 58, chest: 24, shoulder: 15, hem: 120,
+    sleeveLength: 24, sleeveWidth: 12
+  },
+  pieces: [
+    { id: "front",  name: "Front",         kind: "image",
+      src: "cuts/closh-front.png", w: 403, h: 1026 },
+    { id: "back",   name: "Back",          kind: "image",
+      src: "cuts/closh-back.png",  w: 412, h: 1018 },
+    // الكُمّ مستطيل مسطّح بناءً على طلب المستخدمة. العرض = نصف
+    // المحيط المعطى (12 إنش محيطاً ← 6 إنش مفروشاً).
+    { id: "sleeve", name: "Sleeve (flat)", kind: "rect",
+      wIn: 6, hIn: 24 }
+  ]
+}];
+
+function imgCut() { return IMG_CUTS.find(c => c.id === state.cut) || null; }
+
+function curPiece() {
+  const c = imgCut();
+  if (!c) return null;
+  return c.pieces.find(x => x.id === state.piece) || c.pieces[0];
+}
+
+/* مقاس القطعة بالإنش */
+function pieceInches() {
+  const c = imgCut(), pc = curPiece();
+  if (!c || !pc) return null;
+  if (pc.kind === "rect") return { wIn: pc.wIn, hIn: pc.hIn };
+  return { wIn: pc.w / c.pxPerInch, hIn: pc.h / c.pxPerInch };
+}
+
+/* عرض القطعة بالوحدات الداخلية — ارتفاعها دائماً ABAYA_UNITS،
+   فتعمل معها حسابات المقاس والطباعة القائمة أصلاً بلا تغيير. */
+function pieceUnitW() {
+  const pi = pieceInches();
+  return pi ? (pi.wIn / pi.hIn) * ABAYA_UNITS : ABAYA_UNITS;
+}
+
+/* اختيار قطعة يضبط طول المرجع، فيصير قياس النقشة منسوباً إليها */
+function syncPieceLength() {
+  const pi = pieceInches();
+  if (pi) state.lenCm = inToCm(pi.hIn);
+}
+
 const ABAYA_COLORS = ["#1c1c22","#2b2b36","#3c3730","#4a4039","#5b4b3f",
                       "#6b5b4b","#8d7b67","#b9a68f","#d8cdbd","#f0ece5",
                       "#2c3a45","#3c2f3d"];
@@ -452,6 +527,7 @@ const MOTIF_COLORS = ["#c9a227","#d4af37","#e8d9a0","#ffffff","#f0ece5",
 /* ---------------------- الحالة ---------------------- */
 const state = {
   cut: CUTS[0].id,
+  piece: "front",
   lenCm: 56 * 2.54,          // 56 إنش — مقاس العباية المعتاد
   widIn: 24,                 // أوسع نقطة في الجسم (لا الأكمام)
   abayaColor: "#1c1c22",
@@ -532,7 +608,11 @@ const board = $("#board");
 // الـ viewBox تضبطه draw() حسب اتساع القصّة الفعلي
 board.setAttribute("viewBox", `${-BOARD_W / 2} ${-TOP} ${BOARD_W} ${BOARD_H}`);
 
-function cut() { return CUTS.find(c => c.id === state.cut); }
+function cut() {
+  // القصّات القائمة على صور لا معاملات هندسية لها، فتُرجع الأولى
+  // حرّاسةً لئلا تنكسر الدوال التي تقرأ cut().p
+  return CUTS.find(c => c.id === state.cut) || CUTS[0];
+}
 
 /* نصف العرض الذي تحتاجه اللوحة فعلاً.
 
@@ -540,6 +620,7 @@ function cut() { return CUTS.find(c => c.id === state.cut); }
    تقريباً فتخرج الأكمام عن الإطار وتُقصّ في كل القصّات (الأكمام الواسعة
    تحتاج 919 وحدة). فيُحسب الإطار من الرسمة لا بقيمة ثابتة. */
 function boardHalf() {
+  if (imgCut()) return Math.max(BOARD_W / 2, pieceUnitW() / 2 * 1.18);
   const p = cut().p, sx = xStretch();
   const reach = Math.max(p.cuffX, p.hemW, p.hipW, p.shW) * sx;
   return Math.max(BOARD_W / 2, reach * 1.07);
@@ -562,6 +643,58 @@ function draw() {
       preserveAspectRatio: "xMidYMid meet", opacity: state.bgOpacity
     });
     g.appendChild(im);
+  }
+
+  // ===== قصّة قائمة على صورة =====
+  if (imgCut()) {
+    const pi = pieceInches(), wU = pieceUnitW();
+    const pc = curPiece();
+    if (pc.kind === "image") {
+      // تلوين العباية مع الحفاظ على خطوط الرسمة:
+      //   1) قناع من قناة ألفا الصورة — وما خارج العباية شفاف فيُستثنى
+      //   2) مستطيل باللون مقصوصاً بالقناع ← ظلّ العباية ملوّناً
+      //   3) الرسم فوقه بنمط multiply ← الخطوط سوداء والداخل باللون
+      //
+      // ولا يكفي اللون تحت الرسم بلا قناع: الخلفية البيضاء في الرسم
+      // تُلوَّن أيضاً بـ multiply، فيصير المستطيل كله ملوّناً لا العباية.
+      const uid = "msk_" + pc.id;
+      const defs = el("defs");
+      const mk = el("mask", { id: uid, maskUnits: "userSpaceOnUse",
+        x: -wU / 2, y: 0, width: wU, height: ABAYA_UNITS });
+      mk.setAttribute("style", "mask-type:alpha");
+      mk.appendChild(el("image", {
+        href: pc.src, x: -wU / 2, y: 0, width: wU, height: ABAYA_UNITS,
+        preserveAspectRatio: "none"
+      }));
+      defs.appendChild(mk);
+      g.appendChild(defs);
+
+      g.appendChild(el("rect", {
+        x: -wU / 2, y: 0, width: wU, height: ABAYA_UNITS,
+        fill: state.abayaColor, mask: `url(#${uid})`
+      }));
+
+      const im2 = el("image", {
+        href: pc.src, x: -wU / 2, y: 0, width: wU, height: ABAYA_UNITS,
+        preserveAspectRatio: "none"
+      });
+      im2.setAttribute("style", "mix-blend-mode:multiply");
+      g.appendChild(im2);
+    } else {
+      g.appendChild(el("rect", {
+        x: -wU / 2, y: 0, width: wU, height: ABAYA_UNITS,
+        fill: state.abayaColor
+      }));
+      g.appendChild(el("rect", {
+        x: -wU / 2, y: 0, width: wU, height: ABAYA_UNITS,
+        fill: "none", stroke: "#111", "stroke-width": 3
+      }));
+    }
+
+    state.items.forEach(it => g.appendChild(renderItem(it)));
+    if (state.showDim) g.appendChild(pieceDim(pi, wU));
+    board.appendChild(g);
+    return;
   }
 
   const c = cut();
@@ -596,6 +729,33 @@ function draw() {
   if (state.showDim) g.appendChild(dimension());
 
   board.appendChild(g);
+}
+
+/* خطّا قياس للقطعة — بالإنش */
+function pieceDim(pi, wU) {
+  const g = el("g");
+  const x = -wU / 2 - 30;
+  g.appendChild(el("line", { x1: x, y1: 0, x2: x, y2: ABAYA_UNITS,
+    class: "dimline" }));
+  [0, ABAYA_UNITS].forEach(y => g.appendChild(el("line",
+    { x1: x - 8, y1: y, x2: x + 8, y2: y, class: "dimline" })));
+  const t = el("text", { x: x - 12, y: ABAYA_UNITS / 2,
+    fill: "#2563eb", "font-size": 22, "font-weight": "700",
+    transform: `rotate(-90 ${x - 12} ${ABAYA_UNITS / 2})`,
+    "text-anchor": "middle" });
+  t.textContent = `${pi.hIn.toFixed(1)}″`;
+  g.appendChild(t);
+
+  const yw = ABAYA_UNITS + 34;
+  g.appendChild(el("line", { x1: -wU / 2, y1: yw, x2: wU / 2, y2: yw,
+    class: "dimline" }));
+  [-wU / 2, wU / 2].forEach(xx => g.appendChild(el("line",
+    { x1: xx, y1: yw - 8, x2: xx, y2: yw + 8, class: "dimline" })));
+  const tw = el("text", { x: 0, y: yw + 26, fill: "#2563eb",
+    "font-size": 22, "font-weight": "700", "text-anchor": "middle" });
+  tw.textContent = `${pi.wIn.toFixed(1)}″`;
+  g.appendChild(tw);
+  return g;
 }
 
 function dimension() {
@@ -877,6 +1037,47 @@ function renderList() {
 }
 
 /* ---------------------- المكتبة ---------------------- */
+/* يُحدِّث واجهة القطع والمقاسات حسب نوع القصّة المختارة */
+function renderPieces() {
+  const c = imgCut();
+  $("#pieceWrap").style.display = c ? "block" : "none";
+  $("#measWrap").style.display = c ? "block" : "none";
+  $("#manualDims").style.display = c ? "none" : "block";
+  if (!c) return;
+
+  const box = $("#pieceChips");
+  box.innerHTML = "";
+  c.pieces.forEach(pc => {
+    const b = document.createElement("button");
+    b.className = "chip" + (state.piece === pc.id ? " on" : "");
+    b.textContent = pc.name;
+    b.onclick = () => {
+      state.piece = pc.id;
+      syncPieceLength();
+      renderPieces(); draw(); syncProps(); renderList(); save();
+    };
+    box.appendChild(b);
+  });
+
+  const pi = pieceInches();
+  $("#pieceInfo").textContent =
+    `This piece: ${pi.wIn.toFixed(1)}″ wide × ${pi.hIn.toFixed(1)}″ tall`;
+
+  const M = c.measures;
+  const rows = [
+    ["Length (shoulder → hem)", M.length],
+    ["Chest", M.chest],
+    ["Shoulder", M.shoulder],
+    ["Hem", M.hem],
+    ["Sleeve length", M.sleeveLength],
+    ["Sleeve width", M.sleeveWidth],
+  ];
+  $("#measTable").innerHTML = rows.map(([k, v]) =>
+    `<tr><td style="padding:2px 0;color:var(--muted)">${k}</td>
+     <td style="padding:2px 0;text-align:right;font-weight:700">${v}″</td></tr>`
+  ).join("");
+}
+
 function renderChips() {
   const fams = ["All", ...new Set(MOTIFS.map(m => m.fam))];
   const box = $("#famChips");
@@ -1185,7 +1386,8 @@ function printDesign() {
 const KEY = "abaya-panel-v1";
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify({
-    cut: state.cut, lenCm: state.lenCm, widIn: state.widIn,
+    cut: state.cut, piece: state.piece,
+    lenCm: state.lenCm, widIn: state.widIn,
     abayaColor: state.abayaColor,
     items: state.items, uidSeq
   })); } catch (e) {}
@@ -1197,6 +1399,7 @@ function load() {
     if (s.cut && CUTS.some(c => c.id === s.cut)) state.cut = s.cut;
     if (s.lenCm) state.lenCm = s.lenCm;
     if (s.widIn) state.widIn = s.widIn;
+    if (s.piece) state.piece = s.piece;
     if (s.abayaColor) state.abayaColor = s.abayaColor;
     if (Array.isArray(s.items))
       state.items = s.items.filter(i => motifById(i.mid));
@@ -1207,14 +1410,17 @@ function load() {
 /* ---------------------- التهيئة ---------------------- */
 function initUI() {
   const sel = $("#cut");
-  CUTS.forEach(c => {
+  // القصّات الحقيقية (صور) أولاً، ثم القصّات المرسومة بالكود
+  [...IMG_CUTS, ...CUTS].forEach(c => {
     const o = document.createElement("option");
     o.value = c.id; o.textContent = c.name;
     sel.appendChild(o);
   });
   sel.value = state.cut;
   sel.onchange = e => {
-    state.cut = e.target.value; echoHem(); draw(); save(); };
+    state.cut = e.target.value;
+    if (imgCut()) { state.piece = imgCut().pieces[0].id; syncPieceLength(); }
+    renderPieces(); echoHem(); draw(); syncProps(); renderList(); save(); };
 
   const asw = $("#abayaSwatches");
   ABAYA_COLORS.forEach(c => {
@@ -1237,6 +1443,7 @@ function initUI() {
     $("#lenCmEcho").textContent = `= ${state.lenCm.toFixed(1)} cm`;
   };
   const echoHem = () => {
+    if (imgCut()) { $("#hemEcho").textContent = ""; return; }
     $("#hemEcho").textContent =
       `Resulting hem width for this cut ≈ ${hemWidthIn().toFixed(1)}″`;
   };
@@ -1343,7 +1550,9 @@ if (!window.MOTIFS || !window.MOTIFS.length) {
 } else {
   loadMine();        // نقشاتها المرفوعة تُضاف للمكتبة قبل بناء الواجهة
   load();
+  if (imgCut()) syncPieceLength();
   initUI();
+  renderPieces();
   saveMine();        // يُظهر عدّاد نقشاتي إن وُجدت
   renderChips();
   renderLib();

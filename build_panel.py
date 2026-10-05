@@ -92,6 +92,27 @@ PANEL_ONE = "designer-single-file.html"
 DATA_TAG = '<script src="motifs-data.js"></script>'
 
 
+def inline_cut_images(html: str) -> str:
+    """يستبدل src: "cuts/x.png" بـ data URL."""
+    import base64
+    import re as _re
+
+    def rep(m):
+        rel = m.group(1)
+        f = OUT / rel
+        if not f.exists():
+            raise FileNotFoundError(f"صورة قصّة مفقودة: {rel}")
+        b64 = base64.b64encode(f.read_bytes()).decode()
+        kind = "png" if f.suffix.lower() == ".png" else "jpeg"
+        print(f"   دُمجت {rel} ({f.stat().st_size / 1024:.0f} ك.ب)")
+        return f'src: "data:image/{kind};base64,{b64}"'
+
+    out, n = _re.subn(r'src:\s*"(cuts/[^"]+)"', rep, html)
+    if not n:
+        print("   ! لم تُوجد صور قصّات للدمج")
+    return out
+
+
 def build_single_file(payload: str):
     """
     يدمج البيانات داخل الصفحة فتصير ملفاً واحداً مستقلاً.
@@ -110,6 +131,10 @@ def build_single_file(payload: str):
     # </script> داخل نصّ السكربت يُنهي الوسم مبكّراً فتتلف الصفحة،
     # ولا يظهر ذلك إلا عند الفتح. ويُتفادى بتقسيم التسلسل.
     safe = payload.replace("</", "<\\/")
+
+    # صور القصّات تُدمَج كـ data URL، وإلا ظهرت القطع فارغة في
+    # نسخة الملف الواحد لأن المسار النسبي (cuts/...) لا يوجد بجوارها.
+    html = inline_cut_images(html)
 
     inline = ("<script>\n"
               "/* بيانات النقشات مدموجة — مُولّدة آلياً بـ build_panel.py */\n"
