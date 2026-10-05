@@ -109,6 +109,15 @@
     pointer-events:none;vector-effect:non-scaling-stroke}
   .handle{fill:#2563eb;stroke:#fff;stroke-width:1.5;
     cursor:nwse-resize;touch-action:none}
+  /* ===== عناصر تحكّم احترافية: مِمرَر + حقل رقمي ===== */
+  .ctl{display:flex;align-items:center;gap:8px}
+  .ctl input[type=range]{flex:1;min-width:0}
+  .ctl input[type=number]{width:74px;flex:none;text-align:right}
+  .ctl2{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+  .ctl2 input[type=number]{flex:1;min-width:0;text-align:right}
+  .u{font-size:11px;color:var(--muted);min-width:30px}
+  .quick{display:flex;flex-wrap:wrap;gap:4px;margin:5px 0 2px}
+  .chip.mini{padding:2px 7px;font-size:11px}
   .dimline{stroke:#2563eb;stroke-width:1;vector-effect:non-scaling-stroke}
 
   /* ================= قائمة العناصر ================= */
@@ -167,6 +176,27 @@
     .grid{grid-template-columns:repeat(2,1fr)}
     .topbar{flex-wrap:wrap;gap:6px}
   }
+
+  /* ========== معاينة ثلاثية الأبعاد ==========
+     دوران حقيقي للعباية غير ممكن من رسمتين مسطّحتين فقط، فهذه
+     منصّة دوران: العرض يُضغط بجيب الزاوية فتبدو العباية وهي تلتفّ،
+     ويُبدَل الوجه الأمامي بالخلفي عند تجاوز 90°. تُظهر الشكل
+     النهائي وتوزيع النقشات من الزوايا، لا مجسّماً مُحاكى. */
+  /* خلفية فاتحة: العباية الافتراضية شبه سوداء، فعلى خلفية داكنة
+     تختفي تماماً — وهو ما حدث في أول تجربة. */
+  #view3d{position:fixed;inset:0;overflow:auto;z-index:60;
+    display:flex;flex-direction:column;
+    background:radial-gradient(circle at 50% 38%, #fbfaf8 0%, #e4e0da 72%)}
+  /* لازم صريحاً: قاعدة المؤلّف display:flex تتغلّب على خاصية hidden
+     في ورقة أنماط المتصفّح، فتبقى الطبقة ظاهرة وتغطّي اللوحة كلها
+     ولا يُمكن استخدام البرنامج أصلاً. */
+  #view3d[hidden]{display:none}
+  #v3Stage{flex:1;display:flex;align-items:center;justify-content:center;
+    padding:18px;perspective:1800px;min-height:0}
+  #v3Inner{position:relative;transform-style:preserve-3d;
+    filter:drop-shadow(0 22px 26px rgba(0,0,0,.45))}
+  #v3Inner svg{display:block;height:min(74vh,760px);width:auto}
+  #v3Face{transition:none}
 
   /* ========== عرض الطباعة ==========
      يُبنى داخل الصفحة نفسها لا في نافذة منبثقة: المتصفحات تحجب
@@ -237,6 +267,9 @@
     </div>
     <div class="spacer"></div>
     <button class="btn" id="btnReset">↺ New design</button>
+    <button class="btn" id="btn3D"
+            title="Turntable preview of the finished abaya with your motifs"
+            >🔄 3D preview</button>
     <button class="btn" id="btnPrintDesign"
             title="A reference sheet with the abaya drawing and a motif table — for viewing, not for stitching"
             >🖼 Abaya image (reference)</button>
@@ -352,6 +385,21 @@
     </aside>
 
   </div>
+</div>
+
+<div id="view3d" hidden>
+  <div class="pv-bar">
+    <button class="btn" id="v3Back">← Back to design</button>
+    <span style="font-size:13px;font-weight:700">Turntable</span>
+    <input type="range" id="v3Ang" min="0" max="360" value="20"
+           style="flex:1;max-width:320px">
+    <input type="number" id="v3AngN" min="0" max="360" value="20"
+           style="width:74px;text-align:right">
+    <span class="u">°</span>
+    <button class="btn" id="v3Spin">▶ Spin</button>
+    <span class="info" id="v3Info"></span>
+  </div>
+  <div id="v3Stage"><div id="v3Inner"></div></div>
 </div>
 
 <div id="printView" hidden>
@@ -495,10 +543,14 @@ const IMG_CUTS = [{
      مقاساتها بعُرف مختلف. */
   circ: { chest: false, hem: true, sleeve: true },
   pieces: [
-    { id: "front",  name: "Front",         kind: "image",
-      src: "cuts/closh-front.png", w: 403, h: 1026 },
-    { id: "back",   name: "Back",          kind: "image",
-      src: "cuts/closh-back.png",  w: 412, h: 1018 },
+    /* الواجهة والخلفية بلا أكمام — سطح العمل الذي تُوضع عليه النقشة.
+       تُبنى هندسياً من المقاسات لا من الرسمة النقطية: قصّ الأكمام من
+       الرسمة بالتعبئة الانتشارية فشل، إذ خطوط الحياكة غير مغلقة في
+       البكسل فتسرّبت التعبئة من الجسم إلى الكُمّ (247 ألف بكسل في
+       الخلفية). والبناء الهندسي أدقّ أيضاً، فالرسمة الفنية تُظهر
+       الذيل 18.5″ بدل 60″ الحقيقية. */
+    { id: "front",  name: "Front (body)", kind: "body", face: "front" },
+    { id: "back",   name: "Back (body)",  kind: "body", face: "back" },
     // الكُمّ مستطيل مسطّح بناءً على طلب المستخدمة. العرض = نصف
     // المحيط المعطى (12 إنش محيطاً ← 6 إنش مفروشاً).
     { id: "sleeve", name: "Sleeve (flat)", kind: "rect" },
@@ -506,7 +558,12 @@ const IMG_CUTS = [{
     // المفروش على كامل الطول. الرسمة الفنية تُظهر الذيل أضيق بكثير
     // من دورانه الحقيقي، فهذه القطعة هي الصحيحة لأشرطة الذيل
     // والتوزيع الكامل.
-    { id: "flat", name: "Flat panel (true scale)", kind: "trap" }
+    { id: "flat", name: "Flat panel (true scale)", kind: "trap" },
+    /* الرسمة الأصلية كاملةً بالأكمام — للمرجع والشكل لا للعمل */
+    { id: "sketchF", name: "Sketch · front", kind: "image",
+      src: "cuts/closh-front.png", w: 403, h: 1026 },
+    { id: "sketchB", name: "Sketch · back",  kind: "image",
+      src: "cuts/closh-back.png",  w: 412, h: 1018 }
   ]
 }];
 
@@ -515,6 +572,13 @@ function pieceGeom(cutObj, pc) {
   if (pc.kind === "rect") {
     return { wIn: flatOf(cutObj, "sleeveWidth"),
              hIn: cutObj.measures.sleeveLength };
+  }
+  if (pc.kind === "body") {
+    // الجسم: الأكتاف فوق ← الصدر ← الذيل، بلا أكمام
+    return { wIn: flatOf(cutObj, "hem"), hIn: cutObj.measures.length,
+             shoulderIn: cutObj.measures.shoulder,
+             chestIn: flatOf(cutObj, "chest"),
+             hemIn: flatOf(cutObj, "hem") };
   }
   if (pc.kind === "trap") {
     return { topIn: flatOf(cutObj, "chest"),
@@ -741,6 +805,8 @@ function draw() {
       });
       im2.setAttribute("style", "mix-blend-mode:multiply");
       g.appendChild(im2);
+    } else if (pc.kind === "body") {
+      g.appendChild(bodyPanel(pi, wU, pc.face));
     } else if (pc.kind === "trap") {
       const k = wU / pi.wIn;                  // وحدة لكل إنش أفقياً
       const t = pi.topIn * k / 2, b = pi.botIn * k / 2;
@@ -759,7 +825,7 @@ function draw() {
       }));
     }
 
-    state.items.forEach(it => g.appendChild(renderItem(it)));
+    pieceItems().forEach(it => g.appendChild(renderItem(it)));
     if (state.showDim) g.appendChild(pieceDim(pi, wU));
     board.appendChild(g);
     return;
@@ -797,6 +863,45 @@ function draw() {
   if (state.showDim) g.appendChild(dimension());
 
   board.appendChild(g);
+}
+
+/* لوح الجسم بلا أكمام، مبنيّ من المقاسات.
+
+   النِّسَب الأفقية (الأكتاف والصدر والذيل) من مقاسات المستخدمة
+   حرفياً — وهي ما يحدّد مقاس النقشة. أما الأبعاد الرأسية (عمق الإبط
+   وفتحة الرقبة) فنِسَبٌ معتادة في الخياطة، تقديرية ولا تؤثر في
+   القياس الأفقي. */
+function bodyPanel(pi, wU, face) {
+  const g = el("g");
+  const k = wU / pi.wIn;
+  const H = ABAYA_UNITS;
+  const shH = pi.shoulderIn * k / 2;
+  const chH = pi.chestIn * k / 2;
+  const hmH = pi.hemIn * k / 2;
+  const yChest = H * 0.17;
+  const neckW = shH * 0.52;
+  const neckD = face === "front" ? H * 0.085 : H * 0.025;
+
+  const d =
+    `M${neckW},0 L${shH},0 L${chH},${yChest} ` +
+    `C${chH + (hmH - chH) * 0.35},${yChest + (H - yChest) * 0.42} ` +
+    `${hmH - (hmH - chH) * 0.12},${yChest + (H - yChest) * 0.78} ` +
+    `${hmH},${H} ` +
+    `Q0,${H + H * 0.028} ${-hmH},${H} ` +
+    `C${-hmH + (hmH - chH) * 0.12},${yChest + (H - yChest) * 0.78} ` +
+    `${-chH - (hmH - chH) * 0.35},${yChest + (H - yChest) * 0.42} ` +
+    `${-chH},${yChest} L${-shH},0 L${-neckW},0 ` +
+    `Q0,${neckD} ${neckW},0 Z`;
+  g.appendChild(el("path", { d, fill: state.abayaColor,
+    stroke: "#111", "stroke-width": 3 }));
+
+  if (face === "front") {
+    g.appendChild(el("line", { x1: 0, y1: neckD, x2: 0, y2: H,
+      stroke: "#ffffff55", "stroke-width": 2.5, "stroke-dasharray": "12 8" }));
+  }
+  g.appendChild(el("line", { x1: -chH, y1: yChest, x2: chH, y2: yChest,
+    stroke: "#ffffff33", "stroke-width": 2, "stroke-dasharray": "8 6" }));
+  return g;
 }
 
 /* خطّا قياس للقطعة — بالإنش */
@@ -854,6 +959,13 @@ function dimension() {
   return g;
 }
 
+/* نقشات القطعة الحالية فقط */
+function onPiece(it) {
+  if (!imgCut()) return true;
+  return (it.piece || null) === state.piece;
+}
+function pieceItems() { return state.items.filter(onPiece); }
+
 function itemSize(it) {
   const m = motifById(it.mid);
   const n = it.repeat || 1;
@@ -863,6 +975,30 @@ function itemSize(it) {
     h: m.h * it.scale * n + gap * it.scale * (n - 1),
     unitH: m.h * it.scale
   };
+}
+
+/* القصّ: ما يبقى من النقشة بعد تشذيب الحافّات.
+
+   يجب أن يُطبَّق على الشاشة *وعلى الطباعة* معاً، وإلا طُبع ما لا
+   تراه: النقشة كاملة بدل المقصوصة. ولذلك يُحسب المقاس المعروض من
+   المتبقّي لا من الأصل. */
+function cropOf(it) {
+  const c = it.crop || {};
+  return { t: Math.max(0, c.t || 0), b: Math.max(0, c.b || 0),
+           l: Math.max(0, c.l || 0), r: Math.max(0, c.r || 0) };
+}
+
+function visibleSize(it) {
+  const sz = itemSize(it), c = cropOf(it);
+  return {
+    w: Math.max(0.5, sz.w - c.l - c.r),
+    h: Math.max(0.5, sz.h - c.t - c.b)
+  };
+}
+
+function hasCrop(it) {
+  const c = cropOf(it);
+  return c.t > 0 || c.b > 0 || c.l > 0 || c.r > 0;
 }
 
 function renderItem(it) {
@@ -882,13 +1018,36 @@ function renderItem(it) {
     rep.innerHTML = m.svg;
     inner.appendChild(rep);
   }
-  wrap.appendChild(inner);
+  if (hasCrop(it)) {
+    const c = cropOf(it), sz2 = itemSize(it);
+    const cid = "clip_" + it.uid;
+    const defs = el("defs");
+    const cp = el("clipPath", { id: cid, clipPathUnits: "userSpaceOnUse" });
+    cp.appendChild(el("rect", {
+      x: -sz2.w / 2 + c.l, y: -sz2.h / 2 + c.t,
+      width: Math.max(0.5, sz2.w - c.l - c.r),
+      height: Math.max(0.5, sz2.h - c.t - c.b)
+    }));
+    defs.appendChild(cp);
+    wrap.appendChild(defs);
+    const holder = el("g", { "clip-path": `url(#${cid})` });
+    holder.appendChild(inner);
+    wrap.appendChild(holder);
+  } else {
+    wrap.appendChild(inner);
+  }
 
   if (state.sel === it.uid) {
-    const hw = sz.w / 2, hh = sz.h / 2;
+    // الصندوق يحيط بالمرئي بعد القصّ لا بالأصل، وإلا أشار إلى
+    // مساحة لا يُطبع منها شيء
+    const c2 = cropOf(it);
+    const x0 = -sz.w / 2 + c2.l, y0 = -sz.h / 2 + c2.t;
+    const vw = Math.max(0.5, sz.w - c2.l - c2.r);
+    const vh = Math.max(0.5, sz.h - c2.t - c2.b);
+    const hw = x0 + vw, hh = y0 + vh;
     const box = el("g", {
       transform: `translate(${it.x},${it.y}) rotate(${it.rot})` });
-    box.appendChild(el("rect", { x: -hw, y: -hh, width: sz.w, height: sz.h,
+    box.appendChild(el("rect", { x: x0, y: y0, width: vw, height: vh,
       class: "selbox" }));
     const h = el("circle", { cx: hw, cy: hh, r: 9, class: "handle" });
     h.addEventListener("pointerdown", e => startResize(e, it));
@@ -962,9 +1121,14 @@ function addMotif(mid) {
   const targetUnits = m.h > 400 ? ABAYA_UNITS * .42 : ABAYA_UNITS * .13;
   const it = {
     uid: uidSeq++, mid,
+    // النقشة تنتسب إلى القطعة التي وُضعت عليها. وبدون ذلك تظهر
+    // نقشة الواجهة على الخلفية والكُمّ أيضاً، وهو ما يُفسد العمل
+    // «كل قطعة على حدة» ويطبع نقشات لم تُوضع على تلك القطعة.
+    piece: imgCut() ? state.piece : null,
     x: 0, y: ABAYA_UNITS * .5,
     scale: targetUnits / m.h, rot: 0, flip: false,
-    color: "#d4af37", repeat: 1, gap: 0
+    color: "#d4af37", repeat: 1, gap: 0,
+    crop: { t: 0, b: 0, l: 0, r: 0 }
   };
   state.items.push(it);
   select(it.uid);
@@ -984,8 +1148,16 @@ function syncProps() {
   }
   const m = motifById(it.mid);
   const sz = itemSize(it);
+  const vs = visibleSize(it);
   const k = cmPerUnit();
-  const wCm = sz.w * k, hCm = sz.h * k;
+  // المقاس المعروض والمطبوع هو المتبقّي بعد القصّ
+  const wCm = vs.w * k, hCm = vs.h * k;
+  const inPerUnit = cmToIn(k);
+  const xIn = it.x * inPerUnit, yIn = it.y * inPerUnit;
+  const gapIn = (it.gap || 0) * it.scale * inPerUnit;
+  const cu = it.crop || { t: 0, b: 0, l: 0, r: 0 };
+  const cr = { t: cu.t * inPerUnit, b: cu.b * inPerUnit,
+               l: cu.l * inPerUnit, r: cu.r * inPerUnit };
 
   box.innerHTML = `
     <div style="font-size:13px;font-weight:700;margin-bottom:2px">${m.name}</div>
@@ -1010,13 +1182,60 @@ function syncProps() {
       <span class="hint" style="margin:0;white-space:nowrap">Height in inches</span>
     </div>
 
-    <label class="f">Rotate (${it.rot}°)</label>
-    <input type="range" id="pRot" min="-180" max="180" value="${it.rot}">
+    <label class="f">Rotate</label>
+    <div class="ctl">
+      <input type="range" id="pRot" min="-180" max="180" step="1"
+             value="${it.rot}">
+      <input type="number" id="pRotN" min="-180" max="180" step="1"
+             value="${it.rot}"><span class="u">°</span>
+    </div>
+    <div class="quick">
+      ${[0, 45, 90, 180, -45, -90].map(a =>
+        `<button class="chip mini" data-rot="${a}">${a}°</button>`).join("")}
+    </div>
 
-    <label class="f">Repeat down (${it.repeat || 1})</label>
-    <input type="range" id="pRep" min="1" max="12" value="${it.repeat || 1}">
+    <label class="f">Repeat down</label>
+    <div class="ctl">
+      <input type="range" id="pRep" min="1" max="24" step="1"
+             value="${it.repeat || 1}">
+      <input type="number" id="pRepN" min="1" max="24" step="1"
+             value="${it.repeat || 1}"><span class="u">×</span>
+    </div>
+
     <label class="f">Gap between repeats</label>
-    <input type="range" id="pGap" min="0" max="120" value="${it.gap || 0}">
+    <div class="ctl">
+      <input type="range" id="pGap" min="0" max="200" step="1"
+             value="${it.gap || 0}">
+      <input type="number" id="pGapN" min="0" max="200" step="0.1"
+             value="${+(gapIn).toFixed(2)}"><span class="u">in</span>
+    </div>
+
+    <label class="f">Position (inch from centre / top)</label>
+    <div class="ctl2">
+      <input type="number" id="pX" step="0.1" value="${+(xIn).toFixed(2)}">
+      <span class="u">X</span>
+      <input type="number" id="pY" step="0.1" value="${+(yIn).toFixed(2)}">
+      <span class="u">Y</span>
+    </div>
+
+    <label class="f">Crop the motif — trim each edge (inch)</label>
+    <div class="ctl2">
+      <input type="number" id="cT" step="0.1" min="0"
+             value="${+(cr.t).toFixed(2)}"><span class="u">top</span>
+      <input type="number" id="cB" step="0.1" min="0"
+             value="${+(cr.b).toFixed(2)}"><span class="u">btm</span>
+    </div>
+    <div class="ctl2">
+      <input type="number" id="cL" step="0.1" min="0"
+             value="${+(cr.l).toFixed(2)}"><span class="u">left</span>
+      <input type="number" id="cR" step="0.1" min="0"
+             value="${+(cr.r).toFixed(2)}"><span class="u">right</span>
+    </div>
+    <div class="quick">
+      <button class="chip mini" id="cClear">No crop</button>
+      <button class="chip mini" id="cHalfT">Top half</button>
+      <button class="chip mini" id="cHalfB">Bottom half</button>
+    </div>
 
     <label class="f">Motif colour</label>
     ${m.raster ? `<div class="hint" style="margin:0 0 6px;color:#9a6b00">
@@ -1063,11 +1282,74 @@ function syncProps() {
     it.scale = inToCm(wantIn) / cmPerUnit() / unitsPerScale;
     draw(); syncProps(); renderList(); save();
   };
-  $("#pRot").oninput = e => { it.rot = +e.target.value; draw(); syncProps(); save(); };
-  $("#pRep").oninput = e => {
-    it.repeat = +e.target.value; draw(); syncProps(); renderList(); save(); };
-  $("#pGap").oninput = e => {
-    it.gap = +e.target.value; draw(); syncProps(); renderList(); save(); };
+  // كل مِمرَر له حقل رقمي مزدوج — المِمرَر للتقريب والرقم للدقّة
+  const inPerU = cmToIn(cmPerUnit());
+  const pair = (slider, num, read, write, toNum, fromNum) => {
+    const a = $(slider), b = $(num);
+    if (a) a.oninput = e => {
+      write(+e.target.value);
+      if (b) b.value = fromNum ? +fromNum().toFixed(2) : +e.target.value;
+      draw(); renderList(); save();
+    };
+    if (b) b.onchange = e => {
+      const v = parseFloat(e.target.value);
+      if (!isFinite(v)) return;
+      write(toNum ? toNum(v) : v);
+      if (a) a.value = read();
+      draw(); syncProps(); renderList(); save();
+    };
+  };
+
+  pair("#pRot", "#pRotN", () => it.rot, v => { it.rot = Math.max(-180, Math.min(180, v)); });
+  pair("#pRep", "#pRepN", () => it.repeat || 1,
+       v => { it.repeat = Math.max(1, Math.round(v)); });
+  pair("#pGap", "#pGapN", () => it.gap || 0,
+       v => { it.gap = Math.max(0, v); },
+       v => v / Math.max(1e-6, it.scale) / inPerU,
+       () => (it.gap || 0) * it.scale * inPerU);
+
+  document.querySelectorAll("[data-rot]").forEach(b => {
+    b.onclick = () => { it.rot = +b.dataset.rot;
+      draw(); syncProps(); renderList(); save(); };
+  });
+
+  // الموضع بالإنش
+  const posIn = (id, axis) => {
+    const e = $(id);
+    if (e) e.onchange = ev => {
+      const v = parseFloat(ev.target.value);
+      if (!isFinite(v)) return;
+      it[axis] = v / inPerU;
+      draw(); syncProps(); save();
+    };
+  };
+  posIn("#pX", "x"); posIn("#pY", "y");
+
+  // القصّ — تشذيب كل حافة بالإنش
+  it.crop = it.crop || { t: 0, b: 0, l: 0, r: 0 };
+  const cropIn = (id, side) => {
+    const e = $(id);
+    if (e) e.onchange = ev => {
+      const v = Math.max(0, parseFloat(ev.target.value) || 0);
+      it.crop[side] = v / inPerU;
+      draw(); syncProps(); save();
+    };
+  };
+  cropIn("#cT", "t"); cropIn("#cB", "b");
+  cropIn("#cL", "l"); cropIn("#cR", "r");
+  if ($("#cClear")) $("#cClear").onclick = () => {
+    it.crop = { t: 0, b: 0, l: 0, r: 0 };
+    draw(); syncProps(); save();
+  };
+  if ($("#cHalfT")) $("#cHalfT").onclick = () => {
+    it.crop = { t: 0, b: itemSize(it).h / 2, l: 0, r: 0 };
+    draw(); syncProps(); save();
+  };
+  if ($("#cHalfB")) $("#cHalfB").onclick = () => {
+    it.crop = { t: itemSize(it).h / 2, b: 0, l: 0, r: 0 };
+    draw(); syncProps(); save();
+  };
+
   $("#pColor").oninput = e => {
     it.color = e.target.value; draw(); syncProps(); renderList(); save(); };
   $("#pFlip").onclick = () => { it.flip = !it.flip; draw(); save(); };
@@ -1091,14 +1373,14 @@ function renderList() {
     return;
   }
   const k = cmPerUnit();
-  state.items.forEach(it => {
+  pieceItems().forEach(it => {
     const m = motifById(it.mid);
     const sz = itemSize(it);
     const d = document.createElement("div");
     d.className = "item" + (state.sel === it.uid ? " on" : "");
     d.innerHTML = `<span class="sw" style="background:${it.color}"></span>
       <span class="nm">${m.name}</span>
-      <span class="sz">${fmtLen(sz.w * k)} × ${fmtLen(sz.h * k)}</span>`;
+      <span class="sz">${fmtLen(visibleSize(it).w * k)} × ${fmtLen(visibleSize(it).h * k)}${hasCrop(it) ? " ✂" : ""}</span>`;
     d.onclick = () => select(it.uid);
     box.appendChild(d);
   });
@@ -1122,6 +1404,9 @@ function renderPieces() {
     b.onclick = () => {
       state.piece = pc.id;
       syncPieceLength();
+      // تحديدٌ على قطعة أخرى يُلغى، وإلا عُرضت خصائص نقشة غير مرئية
+      const cur = state.items.find(i => i.uid === state.sel);
+      if (cur && !onPiece(cur)) state.sel = null;
       renderPieces(); draw(); syncProps(); renderList(); save();
     };
     box.appendChild(b);
@@ -1353,9 +1638,20 @@ function printMotifs(items) {
 
   for (const it of items) {
     const m = motifById(it.mid);
+    // اسم القطعة يُكتب على الورقة، وإلا لم تُعرف نقشة الكُمّ من نقشة
+    // الواجهة بعد الطباعة
+    const pcName = (() => {
+      const c = imgCut();
+      if (!c || !it.piece) return "";
+      const f = c.pieces.find(x => x.id === it.piece);
+      return f ? f.name : "";
+    })();
     const sz = itemSize(it);
-    const wMM = sz.w * k * MM_PER_CM;
-    const hMM = sz.h * k * MM_PER_CM;
+    const vs = visibleSize(it);
+    const cp = cropOf(it);
+    // المطبوع هو المتبقّي بعد القصّ، وإلا طُبع ما لا تراه على الشاشة
+    const wMM = vs.w * k * MM_PER_CM;
+    const hMM = vs.h * k * MM_PER_CM;
     const n = it.repeat || 1;
     const innerH = m.h * n + (it.gap || 0) * (n - 1);
 
@@ -1365,8 +1661,13 @@ function printMotifs(items) {
                  ${m.svg}</g>`;
     }
     const r2 = v => Math.round(v * 100) / 100;
+    // viewBox يُزاح بمقدار القصّ بوحدات النقشة الأصلية
+    const vbx = cp.l / it.scale;
+    const vby = cp.t / it.scale;
+    const vbw = Math.max(0.5, m.w - (cp.l + cp.r) / it.scale);
+    const vbh = Math.max(0.5, innerH - (cp.t + cp.b) / it.scale);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 ${m.w} ${innerH}"
+        viewBox="${r2(vbx)} ${r2(vby)} ${r2(vbw)} ${r2(vbh)}"
         width="${r2(wMM)}mm" height="${r2(hMM)}mm"
         style="color:#000;display:block">${reps}</svg>`;
 
@@ -1400,8 +1701,8 @@ function printMotifs(items) {
       <section class="pg">
         <div class="ph">
           <b>${m.name}</b>
-          <span>${m.id} · true size
-            ${fmtLen(sz.w * k)} × ${fmtLen(sz.h * k)}${pos}</span>
+          <span>${pcName ? pcName + " · " : ""}${m.id} · true size
+            ${fmtLen(vs.w * k)} × ${fmtLen(vs.h * k)}${pos}${hasCrop(it) ? " · cropped" : ""}</span>
         </div>
         <div class="winwrap" style="width:${r2(sliceW)}mm;height:${r2(sliceH)}mm">
           <div class="win" style="width:${r2(sliceW)}mm;height:${r2(sliceH)}mm">
@@ -1475,6 +1776,87 @@ function printDesign() {
       </table>
     </div>`;
   showPrint(html, `Abaya image · ${state.items.length} motifs`, "design");
+}
+
+/* ================= معاينة منصّة الدوران =================
+
+   تبني SVG مستقلاً لقطعة الجسم (الأمامية أو الخلفية) مع نقشاتها،
+   ثم تضغط عرضه بجيب الزاوية فيبدو الثوب وهو يلتفّ.
+
+   ولماذا ليست مجسّماً حقيقياً؟ لأن المتاح رسمتان مسطّحتان (أمامي
+   وخلفي) بلا أي معلومة عن العمق، فلا يمكن استخراج مجسّم منهما.
+   ولو زُوِّدنا بوجه جانبي أمكن إدخاله في الدوران. */
+let spinTimer = null;
+
+function pieceSvgFor(pieceId, angle) {
+  const c = imgCut();
+  if (!c) return "";
+  const pc = c.pieces.find(x => x.id === pieceId);
+  if (!pc) return "";
+  const pi = pieceGeom(c, pc);
+  const wU = (pi.wIn / pi.hIn) * ABAYA_UNITS;
+  const half = wU / 2 * 1.06;
+
+  // يُعاد استخدام نفس دوال الرسم فلا يختلف الشكل عن سطح العمل
+  const savePiece = state.piece, saveSel = state.sel;
+  state.piece = pieceId; state.sel = null;
+
+  const g = el("g");
+  if (pc.kind === "body") g.appendChild(bodyPanel(pi, wU, pc.face));
+  state.items.filter(it => (it.piece || null) === pieceId)
+             .forEach(it => g.appendChild(renderItem(it)));
+
+  state.piece = savePiece; state.sel = saveSel;
+
+  const svg = el("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: `${-half} ${-40} ${half * 2} ${ABAYA_UNITS + 110}`
+  });
+  svg.appendChild(g);
+  return svg.outerHTML;
+}
+
+function render3D() {
+  const c = imgCut();
+  const stage = $("#v3Inner");
+  if (!c) { stage.innerHTML =
+    '<div style="color:#f3efe9;padding:30px">Pick an image-based cut first.</div>';
+    return; }
+
+  const a = ((+$("#v3Ang").value % 360) + 360) % 360;
+  const rad = a * Math.PI / 180;
+  const cos = Math.cos(rad);
+  const showBack = cos < 0;
+  const face = showBack ? "back" : "front";
+
+  // ضغط العرض بجيب الزاوية، مع حدٍّ أدنى لئلا يتلاشى عند 90°
+  const sx = Math.max(0.06, Math.abs(cos));
+  const shade = 0.55 + 0.45 * Math.abs(cos);
+
+  stage.innerHTML = pieceSvgFor(face, a);
+  const svg = stage.querySelector("svg");
+  if (svg) {
+    // الخلفي يُعكس أفقياً ليستمرّ الدوران في الاتجاه نفسه
+    const flip = showBack ? -1 : 1;
+    svg.style.transform = `scaleX(${(sx * flip).toFixed(4)})`;
+    svg.style.filter = `brightness(${shade.toFixed(3)})`;
+  }
+
+  const n = state.items.filter(i => (i.piece || null) === face).length;
+  $("#v3Info").textContent =
+    `${a}° · ${face === "front" ? "Front" : "Back"} · ${n} motif(s)`;
+  $("#v3AngN").value = a;
+}
+
+function open3D() {
+  $("#view3d").hidden = false;
+  render3D();
+}
+
+function close3D() {
+  if (spinTimer) { clearInterval(spinTimer); spinTimer = null;
+    $("#v3Spin").textContent = "▶ Spin"; }
+  $("#view3d").hidden = true;
 }
 
 /* ---------------------- الحفظ التلقائي ---------------------- */
@@ -1581,8 +1963,39 @@ function initUI() {
   $("#bgOpacity").oninput = e => {
     state.bgOpacity = e.target.value / 100; draw(); };
 
-  $("#btnPrintAll").onclick = () => printMotifs(state.items);
+  // تطبع نقشات كل القطع مرتّبةً بترتيب القطع، لا القطعة الحالية وحدها
+  $("#btnPrintAll").onclick = () => {
+    const c = imgCut();
+    if (!c) return printMotifs(state.items);
+    const order = c.pieces.map(x => x.id);
+    const sorted = [...state.items].sort(
+      (a, b) => order.indexOf(a.piece) - order.indexOf(b.piece));
+    printMotifs(sorted);
+  };
   $("#btnPrintDesign").onclick = printDesign;
+
+  $("#btn3D").onclick = open3D;
+  $("#v3Back").onclick = close3D;
+  $("#v3Ang").oninput = render3D;
+  $("#v3AngN").onchange = e => {
+    const v = parseFloat(e.target.value);
+    if (!isFinite(v)) return;
+    $("#v3Ang").value = ((v % 360) + 360) % 360;
+    render3D();
+  };
+  $("#v3Spin").onclick = () => {
+    if (spinTimer) {
+      clearInterval(spinTimer); spinTimer = null;
+      $("#v3Spin").textContent = "▶ Spin";
+      return;
+    }
+    $("#v3Spin").textContent = "⏸ Stop";
+    spinTimer = setInterval(() => {
+      const a = (+$("#v3Ang").value + 4) % 360;
+      $("#v3Ang").value = a;
+      render3D();
+    }, 60);
+  };
   $("#pvPrint").onclick = () => window.print();
   $("#pvBack").onclick = () => {
     $("#printView").hidden = true;
