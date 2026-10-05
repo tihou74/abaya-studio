@@ -237,8 +237,12 @@
     </div>
     <div class="spacer"></div>
     <button class="btn" id="btnReset">↺ تصميم جديد</button>
-    <button class="btn" id="btnPrintDesign">🖼 طباعة التصميم</button>
-    <button class="btn primary" id="btnPrintAll">📄 طباعة كل النقشات PDF</button>
+    <button class="btn" id="btnPrintDesign"
+            title="ورقة مرجعية فيها رسم العباية وجدول النقشات — للعرض لا للتطريز"
+            >🖼 صورة العباية (مرجع)</button>
+    <button class="btn primary" id="btnPrintAll"
+            title="النقشات وحدها بمقاسها الحقيقي على ورق A4 — بلا العباية"
+            >📄 طباعة النقشات فقط (A4)</button>
   </header>
 
   <div class="main">
@@ -336,6 +340,8 @@
   <div class="pv-bar">
     <button class="btn primary" id="pvPrint">🖨 اطبعي الآن</button>
     <button class="btn" id="pvBack">← رجوع للتصميم</button>
+    <span id="pvMode" style="font-size:13px;font-weight:700;
+          padding:5px 10px;border-radius:7px"></span>
     <span class="info" id="pvInfo"></span>
   </div>
   <div id="printRoot"></div>
@@ -804,7 +810,7 @@ function syncProps() {
       <button class="btn danger" id="pDel">🗑 حذف</button>
     </div>
     <button class="btn primary block" id="pPrint" style="margin-top:9px">
-      📄 طباعة هذه النقشة بمقاسها الحقيقي
+      📄 طباعة هذه النقشة وحدها (A4)
     </button>
   `;
 
@@ -1024,7 +1030,19 @@ async function addMyFiles(files) {
 const A4_W = 210, A4_H = 297, MARGIN = 8;
 const PAGE_W = A4_W - MARGIN * 2, PAGE_H = A4_H - MARGIN * 2;
 
-function showPrint(html, info) {
+function showPrint(html, info, mode) {
+  // شارة صريحة تقول ما يُطبع. الالتباس بين «النقشة وحدها» و«صورة
+  // العباية» يُهدر ورقاً وحبراً، ولا يُكتشف إلا بعد الطباعة.
+  const tag = $("#pvMode");
+  if (mode === "design") {
+    tag.textContent = "🖼 صورة العباية — مرجع للعرض، ليست للتطريز";
+    tag.style.background = "#fff6e5";
+    tag.style.color = "#8a6412";
+  } else {
+    tag.textContent = "✓ النقشات وحدها — بلا العباية";
+    tag.style.background = "#e7f5ef";
+    tag.style.color = "#1d6b4f";
+  }
   $("#printRoot").innerHTML = html;
   $("#pvInfo").textContent = info;
   $("#printView").hidden = false;
@@ -1112,7 +1130,9 @@ function printMotifs(items) {
 
   const intro = `
     <div class="intro">
-      <h1>طباعة النقشات بالمقاس الحقيقي</h1>
+      <h1>النقشات وحدها — بالمقاس الحقيقي</h1>
+      <p><b>هذه الصفحات تحتوي النقشة وحدها، بلا رسم العباية</b> —
+         جاهزة للتطريز أو القصّ أو الاستنسل.</p>
       <p>مقاس العباية: <b>${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″</b> (${state.lenCm.toFixed(1)} سم طولاً) ·
          عدد النقشات: <b>${items.length}</b> ·
          عدد الأوراق: <b>${totalPages}</b></p>
@@ -1133,7 +1153,7 @@ function printMotifs(items) {
          عند اللصق.</p>
     </div>`;
   showPrint(intro + pages,
-    `${items.length} نقشة · ${totalPages} ورقة · العباية ${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″`);
+    `${items.length} نقشة · ${totalPages} ورقة · العباية ${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″`, "motifs");
 }
 
 /* طباعة صورة التصميم كمرجع */
@@ -1159,7 +1179,7 @@ function printDesign() {
         <tbody>${rows || '<tr><td colspan="4">لا توجد نقشات</td></tr>'}</tbody>
       </table>
     </div>`;
-  showPrint(html, `صورة التصميم · ${state.items.length} نقشة`);
+  showPrint(html, `صورة العباية · ${state.items.length} نقشة`, "design");
 }
 
 /* ---------------------- الحفظ التلقائي ---------------------- */
