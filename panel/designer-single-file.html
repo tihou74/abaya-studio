@@ -5,30 +5,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Abaya Design Studio — Fatima</title>
 <style>
+  /* ====================================================================
+     نظام التصميم — رموز موحّدة بدل القيم المتناثرة.
+     الغرض اتّساق المسافات والأحجام والألوان في كل الواجهة، فيبدو
+     البرنامج مصنوعاً بقصد لا مجموعاً من قرارات متفرّقة.
+     ==================================================================== */
   :root{
-    --bg:#f3f1ee; --panel:#ffffff; --ink:#1d1b19; --muted:#6f6a64;
-    --line:#dcd7d0; --accent:#8a6d3b; --accent2:#b99a63; --ok:#2f7d5d;
-    --shadow:0 2px 10px rgba(0,0,0,.07);
+    /* الأسطح والخطوط */
+    --bg:#f4f2ef; --surface:#ffffff; --surface-2:#faf9f7;
+    --surface-3:#f1eee9;
+    --line:#e5e1db; --line-strong:#d1cbc2;
+
+    /* النصّ */
+    --ink:#1a1816; --ink-2:#47423c; --muted:#857f77; --faint:#a8a29a;
+
+    /* الهوية */
+    --accent:#8a6d3b; --accent-deep:#6d5429; --accent-soft:#f6f0e4;
+    --accent-line:#dcc9a4;
+
+    /* دلالية */
+    --ok:#2c7a59; --ok-soft:#e9f4ef;
+    --warn:#9a6a14; --warn-soft:#fdf5e4; --warn-line:#e8d3a4;
+    --danger:#9b2c2c; --danger-soft:#fbeeee;
+    --sel:#2563eb;
+
+    /* الأنصاف */
+    --r-xs:6px; --r-sm:9px; --r-md:12px; --r-lg:16px; --r-pill:999px;
+
+    /* المسافات */
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:28px;
+
+    /* الظلال */
+    --sh-1:0 1px 2px rgba(26,24,22,.06);
+    --sh-2:0 2px 8px rgba(26,24,22,.08);
+    --sh-3:0 8px 28px rgba(26,24,22,.14);
+
+    /* مقاس الخطّ */
+    --t-xs:11px; --t-sm:12px; --t-md:13px; --t-lg:15px; --t-xl:18px;
   }
+
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{
-    font-family:"Segoe UI","Noto Sans Arabic",Tahoma,sans-serif;
+    font-family:"Inter","Segoe UI",system-ui,-apple-system,Tahoma,sans-serif;
     background:var(--bg); color:var(--ink); overflow:hidden;
+    font-size:var(--t-md); line-height:1.45;
+    -webkit-font-smoothing:antialiased;
   }
-  button,select,input{font-family:inherit;font-size:14px}
+  button,select,input{font-family:inherit;font-size:var(--t-md)}
   button{cursor:pointer}
+  /* كل رقم بأعمدة ثابتة العرض فلا يرقص المقاس أثناء السحب */
+  input[type=number],.num,.sz,.big,.mono{font-variant-numeric:tabular-nums}
+
+  /* حلقة تركيز ظاهرة — لازمة للتنقّل بلوحة المفاتيح */
+  :focus-visible{outline:2px solid var(--sel);outline-offset:2px;
+    border-radius:var(--r-xs)}
+
+  /* أشرطة تمرير رقيقة في الأعمدة */
+  .side::-webkit-scrollbar{width:10px}
+  .side::-webkit-scrollbar-thumb{background:var(--line-strong);
+    border-radius:var(--r-pill);border:3px solid var(--surface)}
+  .side::-webkit-scrollbar-track{background:transparent}
 
   /* ================= الهيكل ================= */
   .app{display:flex;flex-direction:column;height:100%}
+
   header{
-    display:flex;align-items:center;gap:14px;padding:10px 16px;
-    background:var(--panel);border-bottom:1px solid var(--line);
-    box-shadow:var(--shadow);z-index:5;flex-wrap:wrap;
+    display:flex;align-items:center;gap:var(--s4);
+    padding:10px var(--s4);
+    background:var(--surface);border-bottom:1px solid var(--line);
+    box-shadow:var(--sh-1);z-index:5;flex-wrap:wrap;
   }
-  header h1{font-size:17px;margin:0;font-weight:700}
-  header .sub{font-size:12px;color:var(--muted)}
+  header h1{font-size:var(--t-xl);margin:0;font-weight:650;
+    letter-spacing:-.01em}
+  header .sub{font-size:var(--t-sm);color:var(--muted);margin-top:1px}
   .spacer{flex:1}
+  /* الأدوات مجموعة فتُقرأ كمجموعة واحدة لا كأزرار متناثرة */
+  .toolbar{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
+  .toolbar .sep{width:1px;height:26px;background:var(--line);margin:0 2px}
+
   .main{display:flex;flex:1;min-height:0}
 
   /* العمود الجانبي منطقة تمرير واحدة.
@@ -42,99 +97,185 @@
      فيُمرَّر العمود كله بدل تعشيش منطقتي تمرير، ويبقى سليماً مهما
      أُضيف من حقول. */
   .side{
-    width:310px;background:var(--panel);border-inline-start:1px solid var(--line);
+    width:324px;background:var(--surface);
+    border-inline-start:1px solid var(--line);
     display:flex;flex-direction:column;min-height:0;
     overflow-y:auto;overscroll-behavior:contain;
   }
-  .sec{flex-shrink:0}
-  .side.left{border-inline-start:none;border-inline-end:1px solid var(--line);width:290px}
-  .stage{flex:1;min-width:0;position:relative;overflow:auto;background:
-    repeating-conic-gradient(#eceae6 0% 25%, #f6f4f1 0% 50%) 50%/22px 22px}
-
-  .sec{padding:12px 14px;border-bottom:1px solid var(--line)}
-  .sec h2{font-size:13px;margin:0 0 9px;color:var(--accent);font-weight:700;
-    letter-spacing:.2px}
+  .side.left{border-inline-start:none;
+    border-inline-end:1px solid var(--line);width:300px}
+  .sec{flex-shrink:0;padding:var(--s4);border-bottom:1px solid var(--line)}
+  /* ترويسة القسم تبقى مرئية أثناء التمرير فلا يُفقد السياق */
+  .sec h2{
+    position:sticky;top:calc(var(--s4) * -1);z-index:2;
+    margin:calc(var(--s4) * -1) calc(var(--s4) * -1) var(--s3);
+    padding:10px var(--s4);
+    background:var(--surface-2);border-bottom:1px solid var(--line);
+    font-size:var(--t-sm);font-weight:700;color:var(--ink-2);
+    letter-spacing:.02em;text-transform:uppercase;
+    display:flex;align-items:center;gap:var(--s2);
+  }
+  .sec h2 .n{
+    width:19px;height:19px;flex:none;border-radius:var(--r-pill);
+    background:var(--accent);color:#fff;font-size:var(--t-xs);
+    font-weight:700;display:grid;place-items:center;letter-spacing:0;
+  }
   /* المكتبة تأخذ طولها الطبيعي، والعمود الجانبي هو الذي يتمرّر */
   .scroll{flex:0 0 auto;min-height:0}
 
-  label.f{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
-  .row{display:flex;gap:8px;align-items:center}
+  .stage{flex:1;min-width:0;position:relative;overflow:auto;
+    background:
+      radial-gradient(circle, var(--line-strong) 1px, transparent 1px)
+      0 0/20px 20px,
+      linear-gradient(180deg,#f7f6f4,#edeae5);
+  }
+
+  /* ================= الحقول ================= */
+  label.f{display:block;font-size:var(--t-sm);color:var(--muted);
+    margin:var(--s3) 0 var(--s1);font-weight:500}
+  label.f:first-child{margin-top:0}
+  .row{display:flex;gap:var(--s2);align-items:center}
   .row>*{min-width:0}
-  select,input[type=number],input[type=text]{
-    width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:8px;
-    background:#fff;color:var(--ink);
+  select,input[type=number],input[type=text],input[type=search]{
+    width:100%;padding:8px 10px;border:1px solid var(--line-strong);
+    border-radius:var(--r-sm);background:var(--surface);color:var(--ink);
+    transition:border-color .12s, box-shadow .12s;
   }
-  input[type=range]{width:100%;accent-color:var(--accent)}
+  select:hover,input[type=number]:hover,input[type=text]:hover,
+  input[type=search]:hover{border-color:var(--accent-line)}
+  select:focus,input:focus{outline:none;border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft)}
+  input[type=range]{width:100%;accent-color:var(--accent);height:22px}
+  input[type=file]{font-size:var(--t-sm);color:var(--muted);width:100%}
+  input[type=color]{padding:2px;border:1px solid var(--line-strong);
+    border-radius:var(--r-sm);background:var(--surface)}
+
   .btn{
-    padding:9px 12px;border:1px solid var(--line);border-radius:9px;
-    background:#fff;font-size:13px;display:inline-flex;align-items:center;
-    gap:6px;justify-content:center;
+    padding:8px 12px;border:1px solid var(--line-strong);
+    border-radius:var(--r-sm);background:var(--surface);
+    font-size:var(--t-md);font-weight:500;color:var(--ink-2);
+    display:inline-flex;align-items:center;gap:6px;justify-content:center;
+    transition:.12s;white-space:nowrap;
   }
-  .btn:hover{border-color:var(--accent2);background:#fdfbf7}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;
-    font-weight:700}
-  .btn.primary:hover{background:#755c32}
-  .btn.ghost{background:transparent}
-  .btn.danger{color:#9b2c2c;border-color:#e7cfcf}
+  .btn:hover{border-color:var(--accent-line);background:var(--surface-2);
+    color:var(--ink)}
+  .btn:active{transform:translateY(1px)}
+  .btn svg{width:15px;height:15px;flex:none}
+  .btn.primary{background:var(--accent);border-color:var(--accent);
+    color:#fff;font-weight:650;box-shadow:var(--sh-1)}
+  .btn.primary:hover{background:var(--accent-deep);
+    border-color:var(--accent-deep);color:#fff}
+  .btn.ghost{background:transparent;border-color:transparent;
+    color:var(--muted)}
+  .btn.ghost:hover{background:var(--surface-3);color:var(--ink)}
+  .btn.danger{color:var(--danger);border-color:#e9d4d4}
+  .btn.danger:hover{background:var(--danger-soft);border-color:#dcb8b8}
   .btn.block{width:100%}
-  .btns{display:flex;gap:7px;flex-wrap:wrap}
+  .btn.sm{padding:5px 9px;font-size:var(--t-sm)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+
+  /* ================= الرقائق والمجموعات ================= */
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:var(--s2)}
+  .chip{
+    padding:5px 11px;border:1px solid var(--line-strong);
+    border-radius:var(--r-pill);background:var(--surface);
+    font-size:var(--t-sm);color:var(--ink-2);transition:.12s;
+  }
+  .chip:hover{border-color:var(--accent-line);background:var(--surface-2)}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;
+    font-weight:600}
+  .chip.mini{padding:3px 8px;font-size:var(--t-xs)}
+
+  /* مجموعة مترابطة للخيارات المتنافية — أوضح من رقائق متفرّقة
+     لأنها تُظهر أن الاختيار واحد لا متعدّد */
+  .segmented{display:flex;flex-wrap:wrap;gap:0;margin-bottom:var(--s2);
+    border:1px solid var(--line-strong);border-radius:var(--r-sm);
+    overflow:hidden;background:var(--surface-3)}
+  .segmented .chip{
+    border:none;border-radius:0;background:transparent;flex:1 0 auto;
+    padding:7px 10px;font-size:var(--t-sm);
+    border-inline-end:1px solid var(--line);
+  }
+  .segmented .chip:last-child{border-inline-end:none}
+  .segmented .chip.on{background:var(--surface);color:var(--accent-deep);
+    font-weight:700;box-shadow:inset 0 -2px 0 var(--accent)}
 
   /* ================= مكتبة النقشات ================= */
-  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
-  .chip{
-    padding:5px 10px;border:1px solid var(--line);border-radius:20px;
-    background:#fff;font-size:12px;
-  }
-  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .libhead{display:flex;align-items:center;gap:var(--s2);
+    margin-bottom:var(--s2)}
+  .libhead .count{font-size:var(--t-xs);color:var(--faint);
+    white-space:nowrap}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2)}
   .card{
-    border:1px solid var(--line);border-radius:10px;background:#fff;
-    padding:5px;cursor:pointer;display:flex;flex-direction:column;
-    align-items:center;gap:3px;transition:.12s;
+    border:1px solid var(--line);border-radius:var(--r-sm);
+    background:var(--surface);padding:5px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    transition:.12s;
   }
-  .card:hover{border-color:var(--accent2);transform:translateY(-1px);
-    box-shadow:var(--shadow)}
-  .card svg{width:100%;height:76px;display:block;color:#2a2622}
-  .card .cid{font-size:9.5px;color:var(--muted)}
+  .card:hover{border-color:var(--accent);background:var(--accent-soft);
+    transform:translateY(-2px);box-shadow:var(--sh-2)}
+  .card svg{width:100%;height:74px;display:block;color:#2a2622}
+  .card .cid{font-size:9.5px;color:var(--faint);font-weight:600;
+    letter-spacing:.03em}
 
   /* ================= المسرح ================= */
   /* اللوحة تتسع لارتفاع الشاشة تلقائياً بدل إظهار أشرطة تمرير */
-  #board{display:block;margin:14px auto;background:#fff;
-    box-shadow:0 4px 22px rgba(0,0,0,.12);border-radius:4px;
-    height:calc(100vh - 118px);width:auto;max-width:96%}
+  #board{display:block;margin:var(--s4) auto;background:var(--surface);
+    box-shadow:var(--sh-3);border-radius:var(--r-xs);
+    height:calc(100vh - 124px);width:auto;max-width:94%}
   /* touch-action:none ضروري للمس: بدونه يُفسّر المتصفّح سحب النقشة
      تمريراً للصفحة، فتتحرّك الصفحة ولا تتحرّك النقشة على الجوال. */
   .motif-wrap{cursor:move;touch-action:none}
-  .selbox{fill:none;stroke:#2563eb;stroke-width:2;stroke-dasharray:6 4;
+  .selbox{fill:none;stroke:var(--sel);stroke-width:2;stroke-dasharray:6 4;
     pointer-events:none;vector-effect:non-scaling-stroke}
-  .handle{fill:#2563eb;stroke:#fff;stroke-width:1.5;
+  .handle{fill:var(--sel);stroke:#fff;stroke-width:1.5;
     cursor:nwse-resize;touch-action:none}
-  /* ===== عناصر تحكّم احترافية: مِمرَر + حقل رقمي ===== */
-  .ctl{display:flex;align-items:center;gap:8px}
+  .dimline{stroke:var(--sel);stroke-width:1;
+    vector-effect:non-scaling-stroke}
+
+  /* ===== مِمرَر + حقل رقمي ===== */
+  .ctl{display:flex;align-items:center;gap:var(--s2)}
   .ctl input[type=range]{flex:1;min-width:0}
-  .ctl input[type=number]{width:74px;flex:none;text-align:right}
+  .ctl input[type=number]{width:72px;flex:none;text-align:right}
   .ctl2{display:flex;align-items:center;gap:6px;margin-bottom:5px}
   .ctl2 input[type=number]{flex:1;min-width:0;text-align:right}
-  .u{font-size:11px;color:var(--muted);min-width:30px}
+  .u{font-size:var(--t-xs);color:var(--muted);min-width:30px}
   .quick{display:flex;flex-wrap:wrap;gap:4px;margin:5px 0 2px}
-  .chip.mini{padding:2px 7px;font-size:11px}
-  .dimline{stroke:#2563eb;stroke-width:1;vector-effect:non-scaling-stroke}
 
   /* ================= قائمة العناصر ================= */
-  .items{display:flex;flex-direction:column;gap:6px}
+  .items{display:flex;flex-direction:column;gap:5px}
   .item{
-    display:flex;align-items:center;gap:8px;padding:7px 9px;
-    border:1px solid var(--line);border-radius:9px;background:#fff;
-    font-size:12px;cursor:pointer;
+    display:flex;align-items:center;gap:var(--s2);padding:7px 9px;
+    border:1px solid var(--line);border-radius:var(--r-sm);
+    background:var(--surface);font-size:var(--t-sm);cursor:pointer;
+    transition:.12s;
   }
-  .item.on{border-color:var(--accent);background:#fdfbf7}
-  .item .sw{width:14px;height:14px;border-radius:4px;border:1px solid #0002;
-    flex:none}
-  .item .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .item .sz{color:var(--ok);font-weight:700;font-size:11px;white-space:nowrap;
-    font-variant-numeric:tabular-nums}
+  .item:hover{border-color:var(--accent-line);background:var(--surface-2)}
+  .item.on{border-color:var(--accent);background:var(--accent-soft);
+    box-shadow:inset 2px 0 0 var(--accent)}
+  .item .sw{width:14px;height:14px;border-radius:var(--r-xs);
+    border:1px solid #0002;flex:none}
+  .item .nm{flex:1;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis}
+  .item .sz{color:var(--ok);font-weight:700;font-size:var(--t-xs);
+    white-space:nowrap}
 
-  .swatches{display:flex;flex-wrap:wrap;gap:6px}
+  .swatches{display:flex;flex-wrap:wrap;gap:5px}
+  .sw-btn{width:24px;height:24px;border-radius:var(--r-xs);
+    border:1px solid #0002;cursor:pointer;transition:.12s}
+  .sw-btn:hover{transform:scale(1.12)}
+  .sw-btn.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+  .empty{font-size:var(--t-sm);color:var(--muted);text-align:center;
+    padding:var(--s4) var(--s2);background:var(--surface-2);
+    border:1px dashed var(--line-strong);border-radius:var(--r-sm);
+    line-height:1.6}
+  .hint{font-size:var(--t-xs);color:var(--muted);line-height:1.65}
+  .readout{background:var(--ok-soft);border:1px solid #cfe6db;
+    border-radius:var(--r-md);padding:var(--s3);margin:var(--s3) 0}
+  .readout .lbl{font-size:var(--t-xs);color:var(--muted)}
+  .readout .big{font-size:21px;font-weight:700;color:var(--ok);
+    letter-spacing:-.01em;margin:1px 0}
+  .cid{font-size:var(--t-xs);color:var(--faint)}
   .sw-btn{width:26px;height:26px;border-radius:7px;border:2px solid #fff;
     box-shadow:0 0 0 1px var(--line);cursor:pointer}
   .sw-btn.on{box-shadow:0 0 0 2px var(--accent)}
@@ -266,16 +407,20 @@
       <div class="sub">Fatima · 80 ready-made motifs</div>
     </div>
     <div class="spacer"></div>
-    <button class="btn" id="btnReset">↺ New design</button>
-    <button class="btn" id="btn3D"
-            title="Turntable preview of the finished abaya with your motifs"
-            >🔄 3D preview</button>
-    <button class="btn" id="btnPrintDesign"
-            title="A reference sheet with the abaya drawing and a motif table — for viewing, not for stitching"
-            >🖼 Abaya image (reference)</button>
-    <button class="btn primary" id="btnPrintAll"
-            title="The motifs alone at true size on A4 paper — without the abaya"
-            >📄 Print motifs only (A4)</button>
+    <div class="toolbar">
+      <button class="btn ghost" id="btnReset"
+              title="Clear the design and start over"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>New</button>
+      <span class="sep"></span>
+      <button class="btn" id="btn3D"
+              title="Turntable preview of the finished abaya with your motifs"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>3D preview</button>
+      <button class="btn" id="btnPrintDesign"
+              title="A reference sheet with the abaya drawing and a motif table — for viewing, not for stitching"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 5"/></svg>Reference sheet</button>
+      <button class="btn primary" id="btnPrintAll"
+              title="The motifs alone at true size on A4 paper — without the abaya"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="7" rx="2"/><path d="M7 16h10v5H7z"/></svg>Print motifs (A4)</button>
+    </div>
   </header>
 
   <div class="main">
@@ -283,12 +428,12 @@
     <!-- ============ Left: abaya and library ============ -->
     <aside class="side">
       <div class="sec">
-        <h2>1 · Abaya cut</h2>
+        <h2><span class="n">1</span>Abaya cut</h2>
         <select id="cut"></select>
 
         <div id="pieceWrap" style="display:none;margin-top:9px">
           <label class="f">Piece — each is measured on its own</label>
-          <div class="chips" id="pieceChips"></div>
+          <div class="segmented" id="pieceChips"></div>
           <div class="hint" id="pieceInfo" style="margin:6px 0 0"></div>
         </div>
 
@@ -335,7 +480,7 @@
       </div>
 
       <div class="sec" style="padding-bottom:6px">
-        <h2>2 · Choose a motif</h2>
+        <h2><span class="n">2</span>Choose a motif</h2>
         <label class="f">Or upload your own motif (SVG or image)</label>
         <div class="row">
           <input type="file" id="myMotif" accept=".svg,image/*" multiple
@@ -348,6 +493,16 @@
         <div class="chips" id="famChips"></div>
       </div>
       <div class="scroll sec" style="border-bottom:none;padding-top:0">
+        <div class="libhead">
+          <div style="position:relative;flex:1">
+            <span style="position:absolute;inset-inline-start:9px;top:50%;
+                  transform:translateY(-50%);color:var(--faint);
+                  width:15px;height:15px;pointer-events:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+            <input type="search" id="libSearch" placeholder="Search motifs…"
+                   style="padding-inline-start:30px">
+          </div>
+          <span class="count" id="libCount"></span>
+        </div>
         <div class="grid" id="lib"></div>
       </div>
     </aside>
@@ -360,16 +515,18 @@
     <!-- ============ Right: motif properties ============ -->
     <aside class="side left">
       <div class="sec">
-        <h2>3 · Selected motif</h2>
+        <h2><span class="n">3</span>Selected motif</h2>
         <div id="props">
           <div class="empty">
-            Tap a motif in the library to add it,<br>then drag it into place on the abaya.
+            <div style="font-weight:650;color:var(--ink-2);margin-bottom:4px">
+              Nothing selected</div>
+            Pick a motif from the library, then drag it into place.
           </div>
         </div>
       </div>
 
       <div class="sec">
-        <h2>Motifs on the abaya</h2>
+        <h2>On this piece</h2>
         <div class="items" id="itemList"></div>
       </div>
 
@@ -389,14 +546,14 @@
 
 <div id="view3d" hidden>
   <div class="pv-bar">
-    <button class="btn" id="v3Back">← Back to design</button>
+    <button class="btn" id="v3Back">← Back</button>
     <span style="font-size:13px;font-weight:700">Turntable</span>
     <input type="range" id="v3Ang" min="0" max="360" value="20"
            style="flex:1;max-width:320px">
     <input type="number" id="v3AngN" min="0" max="360" value="20"
            style="width:74px;text-align:right">
     <span class="u">°</span>
-    <button class="btn" id="v3Spin">▶ Spin</button>
+    <button class="btn" id="v3Spin">Spin</button>
     <span class="info" id="v3Info"></span>
   </div>
   <div id="v3Stage"><div id="v3Inner"></div></div>
@@ -404,8 +561,8 @@
 
 <div id="printView" hidden>
   <div class="pv-bar">
-    <button class="btn primary" id="pvPrint">🖨 Print now</button>
-    <button class="btn" id="pvBack">← Back to design</button>
+    <button class="btn primary" id="pvPrint">Print now</button>
+    <button class="btn" id="pvBack">← Back</button>
     <span id="pvMode" style="font-size:13px;font-weight:700;
           padding:5px 10px;border-radius:7px"></span>
     <span class="info" id="pvInfo"></span>
@@ -663,7 +820,8 @@ const state = {
   bg: null, bgOpacity: 1,
   items: [],          // {uid, mid, x, y, scale, rot, flip, color, repeat, gap}
   sel: null,
-  fam: "All"
+  fam: "All",
+  q: ""
 };
 let uidSeq = 1;
 
@@ -1179,10 +1337,10 @@ function syncProps() {
     <label class="f">Size</label>
     <input type="range" id="pScale" min="1" max="100"
            value="${Math.round(it.scale / 3 * 100)}">
-    <div class="row">
+    <div class="ctl2">
       <input type="number" id="pHin" value="${cmToIn(hCm).toFixed(1)}"
-             step="0.25" min="0.25">
-      <span class="hint" style="margin:0;white-space:nowrap">Height in inches</span>
+             step="0.25" min="0.25" style="text-align:right">
+      <span class="u">inch</span>
     </div>
 
     <label class="f">Rotate</label>
@@ -1252,13 +1410,13 @@ function syncProps() {
     </div>
 
     <div class="btns" style="margin-top:12px">
-      <button class="btn" id="pFlip">↔ Flip</button>
-      <button class="btn" id="pCenter">⊕ Centre</button>
-      <button class="btn" id="pDup">⧉ Duplicate</button>
-      <button class="btn danger" id="pDel">🗑 Delete</button>
+      <button class="btn" id="pFlip">Flip</button>
+      <button class="btn" id="pCenter">Centre</button>
+      <button class="btn" id="pDup">Duplicate</button>
+      <button class="btn danger" id="pDel">Delete</button>
     </div>
     <button class="btn primary block" id="pPrint" style="margin-top:9px">
-      📄 Print this motif alone (A4)
+      Print this motif (A4)
     </button>
   `;
 
@@ -1431,20 +1589,20 @@ function renderPieces() {
     ["Sleeve width", M.sleeveWidth, "sleeve"],
   ];
   $("#measTable").innerHTML = rows.map(([k, v, key]) => {
+    const td = "padding:5px 0;border-bottom:1px solid var(--line)";
     if (!key) {
-      return `<tr><td style="padding:3px 0;color:var(--muted)">${k}</td>
-        <td style="padding:3px 0;text-align:right;font-weight:700"
+      return `<tr><td style="${td};color:var(--muted)">${k}</td>
+        <td class="num" style="${td};text-align:right;font-weight:700"
             colspan="2">${v}″</td></tr>`;
     }
     const isC = !!c.circ[key];
     const flat = isC ? v / 2 : v;
-    return `<tr><td style="padding:3px 0;color:var(--muted)">${k}</td>
-      <td style="padding:3px 0;text-align:right;font-weight:700">${v}″</td>
-      <td style="padding:3px 0;text-align:right">
-        <button class="chip" data-circ="${key}"
-          style="padding:1px 6px;font-size:11px"
-          title="Tap to switch between circumference and flat width"
-          >${isC ? "circ → " + flat + "″ flat" : "flat"}</button></td></tr>`;
+    return `<tr><td style="${td};color:var(--muted)">${k}</td>
+      <td class="num" style="${td};text-align:right;font-weight:700">${v}″</td>
+      <td style="${td};text-align:right;padding-inline-start:6px">
+        <button class="chip mini" data-circ="${key}"
+          title="Switch between circumference and flat width"
+          >${isC ? "circ · " + flat + "″ flat" : "flat"}</button></td></tr>`;
   }).join("");
 
   $("#measTable").querySelectorAll("[data-circ]").forEach(b => {
@@ -1476,8 +1634,22 @@ function renderChips() {
 function renderLib() {
   const box = $("#lib");
   box.innerHTML = "";
-  MOTIFS.filter(m => state.fam === "All" || m.fam === state.fam)
-        .forEach(m => {
+  // البحث يمسح الاسم والرمز والعائلة — مع 80 نقشة يصير التصفّح
+  // وحده بطيئاً، والبحث أسرع طريق إلى نقشة معروفة
+  const qs = (state.q || "").trim().toLowerCase();
+  const list = MOTIFS.filter(m =>
+    (state.fam === "All" || m.fam === state.fam) &&
+    (!qs || (m.name + " " + m.id + " " + m.fam).toLowerCase().includes(qs)));
+
+  const cnt = $("#libCount");
+  if (cnt) cnt.textContent = `${list.length} of ${MOTIFS.length}`;
+
+  if (!list.length) {
+    box.innerHTML = `<div class="empty" style="grid-column:1/-1;padding:18px">
+      No motif matches “${qs}”.</div>`;
+    return;
+  }
+  list.forEach(m => {
     const c = document.createElement("div");
     c.className = "card";
     c.title = m.name;
@@ -1858,7 +2030,7 @@ function open3D() {
 
 function close3D() {
   if (spinTimer) { clearInterval(spinTimer); spinTimer = null;
-    $("#v3Spin").textContent = "▶ Spin"; }
+    $("#v3Spin").textContent = "Spin"; }
   $("#view3d").hidden = true;
 }
 
@@ -1989,10 +2161,10 @@ function initUI() {
   $("#v3Spin").onclick = () => {
     if (spinTimer) {
       clearInterval(spinTimer); spinTimer = null;
-      $("#v3Spin").textContent = "▶ Spin";
+      $("#v3Spin").textContent = "Spin";
       return;
     }
-    $("#v3Spin").textContent = "⏸ Stop";
+    $("#v3Spin").textContent = "Stop";
     spinTimer = setInterval(() => {
       const a = (+$("#v3Ang").value + 4) % 360;
       $("#v3Ang").value = a;
@@ -2011,6 +2183,9 @@ function initUI() {
   };
 
   // رفع نقشات من عندها
+  const sb = $("#libSearch");
+  if (sb) sb.oninput = e => { state.q = e.target.value; renderLib(); };
+
   $("#myMotif").onchange = async e => {
     const files = [...e.target.files];
     e.target.value = "";
