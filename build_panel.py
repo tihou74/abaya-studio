@@ -15,6 +15,7 @@
 """
 
 import json
+from datetime import datetime
 import re
 from pathlib import Path
 
@@ -131,6 +132,10 @@ def build_single_file(payload: str):
     # </script> داخل نصّ السكربت يُنهي الوسم مبكّراً فتتلف الصفحة،
     # ولا يظهر ذلك إلا عند الفتح. ويُتفادى بتقسيم التسلسل.
     safe = payload.replace("</", "<\\/")
+
+    # بصمة البناء — تظهر في الترويسة
+    stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    html = html.replace("__BUILD__", stamp)
 
     # صور القصّات تُدمَج كـ data URL، وإلا ظهرت القطع فارغة في
     # نسخة الملف الواحد لأن المسار النسبي (cuts/...) لا يوجد بجوارها.

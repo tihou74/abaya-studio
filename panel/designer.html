@@ -82,6 +82,13 @@
   header h1{font-size:var(--t-xl);margin:0;font-weight:600;
     letter-spacing:-.015em;color:var(--ink)}
   header .sub{font-size:var(--t-sm);color:var(--faint);margin-top:2px}
+  /* بصمة الإصدار: بلا علامة ظاهرة لا تعرف المستخدمة أهي تفتح الملف
+     الجديد أم نسخة قديمة بقيت في مجلد التنزيلات بالاسم نفسه. */
+  .build{display:inline-block;margin-inline-start:7px;padding:1px 7px;
+    border-radius:var(--r-pill);background:var(--accent-soft);
+    border:1px solid var(--accent-line);color:var(--accent-deep);
+    font-size:10px;font-weight:700;letter-spacing:.03em;
+    font-variant-numeric:tabular-nums}
   .spacer{flex:1}
   /* الأدوات مجموعة فتُقرأ كمجموعة واحدة لا كأزرار متناثرة */
   .toolbar{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
@@ -422,7 +429,7 @@
   <header>
     <div>
       <h1>Abaya Design Studio</h1>
-      <div class="sub">Fatima · 80 ready-made motifs</div>
+      <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">__BUILD__</span></div>
     </div>
     <div class="spacer"></div>
     <div class="toolbar">
@@ -2253,6 +2260,12 @@ if (!window.MOTIFS || !window.MOTIFS.length) {
        first, then open the page.</p>
     <p>Or use the single-file version, which needs no other file.</p></div>`;
 } else {
+  // نسخة الملفين لا تمرّ على build_panel.py فتبقى العلامة حرفية
+  (() => {
+    const b = $("#buildStamp");
+    if (b && b.textContent.indexOf("BUILD") >= 0) b.textContent = "dev";
+  })();
+
   loadMine();        // نقشاتها المرفوعة تُضاف للمكتبة قبل بناء الواجهة
   load();
   if (imgCut()) syncPieceLength();
