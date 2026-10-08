@@ -11,17 +11,18 @@
      البرنامج مصنوعاً بقصد لا مجموعاً من قرارات متفرّقة.
      ==================================================================== */
   :root{
-    /* الأسطح والخطوط */
-    --bg:#f4f2ef; --surface:#ffffff; --surface-2:#faf9f7;
-    --surface-3:#f1eee9;
-    --line:#e5e1db; --line-strong:#d1cbc2;
+    /* الأسطح — رمادي محايد بارد قليلاً، فالبنيّ الدافئ في كل مكان
+       يُشعر بالقِدَم. الحياد يُبرز القماش والنقشة لا الواجهة. */
+    --bg:#f1f2f4; --surface:#ffffff; --surface-2:#f8f9fa;
+    --surface-3:#eef0f3;
+    --line:#e3e6ea; --line-strong:#cdd2d9;
 
-    /* النصّ */
-    --ink:#1a1816; --ink-2:#47423c; --muted:#857f77; --faint:#a8a29a;
+    /* النصّ — تدرّج واضح يبني التسلسل البصري */
+    --ink:#15181c; --ink-2:#3d444d; --muted:#6b737d; --faint:#9aa1ab;
 
-    /* الهوية */
-    --accent:#8a6d3b; --accent-deep:#6d5429; --accent-soft:#f6f0e4;
-    --accent-line:#dcc9a4;
+    /* الهوية — برونز واحد واثق، يُستخدم بقلّة فيبقى ذا معنى */
+    --accent:#9a7336; --accent-deep:#7c5c28; --accent-soft:#fdf8ee;
+    --accent-line:#e2d0ad;
 
     /* دلالية */
     --ok:#2c7a59; --ok-soft:#e9f4ef;
@@ -30,15 +31,17 @@
     --sel:#2563eb;
 
     /* الأنصاف */
-    --r-xs:6px; --r-sm:9px; --r-md:12px; --r-lg:16px; --r-pill:999px;
+    --r-xs:6px; --r-sm:10px; --r-md:14px; --r-lg:18px; --r-pill:999px;
 
     /* المسافات */
     --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:28px;
 
     /* الظلال */
-    --sh-1:0 1px 2px rgba(26,24,22,.06);
-    --sh-2:0 2px 8px rgba(26,24,22,.08);
-    --sh-3:0 8px 28px rgba(26,24,22,.14);
+    /* ظلال مركّبة: حدّ رقيق + انتشار. الظلّ المفرد المسطّح يبدو
+       رخيصاً، والطبقتان تُعطيان عمقاً هادئاً. */
+    --sh-1:0 1px 2px rgba(21,24,28,.05), 0 0 0 1px rgba(21,24,28,.03);
+    --sh-2:0 2px 4px rgba(21,24,28,.05), 0 4px 14px rgba(21,24,28,.07);
+    --sh-3:0 4px 10px rgba(21,24,28,.06), 0 18px 44px rgba(21,24,28,.13);
 
     /* مقاس الخطّ */
     --t-xs:11px; --t-sm:12px; --t-md:13px; --t-lg:15px; --t-xl:18px;
@@ -71,14 +74,14 @@
   .app{display:flex;flex-direction:column;height:100%}
 
   header{
-    display:flex;align-items:center;gap:var(--s4);
-    padding:10px var(--s4);
+    display:flex;align-items:center;gap:var(--s5);
+    padding:var(--s3) var(--s5);
     background:var(--surface);border-bottom:1px solid var(--line);
-    box-shadow:var(--sh-1);z-index:5;flex-wrap:wrap;
+    z-index:5;flex-wrap:wrap;
   }
-  header h1{font-size:var(--t-xl);margin:0;font-weight:650;
-    letter-spacing:-.01em}
-  header .sub{font-size:var(--t-sm);color:var(--muted);margin-top:1px}
+  header h1{font-size:var(--t-xl);margin:0;font-weight:600;
+    letter-spacing:-.015em;color:var(--ink)}
+  header .sub{font-size:var(--t-sm);color:var(--faint);margin-top:2px}
   .spacer{flex:1}
   /* الأدوات مجموعة فتُقرأ كمجموعة واحدة لا كأزرار متناثرة */
   .toolbar{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
@@ -106,28 +109,33 @@
     border-inline-end:1px solid var(--line);width:300px}
   .sec{flex-shrink:0;padding:var(--s4);border-bottom:1px solid var(--line)}
   /* ترويسة القسم تبقى مرئية أثناء التمرير فلا يُفقد السياق */
+  /* ترويسة لاصقة بزجاج مُعتَّم: تبقى مقروءة فوق المحتوى المتمرّر
+     بلا شريط ملوّن يسحب الانتباه من المحتوى نفسه. */
   .sec h2{
-    position:sticky;top:calc(var(--s4) * -1);z-index:2;
-    margin:calc(var(--s4) * -1) calc(var(--s4) * -1) var(--s3);
-    padding:10px var(--s4);
-    background:var(--surface-2);border-bottom:1px solid var(--line);
-    font-size:var(--t-sm);font-weight:700;color:var(--ink-2);
-    letter-spacing:.02em;text-transform:uppercase;
-    display:flex;align-items:center;gap:var(--s2);
+    position:sticky;top:0;z-index:2;
+    margin:calc(var(--s4) * -1) calc(var(--s4) * -1) var(--s4);
+    padding:var(--s3) var(--s4);
+    background:rgba(255,255,255,.88);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    font-size:var(--t-sm);font-weight:600;color:var(--ink);
+    letter-spacing:.04em;text-transform:uppercase;
+    display:flex;align-items:center;gap:9px;
   }
   .sec h2 .n{
-    width:19px;height:19px;flex:none;border-radius:var(--r-pill);
-    background:var(--accent);color:#fff;font-size:var(--t-xs);
-    font-weight:700;display:grid;place-items:center;letter-spacing:0;
+    width:18px;height:18px;flex:none;border-radius:var(--r-xs);
+    background:var(--accent-soft);color:var(--accent-deep);
+    border:1px solid var(--accent-line);
+    font-size:10px;font-weight:700;display:grid;place-items:center;
+    letter-spacing:0;
   }
   /* المكتبة تأخذ طولها الطبيعي، والعمود الجانبي هو الذي يتمرّر */
   .scroll{flex:0 0 auto;min-height:0}
 
+  /* إضاءة موضعية تُركّز العين على الثوب. الشبكة المنقّطة كانت
+     تتنافس بصرياً مع النقشة نفسها. */
   .stage{flex:1;min-width:0;position:relative;overflow:auto;
-    background:
-      radial-gradient(circle, var(--line-strong) 1px, transparent 1px)
-      0 0/20px 20px,
-      linear-gradient(180deg,#f7f6f4,#edeae5);
+    background:radial-gradient(ellipse at 50% 34%, #ffffff 0%,
+      #eceef1 52%, #e2e5ea 100%);
   }
 
   /* ================= الحقول ================= */
@@ -137,9 +145,9 @@
   .row{display:flex;gap:var(--s2);align-items:center}
   .row>*{min-width:0}
   select,input[type=number],input[type=text],input[type=search]{
-    width:100%;padding:8px 10px;border:1px solid var(--line-strong);
+    width:100%;padding:9px 11px;border:1px solid var(--line-strong);
     border-radius:var(--r-sm);background:var(--surface);color:var(--ink);
-    transition:border-color .12s, box-shadow .12s;
+    transition:border-color .14s, box-shadow .14s;
   }
   select:hover,input[type=number]:hover,input[type=text]:hover,
   input[type=search]:hover{border-color:var(--accent-line)}
@@ -151,18 +159,20 @@
     border-radius:var(--r-sm);background:var(--surface)}
 
   .btn{
-    padding:8px 12px;border:1px solid var(--line-strong);
+    padding:9px 14px;border:1px solid var(--line-strong);
     border-radius:var(--r-sm);background:var(--surface);
-    font-size:var(--t-md);font-weight:500;color:var(--ink-2);
-    display:inline-flex;align-items:center;gap:6px;justify-content:center;
-    transition:.12s;white-space:nowrap;
+    font-size:var(--t-md);font-weight:550;color:var(--ink-2);
+    display:inline-flex;align-items:center;gap:7px;justify-content:center;
+    transition:.14s cubic-bezier(.4,0,.2,1);white-space:nowrap;
+    box-shadow:var(--sh-1);
   }
   .btn:hover{border-color:var(--accent-line);background:var(--surface-2);
     color:var(--ink)}
   .btn:active{transform:translateY(1px)}
   .btn svg{width:15px;height:15px;flex:none}
   .btn.primary{background:var(--accent);border-color:var(--accent);
-    color:#fff;font-weight:650;box-shadow:var(--sh-1)}
+    color:#fff;font-weight:650;
+    box-shadow:0 1px 2px rgba(122,92,40,.3), 0 4px 12px rgba(122,92,40,.22)}
   .btn.primary:hover{background:var(--accent-deep);
     border-color:var(--accent-deep);color:#fff}
   .btn.ghost{background:transparent;border-color:transparent;
@@ -212,17 +222,17 @@
     display:flex;flex-direction:column;align-items:center;gap:2px;
     transition:.12s;
   }
-  .card:hover{border-color:var(--accent);background:var(--accent-soft);
-    transform:translateY(-2px);box-shadow:var(--sh-2)}
+  .card:hover{border-color:var(--accent-line);background:var(--accent-soft);
+    transform:translateY(-3px);box-shadow:var(--sh-2)}
   .card svg{width:100%;height:74px;display:block;color:#2a2622}
   .card .cid{font-size:9.5px;color:var(--faint);font-weight:600;
     letter-spacing:.03em}
 
   /* ================= المسرح ================= */
   /* اللوحة تتسع لارتفاع الشاشة تلقائياً بدل إظهار أشرطة تمرير */
-  #board{display:block;margin:var(--s4) auto;background:var(--surface);
-    box-shadow:var(--sh-3);border-radius:var(--r-xs);
-    height:calc(100vh - 124px);width:auto;max-width:94%}
+  #board{display:block;margin:var(--s5) auto;background:var(--surface);
+    box-shadow:var(--sh-3);border-radius:var(--r-md);
+    height:calc(100vh - 136px);width:auto;max-width:92%}
   /* touch-action:none ضروري للمس: بدونه يُفسّر المتصفّح سحب النقشة
      تمريراً للصفحة، فتتحرّك الصفحة ولا تتحرّك النقشة على الجوال. */
   .motif-wrap{cursor:move;touch-action:none}
@@ -270,11 +280,19 @@
     border:1px dashed var(--line-strong);border-radius:var(--r-sm);
     line-height:1.6}
   .hint{font-size:var(--t-xs);color:var(--muted);line-height:1.65}
-  .readout{background:var(--ok-soft);border:1px solid #cfe6db;
-    border-radius:var(--r-md);padding:var(--s3);margin:var(--s3) 0}
-  .readout .lbl{font-size:var(--t-xs);color:var(--muted)}
-  .readout .big{font-size:21px;font-weight:700;color:var(--ok);
-    letter-spacing:-.01em;margin:1px 0}
+  /* المقاس الحقيقي هو جوهر الأداة، فيأخذ أبرز معالجة بصرية */
+  .readout{background:linear-gradient(180deg,#fbfdfc,var(--ok-soft));
+    border:1px solid #cde4d8;border-radius:var(--r-md);
+    padding:var(--s4);margin:var(--s4) 0;box-shadow:var(--sh-1)}
+  .readout .lbl{font-size:var(--t-xs);color:var(--muted);
+    letter-spacing:.03em;text-transform:uppercase;font-weight:600}
+  .readout .big{font-size:26px;font-weight:700;color:var(--ok);
+    letter-spacing:-.02em;margin:5px 0 3px;line-height:1.1}
+  /* جملتان لا عنوانان: الحروف الكبيرة تُصرِّخ وتُبطئ القراءة */
+  .readout .sub-cm{font-size:var(--t-sm);color:var(--muted)}
+  .readout .sheets{display:flex;align-items:center;gap:6px;
+    margin-top:9px;padding-top:9px;border-top:1px solid #d6e6dd;
+    font-size:var(--t-sm);font-weight:600;color:var(--accent-deep)}
   .cid{font-size:var(--t-xs);color:var(--faint)}
   .sw-btn{width:26px;height:26px;border-radius:7px;border:2px solid #fff;
     box-shadow:0 0 0 1px var(--line);cursor:pointer}
@@ -1325,10 +1343,9 @@ function syncProps() {
       <div class="lbl">True size on the abaya</div>
       <div class="big"><span id="roW">${cmToIn(wCm).toFixed(1)}</span> ×
         <span id="roH">${cmToIn(hCm).toFixed(1)}</span> inch</div>
-      <div class="lbl"><span id="roWc">${wCm.toFixed(1)}</span> ×
+      <div class="sub-cm"><span id="roWc">${wCm.toFixed(1)}</span> ×
         <span id="roHc">${hCm.toFixed(1)}</span> cm — width × height</div>
-      <div class="lbl" style="margin-top:4px;color:#2563eb;font-weight:700">
-        🖨 <span id="roSheets">${sheetsFor(wCm, hCm)}</span></div>
+      <div class="sheets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="width:13px;height:13px;flex:none"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="7" rx="2"/><path d="M7 16h10v5H7z"/></svg><span id="roSheets">${sheetsFor(wCm, hCm)}</span></div>
     </div>
 
     <label class="f">Size</label>
