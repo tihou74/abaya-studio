@@ -247,6 +247,8 @@
     pointer-events:none;vector-effect:non-scaling-stroke}
   .handle{fill:var(--sel);stroke:#fff;stroke-width:1.5;
     cursor:nwse-resize;touch-action:none}
+  /* مقبض القصّ مربّع ليتميّز عن مقبض التحجيم الدائري */
+  .crop-h{fill:#fff;stroke:var(--sel);stroke-width:2}
   .dimline{stroke:var(--sel);stroke-width:1;
     vector-effect:non-scaling-stroke}
 
@@ -429,7 +431,7 @@
   <header>
     <div>
       <h1>Abaya Design Studio</h1>
-      <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">2026-10-11 14:03</span></div>
+      <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">2026-10-11 14:12</span></div>
     </div>
     <div class="spacer"></div>
     <div class="toolbar">
@@ -1267,6 +1269,22 @@ function renderItem(it) {
     const h = el("circle", { cx: hw, cy: hh, r: 9, class: "handle" });
     h.addEventListener("pointerdown", e => startResize(e, it));
     box.appendChild(h);
+
+    /* مقابض القصّ على منتصف كل حافة — تشذيب بالسحب بدل كتابة أرقام.
+       القصّ بالعين أسرع وأدقّ حين يكون المطلوب «اقطعي هنا». */
+    const mid = [
+      ["t", (x0 + hw) / 2, y0,        "ns-resize"],
+      ["b", (x0 + hw) / 2, hh,        "ns-resize"],
+      ["l", x0,            (y0 + hh) / 2, "ew-resize"],
+      ["r", hw,            (y0 + hh) / 2, "ew-resize"],
+    ];
+    mid.forEach(([side, cx, cy, cur]) => {
+      const k = el("rect", { x: cx - 7, y: cy - 7, width: 14, height: 14,
+        rx: 3, class: "handle crop-h" });
+      k.setAttribute("style", `cursor:${cur}`);
+      k.addEventListener("pointerdown", e => startCrop(e, it, side));
+      box.appendChild(k);
+    });
     wrap.appendChild(box);
   }
   wrap.addEventListener("pointerdown", e => startDrag(e, it));
@@ -1307,7 +1325,39 @@ function startResize(e, it) {
           scale0: it.scale, diag: Math.hypot(sz.w, sz.h) / 2 };
   board.setPointerCapture(e.pointerId);
 }
+/* سحب مقبض القصّ.
+
+   دلتا المؤشّر تُحسب في فضاء اللوح، ثم تُدوَّر بعكس زاوية النقشة
+   لتصير في فضائها المحلي — وبدون ذلك يسحب المقبض في اتجاه خاطئ
+   متى كانت النقشة مُدوَّرة. */
+let cropDrag = null;
+function startCrop(e, it, side) {
+  e.preventDefault(); e.stopPropagation();
+  const p = boardPoint(e);
+  cropDrag = { uid: it.uid, side, p0: p, c0: { ...cropOf(it) },
+               rot: (it.rot || 0) * Math.PI / 180 };
+  board.setPointerCapture(e.pointerId);
+}
+
 board.addEventListener("pointermove", e => {
+  if (cropDrag) {
+    const it = state.items.find(i => i.uid === cropDrag.uid);
+    if (!it) { cropDrag = null; return; }
+    const p = boardPoint(e);
+    const dx = p.x - cropDrag.p0.x, dy = p.y - cropDrag.p0.y;
+    const c = Math.cos(-cropDrag.rot), si = Math.sin(-cropDrag.rot);
+    const lx = dx * c - dy * si, ly = dx * si + dy * c;
+    const sz = itemSize(it), c0 = cropDrag.c0;
+    const S = cropDrag.side;
+    const MIN = 4;                       // أدنى بقية مرئية
+    it.crop = { ...c0 };
+    if (S === "t") it.crop.t = Math.max(0, Math.min(sz.h - c0.b - MIN, c0.t + ly));
+    if (S === "b") it.crop.b = Math.max(0, Math.min(sz.h - c0.t - MIN, c0.b - ly));
+    if (S === "l") it.crop.l = Math.max(0, Math.min(sz.w - c0.r - MIN, c0.l + lx));
+    if (S === "r") it.crop.r = Math.max(0, Math.min(sz.w - c0.l - MIN, c0.r - lx));
+    draw(); syncProps();
+    return;
+  }
   if (drag) {
     const it = state.items.find(i => i.uid === drag.uid);
     const p = boardPoint(e);
@@ -1323,7 +1373,10 @@ board.addEventListener("pointermove", e => {
   }
 });
 ["pointerup", "pointercancel"].forEach(ev =>
-  board.addEventListener(ev, () => { drag = null; rez = null; }));
+  board.addEventListener(ev, () => {
+    if (cropDrag) { cropDrag = null; syncProps(); renderList(); save(); }
+    drag = null; rez = null;
+  }));
 board.addEventListener("pointerdown", e => {
   if (e.target === board || e.target.tagName === "path"
       || e.target.tagName === "image") select(null);
@@ -1450,6 +1503,21 @@ function syncProps() {
       <button class="chip mini" id="cHalfT">Top half</button>
       <button class="chip mini" id="cHalfB">Bottom half</button>
     </div>
+    <div class="hint" style="margin:7px 0 3px">
+      Or drag the square handles on the motif edges to crop by eye.</div>
+
+    <label class="f">Split into independent parts</label>
+    <div class="btns">
+      <button class="btn sm" id="pSplitV"
+        title="Cut across: two parts, each movable and rotatable on its own"
+        >Split across ⇅</button>
+      <button class="btn sm" id="pSplitH"
+        title="Cut down the middle: two parts, each movable and rotatable on its own"
+        >Split down ⇄</button>
+    </div>
+    <div class="hint" style="margin-top:5px">
+      Each part becomes its own motif — so you can rotate or move one
+      half without touching the other.</div>
 
     <label class="f">Motif colour</label>
     ${m.raster ? `<div class="hint" style="margin:0 0 6px;color:#9a6b00">
@@ -1568,6 +1636,31 @@ function syncProps() {
     it.color = e.target.value; draw(); syncProps(); renderList(); save(); };
   $("#pFlip").onclick = () => { it.flip = !it.flip; draw(); save(); };
   $("#pCenter").onclick = () => { it.x = 0; draw(); syncProps(); save(); };
+  /* التقسيم إلى عنصرين مستقلّين.
+
+     القصّ وحده لا يكفي لطلب «أدوّر جزءاً منها»: العنصر واحد فدورانه
+     واحد. فيُنسخ العنصر ويُقصّ كلٌّ إلى نصفه، ويبقى الاثنان في
+     موضعهما بالضبط — لأن القصّ محسوب من مركز العنصر لا من حافّته.
+     فتصير لكل نصف زاويته وموضعه. */
+  const split = (axis) => {
+    const sz = itemSize(it), c = cropOf(it);
+    const vis = axis === "v" ? sz.h - c.t - c.b : sz.w - c.l - c.r;
+    if (vis < 8) { alert("The motif is too small to split."); return; }
+    const halfCut = vis / 2;
+
+    const a = { ...it, uid: uidSeq++, crop: { ...c } };
+    const b = { ...it, uid: uidSeq++, crop: { ...c } };
+    if (axis === "v") { a.crop.b = c.b + halfCut; b.crop.t = c.t + halfCut; }
+    else              { a.crop.r = c.r + halfCut; b.crop.l = c.l + halfCut; }
+
+    const i = state.items.findIndex(x => x.uid === it.uid);
+    state.items.splice(i, 1, a, b);
+    select(b.uid);
+    renderList(); save();
+  };
+  $("#pSplitV").onclick = () => split("v");
+  $("#pSplitH").onclick = () => split("h");
+
   $("#pDup").onclick = () => {
     const cp = { ...it, uid: uidSeq++, x: it.x + 60 };
     state.items.push(cp); select(cp.uid); renderList(); save();
