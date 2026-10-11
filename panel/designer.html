@@ -592,6 +592,20 @@
     <button class="btn" id="pvBack">← Back</button>
     <span id="pvMode" style="font-size:13px;font-weight:700;
           padding:5px 10px;border-radius:7px"></span>
+    <span class="sep" style="width:1px;height:24px;background:var(--line)"></span>
+    <label class="u" style="min-width:0">Paper</label>
+    <select id="ppPaper" style="width:auto;min-width:120px"></select>
+    <label class="u" style="min-width:0">Margin</label>
+    <input type="number" id="ppMargin" min="0" max="20" step="0.5"
+           style="width:66px;text-align:right">
+    <label class="u" style="min-width:0">Overlap</label>
+    <input type="number" id="ppOver" min="0" max="25" step="1"
+           style="width:62px;text-align:right">
+    <label class="togg" style="display:flex;align-items:center;gap:5px;
+           font-size:12px;white-space:nowrap">
+      <input type="checkbox" id="ppHead"> Label
+    </label>
+    <button class="btn sm" id="ppMax" title="Smallest margin, no label, no overlap">Max area</button>
     <span class="info" id="pvInfo"></span>
   </div>
   <div id="printRoot"></div>
@@ -926,12 +940,12 @@ function xStretch() {
    حتى لا يُخبرها الحساب بورقة ثم تُطبع ورقتان. */
 function sheetGrid(wCm, hCm) {
   const wMM = wCm * 10, hMM = hCm * 10;
-  const overlap = 10;
-  const usableH = PAGE_H - 16, usableW = PAGE_W;
-  const n = (total, usable) => total <= usable ? 1
-    : Math.ceil((total - overlap) / (usable - overlap));
-  const rows = n(hMM, usableH), cols = n(wMM, usableW);
-  return { rows, cols, total: rows * cols };
+  const B = pageBox();
+  const ov = Math.max(0, Math.min(PRINT.overlap, B.usableW - 5, B.usableH - 5));
+  const n = (total, usable) => total <= usable + 0.01 ? 1
+    : Math.ceil((total - ov) / (usable - ov));
+  const rows = n(hMM, B.usableH), cols = n(wMM, B.usableW);
+  return { rows, cols, total: rows * cols, ov, B };
 }
 
 function sheetsFor(wCm, hCm) {
@@ -2075,10 +2089,77 @@ async function addMyFiles(files) {
 }
 
 /* ---------------------- الطباعة بالمقاس الحقيقي ---------------------- */
-const A4_W = 210, A4_H = 297, MARGIN = 8;
-const PAGE_W = A4_W - MARGIN * 2, PAGE_H = A4_H - MARGIN * 2;
+/* ===================== إعدادات الطباعة =====================
+
+   حدٌّ فيزيائي لا يُتجاوز: الطابعات المنزلية لا تطبع حتى حافة
+   الورقة؛ لكلٍّ منطقة عمياء نحو 3–5 مم. فلو جُعل الهامش صفراً
+   اقتُطع ما قرب الحافة، أو اضطرّت الطابعة إلى التصغير لتُلائم —
+   وذلك يُفسد المقاس الحقيقي وهو جوهر الأداة كلها.
+
+   فالهامش قابل للضبط لتُنزله إلى أدنى ما تسمح به طابعتها، والترويسة
+   تُطفأ فتُستغلّ مساحتها، والتداخل يُصفَّر فتُلصق الأوراق تلاصقاً
+   بلا قصّ. والورق الأكبر (A3) يُقلّل عدد الأوراق فيُقلّل اللصق. */
+const PAPERS = {
+  A4: { w: 210, h: 297, label: "A4 (210 × 297)" },
+  A3: { w: 297, h: 420, label: "A3 (297 × 420)" },
+  Letter: { w: 216, h: 279, label: "Letter (216 × 279)" }
+};
+const PRINT = { paper: "A4", margin: 5, overlap: 8, header: true };
+const HEAD_MM = 13;                     // ارتفاع الترويسة إن كانت مُشغَّلة
+
+function pageBox() {
+  const P = PAPERS[PRINT.paper] || PAPERS.A4;
+  const w = Math.max(40, P.w - PRINT.margin * 2);
+  const h = Math.max(40, P.h - PRINT.margin * 2);
+  const head = PRINT.header ? HEAD_MM : 0;
+  return { paperW: P.w, paperH: P.h, w, h,
+           usableW: w, usableH: Math.max(20, h - head), head };
+}
+
+/* أنماط الطباعة تُكتب حياً: مقاس @page والهامش وأبعاد الورقة لا
+   يمكن أن تبقى ثابتة في ورقة الأنماط متى صارت قابلة للضبط. */
+function applyPrintCss() {
+  const B = pageBox();
+  let el2 = document.getElementById("printCss");
+  if (!el2) {
+    el2 = document.createElement("style");
+    el2.id = "printCss";
+    document.head.appendChild(el2);
+  }
+  el2.textContent = `
+    @page{ size:${PRINT.paper} portrait; margin:${PRINT.margin}mm }
+    #printRoot .pg{ width:${B.w}mm; min-height:${B.h}mm; padding:0 }
+    #printRoot .intro{ width:${B.w}mm }
+    #printRoot .ph{ height:${B.head}mm; margin-bottom:0;
+      align-items:center; overflow:hidden }
+  `;
+}
+
+let lastPrint = "motifs";
+
+/* ترتيب النقشات بترتيب القطع — يُستخدم عند إعادة البناء */
+function sortedItems() {
+  const c = imgCut();
+  if (!c) return state.items;
+  const order = c.pieces.map(x => x.id);
+  return [...state.items].sort(
+    (a, b) => order.indexOf(a.piece) - order.indexOf(b.piece));
+}
+
+function savePrint() {
+  try { localStorage.setItem("fatima_print_v1", JSON.stringify(PRINT)); }
+  catch (e) { /* الحفظ ليس حرجاً */ }
+}
+function loadPrint() {
+  try {
+    const o = JSON.parse(localStorage.getItem("fatima_print_v1") || "null");
+    if (o && typeof o === "object") Object.assign(PRINT, o);
+  } catch (e) { /* تجاهل */ }
+}
 
 function showPrint(html, info, mode) {
+  lastPrint = mode === "design" ? "design" : "motifs";
+  applyPrintCss();
   // شارة صريحة تقول ما يُطبع. الالتباس بين «النقشة وحدها» و«صورة
   // العباية» يُهدر ورقاً وحبراً، ولا يُكتشف إلا بعد الطباعة.
   const tag = $("#pvMode");
@@ -2161,10 +2242,11 @@ function printMotifs(items) {
     // لوح متدلّيات عرضه 460 وحدة على عباية 56 إنش = 654 مم، أي أربعة
     // أضعاف عرض الورقة القابل للطباعة (194 مم) — فيُطبع ربعها ويضيع
     // الباقي بلا أي تحذير.
-    const overlap = 10;                       // مم تداخل بين الأوراق
-    const usableH = PAGE_H - 16;              // مكان للعنوان والعلامات
-    const usableW = PAGE_W;
-    const nTiles = (total, usable) => total <= usable ? 1
+    const B = pageBox();
+    const overlap = Math.max(0,
+      Math.min(PRINT.overlap, B.usableW - 5, B.usableH - 5));
+    const usableH = B.usableH, usableW = B.usableW;
+    const nTiles = (total, usable) => total <= usable + 0.01 ? 1
       : Math.ceil((total - overlap) / (usable - overlap));
     const rows_ = nTiles(hMM, usableH);
     const cols_ = nTiles(wMM, usableW);
@@ -2183,11 +2265,11 @@ function printMotifs(items) {
           : "";
         pages += `
       <section class="pg">
-        <div class="ph">
+        ${PRINT.header ? `<div class="ph">
           <b>${m.name}</b>
           <span>${pcName ? pcName + " · " : ""}${m.id} · true size
             ${fmtLen(vs.w * k)} × ${fmtLen(vs.h * k)}${pos}${hasCrop(it) ? " · cropped" : ""}${eraseOf(it).length ? " · erased" : ""}</span>
-        </div>
+        </div>` : ""}
         <div class="winwrap" style="width:${r2(sliceW)}mm;height:${r2(sliceH)}mm">
           <div class="win" style="width:${r2(sliceW)}mm;height:${r2(sliceH)}mm">
             <div style="transform:translate(-${r2(offX)}mm,-${r2(offY)}mm)">${svg}</div>
@@ -2448,15 +2530,51 @@ function initUI() {
     state.bgOpacity = e.target.value / 100; draw(); };
 
   // تطبع نقشات كل القطع مرتّبةً بترتيب القطع، لا القطعة الحالية وحدها
-  $("#btnPrintAll").onclick = () => {
-    const c = imgCut();
-    if (!c) return printMotifs(state.items);
-    const order = c.pieces.map(x => x.id);
-    const sorted = [...state.items].sort(
-      (a, b) => order.indexOf(a.piece) - order.indexOf(b.piece));
-    printMotifs(sorted);
-  };
+  $("#btnPrintAll").onclick = () => printMotifs(sortedItems());
   $("#btnPrintDesign").onclick = printDesign;
+
+  /* إعدادات الطباعة — إعادة البناء عند أي تغيير لأن عدد الأوراق
+     وتقسيمها يتغيّران بتغيّر المساحة المتاحة */
+  const paperSel = $("#ppPaper");
+  if (paperSel) {
+    Object.keys(PAPERS).forEach(k => {
+      const o = document.createElement("option");
+      o.value = k; o.textContent = PAPERS[k].label;
+      paperSel.appendChild(o);
+    });
+    paperSel.value = PRINT.paper;
+  }
+  const reprint = () => {
+    savePrint();
+    applyPrintCss();
+    if (lastPrint === "design") printDesign();
+    else printMotifs(sortedItems());
+  };
+  if (paperSel) paperSel.onchange = e => { PRINT.paper = e.target.value; reprint(); };
+  if ($("#ppMargin")) {
+    $("#ppMargin").value = PRINT.margin;
+    $("#ppMargin").onchange = e => {
+      const v = parseFloat(e.target.value);
+      if (isFinite(v) && v >= 0) { PRINT.margin = v; reprint(); }
+    };
+  }
+  if ($("#ppOver")) {
+    $("#ppOver").value = PRINT.overlap;
+    $("#ppOver").onchange = e => {
+      const v = parseFloat(e.target.value);
+      if (isFinite(v) && v >= 0) { PRINT.overlap = v; reprint(); }
+    };
+  }
+  if ($("#ppHead")) {
+    $("#ppHead").checked = PRINT.header;
+    $("#ppHead").onchange = e => { PRINT.header = e.target.checked; reprint(); };
+  }
+  if ($("#ppMax")) $("#ppMax").onclick = () => {
+    PRINT.margin = 3; PRINT.overlap = 0; PRINT.header = false;
+    $("#ppMargin").value = 3; $("#ppOver").value = 0;
+    $("#ppHead").checked = false;
+    reprint();
+  };
 
   $("#btn3D").onclick = open3D;
   $("#v3Back").onclick = close3D;
@@ -2554,6 +2672,7 @@ if (!window.MOTIFS || !window.MOTIFS.length) {
     if (b && b.textContent.indexOf("BUILD") >= 0) b.textContent = "dev";
   })();
 
+  loadPrint();
   loadMine();        // نقشاتها المرفوعة تُضاف للمكتبة قبل بناء الواجهة
   load();
   if (imgCut()) syncPieceLength();
