@@ -431,7 +431,7 @@
   <header>
     <div>
       <h1>Abaya Design Studio</h1>
-      <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">2026-10-11 14:12</span></div>
+      <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">2026-10-11 14:23</span></div>
     </div>
     <div class="spacer"></div>
     <div class="toolbar">
@@ -1199,6 +1199,15 @@ function itemSize(it) {
    يجب أن يُطبَّق على الشاشة *وعلى الطباعة* معاً، وإلا طُبع ما لا
    تراه: النقشة كاملة بدل المقصوصة. ولذلك يُحسب المقاس المعروض من
    المتبقّي لا من الأصل. */
+/* ضربات الممحاة — مُسجَّلة بإحداثيات النقشة نفسها، فتتبع التحجيم
+   والتدوير تلقائياً وتُطبع كما تُرى. */
+function eraseOf(it) { return Array.isArray(it.erase) ? it.erase : []; }
+
+/* مقاس رأس الممحاة بالإنش — يُحوَّل إلى وحدات النقشة عند الاستخدام */
+let erBrushIn = 0.12;
+let eraseMode = false;
+let erStroke = null;      // ضربة قيد الرسم
+
 function cropOf(it) {
   const c = it.crop || {};
   return { t: Math.max(0, c.t || 0), b: Math.max(0, c.b || 0),
@@ -1228,13 +1237,38 @@ function renderItem(it) {
   });
   inner.setAttribute("style", `color:${it.color}`);
   const n = it.repeat || 1;
+  /* كل التكرارات داخل مجموعة واحدة «stack» إحداثياتها 0..m.w في
+     العرض و0..innerH في الطول — وهي بالضبط مساحة viewBox المستخدمة
+     في الطباعة. فضربات الممحاة تُسجَّل في هذه المساحة فتُرسم على
+     الشاشة وتُطبع بالشكل نفسه بلا أي تحويل. */
+  const stack = el("g", {
+    transform: `translate(${-m.w / 2},${-sz.h / it.scale / 2})`
+  });
+  stack.setAttribute("data-stack", it.uid);
   for (let i = 0; i < n; i++) {
     const rep = el("g", {
-      transform: `translate(${-m.w / 2},${-sz.h / it.scale / 2 + i * (m.h + (it.gap || 0))})`
+      transform: `translate(0,${i * (m.h + (it.gap || 0))})`
     });
     rep.innerHTML = m.svg;
-    inner.appendChild(rep);
+    stack.appendChild(rep);
   }
+  // قناع الممحاة: أبيض يُظهر، ودوائر سوداء تمحو
+  const er = eraseOf(it);
+  if (er.length) {
+    const innerH = m.h * n + (it.gap || 0) * (n - 1);
+    const mid = "er_" + it.uid;
+    const defs = el("defs");
+    const mk = el("mask", { id: mid, maskUnits: "userSpaceOnUse",
+      x: -2, y: -2, width: m.w + 4, height: innerH + 4 });
+    mk.appendChild(el("rect", { x: -2, y: -2,
+      width: m.w + 4, height: innerH + 4, fill: "#fff" }));
+    er.forEach(k => mk.appendChild(
+      el("circle", { cx: k.x, cy: k.y, r: k.r, fill: "#000" })));
+    defs.appendChild(mk);
+    stack.appendChild(defs);
+    stack.setAttribute("mask", `url(#${mid})`);
+  }
+  inner.appendChild(stack);
   if (hasCrop(it)) {
     const c = cropOf(it), sz2 = itemSize(it);
     const cid = "clip_" + it.uid;
@@ -1287,7 +1321,11 @@ function renderItem(it) {
     });
     wrap.appendChild(box);
   }
-  wrap.addEventListener("pointerdown", e => startDrag(e, it));
+  wrap.addEventListener("pointerdown", e => {
+    // في وضع الممحاة يمسح الضغط بدل أن يسحب
+    if (eraseMode && state.sel === it.uid) { startErase(e, it); return; }
+    startDrag(e, it);
+  });
   return wrap;
 }
 
@@ -1330,6 +1368,35 @@ function startResize(e, it) {
    دلتا المؤشّر تُحسب في فضاء اللوح، ثم تُدوَّر بعكس زاوية النقشة
    لتصير في فضائها المحلي — وبدون ذلك يسحب المقبض في اتجاه خاطئ
    متى كانت النقشة مُدوَّرة. */
+/* نقطة المؤشّر بإحداثيات النقشة — عبر مصفوفة مجموعة التكرارات.
+
+   استخدام getScreenCTM للمجموعة نفسها يتولّى كل التحويلات معاً
+   (الموضع والدوران والتحجيم والقلب والإزاحة)، فلا حاجة لعكسها
+   يدوياً — والعكس اليدوي مع القلب السالب مصدر أخطاء. */
+function motifPoint(e, uid) {
+  const g = board.querySelector(`[data-stack="${uid}"]`);
+  if (!g) return null;
+  const m = g.getScreenCTM();
+  if (!m) return null;
+  const pt = board.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const q = pt.matrixTransform(m.inverse());
+  return { x: q.x, y: q.y };
+}
+
+function startErase(e, it) {
+  e.preventDefault(); e.stopPropagation();
+  const q = motifPoint(e, it.uid);
+  if (!q) return;
+  // نصف رأس الممحاة بوحدات النقشة = الإنش ÷ (إنش لكل وحدة)
+  const inPerUnit = cmToIn(cmPerUnit());
+  const r = Math.max(0.5, (erBrushIn / 2) / Math.max(1e-6, it.scale * inPerUnit));
+  it.erase = eraseOf(it).concat([{ x: q.x, y: q.y, r }]);
+  erStroke = { uid: it.uid, r, last: q };
+  board.setPointerCapture(e.pointerId);
+  draw();
+}
+
 let cropDrag = null;
 function startCrop(e, it, side) {
   e.preventDefault(); e.stopPropagation();
@@ -1340,6 +1407,25 @@ function startCrop(e, it, side) {
 }
 
 board.addEventListener("pointermove", e => {
+  if (erStroke) {
+    const it = state.items.find(i => i.uid === erStroke.uid);
+    if (!it) { erStroke = null; return; }
+    const q = motifPoint(e, it.uid);
+    if (!q) return;
+    // نقاط متقاربة على طول المسار فلا تتقطّع الضربة عند السحب السريع
+    const L = erStroke.last;
+    const d = Math.hypot(q.x - L.x, q.y - L.y);
+    const step = Math.max(1, erStroke.r * 0.7);
+    const arr = eraseOf(it).slice();
+    const nSeg = Math.min(60, Math.floor(d / step));
+    for (let i = 1; i <= nSeg; i++) {
+      const t = i / nSeg;
+      arr.push({ x: L.x + (q.x - L.x) * t, y: L.y + (q.y - L.y) * t,
+                 r: erStroke.r });
+    }
+    if (nSeg > 0) { it.erase = arr; erStroke.last = q; draw(); }
+    return;
+  }
   if (cropDrag) {
     const it = state.items.find(i => i.uid === cropDrag.uid);
     if (!it) { cropDrag = null; return; }
@@ -1374,6 +1460,7 @@ board.addEventListener("pointermove", e => {
 });
 ["pointerup", "pointercancel"].forEach(ev =>
   board.addEventListener(ev, () => {
+    if (erStroke) { erStroke = null; syncProps(); save(); }
     if (cropDrag) { cropDrag = null; syncProps(); renderList(); save(); }
     drag = null; rez = null;
   }));
@@ -1505,6 +1592,20 @@ function syncProps() {
     </div>
     <div class="hint" style="margin:7px 0 3px">
       Or drag the square handles on the motif edges to crop by eye.</div>
+
+    <label class="f">Eraser — rub out part of the motif</label>
+    <div class="btns">
+      <button class="btn sm" id="erOn">Eraser: off</button>
+      <button class="btn sm" id="erUndo">Undo stroke</button>
+      <button class="btn sm danger" id="erClear">Restore all</button>
+    </div>
+    <div class="ctl" style="margin-top:6px">
+      <input type="range" id="erSize" min="2" max="60" step="1"
+             value="${Math.round(erBrushIn * 100)}">
+      <input type="number" id="erSizeN" min="0.02" max="0.6" step="0.01"
+             value="${erBrushIn.toFixed(2)}"><span class="u">in</span>
+    </div>
+    <div class="hint" id="erInfo" style="margin-top:5px"></div>
 
     <label class="f">Split into independent parts</label>
     <div class="btns">
@@ -1658,6 +1759,55 @@ function syncProps() {
     select(b.uid);
     renderList(); save();
   };
+  /* الممحاة: المسح بالمرور على النقشة.
+
+     الضربات تُسجَّل بإحداثيات النقشة لا بإحداثيات اللوح، فتثبت
+     بالنسبة إليها: لو كبّرتِ النقشة أو دوّرتِها بعد المسح بقي
+     الممسوح في موضعه من الرسم. ولو سُجِّلت بإحداثيات اللوح لانزاح
+     الممسوح عند أول تحجيم. */
+  const refreshEr = () => {
+    const nEr = eraseOf(it).length;
+    const b = $("#erOn");
+    if (b) {
+      b.textContent = eraseMode ? "Eraser: ON" : "Eraser: off";
+      b.classList.toggle("primary", eraseMode);
+    }
+    const inf = $("#erInfo");
+    if (inf) inf.textContent = nEr
+      ? `${nEr} stroke(s) erased · drag over the motif to erase more`
+      : "Turn the eraser on, then drag over the motif.";
+  };
+  refreshEr();
+
+  if ($("#erOn")) $("#erOn").onclick = () => {
+    eraseMode = !eraseMode;
+    board.style.cursor = eraseMode ? "crosshair" : "";
+    refreshEr();
+  };
+  if ($("#erUndo")) $("#erUndo").onclick = () => {
+    const a = eraseOf(it);
+    if (!a.length) return;
+    it.erase = a.slice(0, -1);
+    draw(); syncProps(); save();
+  };
+  if ($("#erClear")) $("#erClear").onclick = () => {
+    if (!eraseOf(it).length) return;
+    it.erase = [];
+    draw(); syncProps(); save();
+  };
+  const erPair = (sl, nu) => {
+    const a = $(sl), b = $(nu);
+    if (a) a.oninput = e => { erBrushIn = (+e.target.value) / 100;
+      if (b) b.value = erBrushIn.toFixed(2); };
+    if (b) b.onchange = e => {
+      const v = parseFloat(e.target.value);
+      if (!isFinite(v) || v <= 0) return;
+      erBrushIn = v;
+      if (a) a.value = Math.round(v * 100);
+    };
+  };
+  erPair("#erSize", "#erSizeN");
+
   $("#pSplitV").onclick = () => split("v");
   $("#pSplitH").onclick = () => split("h");
 
@@ -1976,12 +2126,28 @@ function printMotifs(items) {
     const n = it.repeat || 1;
     const innerH = m.h * n + (it.gap || 0) * (n - 1);
 
+    const r2 = v => Math.round(v * 100) / 100;
     let reps = "";
     for (let i = 0; i < n; i++) {
       reps += `<g transform="translate(0,${i * (m.h + (it.gap || 0))})">
                  ${m.svg}</g>`;
     }
-    const r2 = v => Math.round(v * 100) / 100;
+    /* قناع الممحاة في المطبوع أيضاً، وإلا طُبعت النقشة كاملة بينما
+       تراها ممسوحة على الشاشة. وضربات الممحاة مُسجَّلة بإحداثيات
+       النقشة وهي نفس مساحة viewBox هنا، فتُستعمل كما هي. */
+    const erP = eraseOf(it);
+    if (erP.length) {
+      const mid = `erp_${it.uid}`;
+      const circles = erP.map(k =>
+        `<circle cx="${r2(k.x)}" cy="${r2(k.y)}" r="${r2(k.r)}" fill="#000"/>`
+      ).join("");
+      reps = `<defs><mask id="${mid}" maskUnits="userSpaceOnUse"
+          x="-2" y="-2" width="${r2(m.w + 4)}" height="${r2(innerH + 4)}">
+          <rect x="-2" y="-2" width="${r2(m.w + 4)}"
+                height="${r2(innerH + 4)}" fill="#fff"/>
+          ${circles}</mask></defs>
+        <g mask="url(#${mid})">${reps}</g>`;
+    }
     // viewBox يُزاح بمقدار القصّ بوحدات النقشة الأصلية
     const vbx = cp.l / it.scale;
     const vby = cp.t / it.scale;
@@ -2023,7 +2189,7 @@ function printMotifs(items) {
         <div class="ph">
           <b>${m.name}</b>
           <span>${pcName ? pcName + " · " : ""}${m.id} · true size
-            ${fmtLen(vs.w * k)} × ${fmtLen(vs.h * k)}${pos}${hasCrop(it) ? " · cropped" : ""}</span>
+            ${fmtLen(vs.w * k)} × ${fmtLen(vs.h * k)}${pos}${hasCrop(it) ? " · cropped" : ""}${eraseOf(it).length ? " · erased" : ""}</span>
         </div>
         <div class="winwrap" style="width:${r2(sliceW)}mm;height:${r2(sliceH)}mm">
           <div class="win" style="width:${r2(sliceW)}mm;height:${r2(sliceH)}mm">
