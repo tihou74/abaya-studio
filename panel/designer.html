@@ -948,12 +948,16 @@ function sheetGrid(wCm, hCm) {
   return { rows, cols, total: rows * cols, ov, B };
 }
 
+/* اسم الورق يُقرأ من الإعداد لا يُكتب ثابتاً: المستخدمة قد تختار A3
+   أو Letter فيصير كلّ ذكر لـ«A4» كذباً عليها. */
 function sheetsFor(wCm, hCm) {
   const g = sheetGrid(wCm, hCm);
-  if (g.total === 1) return "Fits on one A4 sheet";
+  const paper = PRINT.paper;
+  if (g.total === 1) return `Fits on one ${paper} sheet`;
   const shape = g.cols > 1 && g.rows > 1
     ? ` (${g.cols} across × ${g.rows} down)` : "";
-  return `Needs ${g.total} A4 sheets${shape} — join using the alignment marks`;
+  return `Needs ${g.total} ${paper} sheets${shape}`
+       + ` — join using the alignment marks`;
 }
 
 /* ---------------------- بناء المسرح ---------------------- */
@@ -1214,6 +1218,36 @@ function itemSize(it) {
    والتدوير تلقائياً وتُطبع كما تُرى. */
 function eraseOf(it) { return Array.isArray(it.erase) ? it.erase : []; }
 
+/* نسخة مستقلّة تماماً من النقشة.
+
+   النسخ السطحي `{...it}` يُبقي `erase` و`crop` *مرجعاً واحداً*
+   مشتركاً بين الأصل والنسخة، فالمسح على إحداهما يمسح من الأخرى
+   والقصّ يقصّ الاثنتين — وهو عيب لا يظهر إلا بعد أن تُفسد المستخدمة
+   عملها. */
+function cloneItem(it) {
+  return Object.assign({}, it, {
+    crop: Object.assign({}, cropOf(it)),
+    erase: eraseOf(it).map(d => Object.assign({}, d))
+  });
+}
+
+/* عدد المسحات المستقلّة — تُحصى بأرقام الضربات لا بعدد النقاط.
+   النقاط مُستوفاة على طول السحب فالمسحة الواحدة عشرات النقاط. */
+function strokeIds(it) {
+  const seen = [];
+  eraseOf(it).forEach(d => {
+    if (d.s != null && seen.indexOf(d.s) < 0) seen.push(d.s);
+  });
+  return seen;
+}
+function strokeCount(it) {
+  const ids = strokeIds(it);
+  // بيانات محفوظة من إصدار سابق بلا أرقام ضربات: تُعدّ نقاطاً
+  const untagged = eraseOf(it).filter(d => d.s == null).length;
+  return ids.length + untagged;
+}
+let erSeq = 1;
+
 /* مقاس رأس الممحاة بالإنش — يُحوَّل إلى وحدات النقشة عند الاستخدام */
 let erBrushIn = 0.12;
 let eraseMode = false;
@@ -1236,6 +1270,29 @@ function visibleSize(it) {
 function hasCrop(it) {
   const c = cropOf(it);
   return c.t > 0 || c.b > 0 || c.l > 0 || c.r > 0;
+}
+
+/* الصندوق المحيط *بعد التدوير* — وهو ما يُقاس ويُطبع فعلاً.
+
+   مستطيل عرضه w وطوله h مُدوَّر بزاوية θ يشغل صندوقاً محيطاً
+   W = |w·cosθ| + |h·sinθ|   و   H = |w·sinθ| + |h·cosθ|.
+
+   تجاهل هذا كان يجعل «المقاس الحقيقي» وعدد الأوراق والمقاس المطبوع
+   كلها للصندوق غير المدوّر: لوح يُقرأ 220×350 وحدة يبقى 220×350 بعد
+   تدويره 90° مع أن أبعاده تبادلت فعلاً — فتُطبع المستخدمة بمقاس خاطئ.
+
+   ويُحتفظ بـ visibleSize كما هي لأن صندوق التحديد ومقابض القصّ تعمل
+   في فضاء النقشة المدوّر معها، فتحتاج المقاس قبل التدوير. */
+function outerSize(it) {
+  const vs = visibleSize(it);
+  const a = ((it.rot || 0) * Math.PI) / 180;
+  const ca = Math.abs(Math.cos(a)), sa = Math.abs(Math.sin(a));
+  return {
+    w: vs.w * ca + vs.h * sa,
+    h: vs.w * sa + vs.h * ca,
+    rawW: vs.w, rawH: vs.h,
+    rotated: ((it.rot || 0) % 180) !== 0
+  };
 }
 
 function renderItem(it) {
@@ -1402,8 +1459,10 @@ function startErase(e, it) {
   // نصف رأس الممحاة بوحدات النقشة = الإنش ÷ (إنش لكل وحدة)
   const inPerUnit = cmToIn(cmPerUnit());
   const r = Math.max(0.5, (erBrushIn / 2) / Math.max(1e-6, it.scale * inPerUnit));
-  it.erase = eraseOf(it).concat([{ x: q.x, y: q.y, r }]);
-  erStroke = { uid: it.uid, r, last: q };
+  // كل نقطة تحمل رقم مسحتها، فيُمكن التراجع عن المسحة كاملةً
+  const sid = erSeq++;
+  it.erase = eraseOf(it).concat([{ x: q.x, y: q.y, r, s: sid }]);
+  erStroke = { uid: it.uid, r, last: q, sid };
   board.setPointerCapture(e.pointerId);
   draw();
 }
@@ -1432,7 +1491,7 @@ board.addEventListener("pointermove", e => {
     for (let i = 1; i <= nSeg; i++) {
       const t = i / nSeg;
       arr.push({ x: L.x + (q.x - L.x) * t, y: L.y + (q.y - L.y) * t,
-                 r: erStroke.r });
+                 r: erStroke.r, s: erStroke.sid });
     }
     if (nSeg > 0) { it.erase = arr; erStroke.last = q; draw(); }
     return;
@@ -1515,9 +1574,11 @@ function syncProps() {
   const m = motifById(it.mid);
   const sz = itemSize(it);
   const vs = visibleSize(it);
+  const os = outerSize(it);
   const k = cmPerUnit();
-  // المقاس المعروض والمطبوع هو المتبقّي بعد القصّ
-  const wCm = vs.w * k, hCm = vs.h * k;
+  // المقاس المعروض والمطبوع هو المتبقّي بعد القصّ، بصندوقه المحيط
+  // بعد التدوير — فهو ما يُقاس على القماش وما تشغله الورقة فعلاً
+  const wCm = os.w * k, hCm = os.h * k;
   const inPerUnit = cmToIn(k);
   const xIn = it.x * inPerUnit, yIn = it.y * inPerUnit;
   const gapIn = (it.gap || 0) * it.scale * inPerUnit;
@@ -1535,6 +1596,10 @@ function syncProps() {
         <span id="roH">${cmToIn(hCm).toFixed(1)}</span> inch</div>
       <div class="sub-cm"><span id="roWc">${wCm.toFixed(1)}</span> ×
         <span id="roHc">${hCm.toFixed(1)}</span> cm — width × height</div>
+      ${os.rotated ? `<div class="sub-cm" style="color:var(--accent)">
+        rotated ${it.rot}° — this is the box it occupies on the fabric
+        (${cmToIn(os.rawW * k).toFixed(1)}″ × ${cmToIn(os.rawH * k).toFixed(1)}″
+        unrotated)</div>` : ""}
       <div class="sheets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="width:13px;height:13px;flex:none"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="7" rx="2"/><path d="M7 16h10v5H7z"/></svg><span id="roSheets">${sheetsFor(wCm, hCm)}</span></div>
     </div>
 
@@ -1666,14 +1731,35 @@ function syncProps() {
     it.scale = Math.max(.02, e.target.value / 100 * 3);
     draw(); syncProps(); renderList(); save();
   };
-  // إدخال الطول بالإنش مباشرة — أدقّ من السحب بالمؤشّر
+  /* إدخال الطول بالإنش مباشرة — أدقّ من السحب بالمؤشّر.
+
+     الحقل يعني الطول الذي يُقاس على القماش: الصندوق المحيط بعد القصّ
+     والتدوير، وهو نفس الرقم المعروض أعلاه. والعكس محسوب تحليلياً:
+
+       الطول = s·(sinθ·العرض_الأصلي + cosθ·الطول_الأصلي)
+               − (sinθ·قصّ_الجانبين + cosθ·قصّ_الطرفين)
+
+     فهي دالّة خطّية في s تُقلب مباشرة. والقصّ بوحدات اللوح لا يتأثّر
+     بالتحجيم، فيُطرح خارج القوس.
+
+     قبل الإصلاح كان الحقل يعرض الطول المدوّر ويحسب كأن لا تدوير ولا
+     قصّ — فإدخال 10 إنش على نقشة مدوّرة يُعطي طولاً آخر. */
   $("#pHin").onchange = e => {
     const wantIn = parseFloat(e.target.value);
     if (!(wantIn > 0)) return;
     const m2 = motifById(it.mid);
     const n = it.repeat || 1;
-    const unitsPerScale = m2.h * n + (it.gap || 0) * (n - 1);
-    it.scale = inToCm(wantIn) / cmPerUnit() / unitsPerScale;
+    const c = cropOf(it);
+    const a = ((it.rot || 0) * Math.PI) / 180;
+    const ca = Math.abs(Math.cos(a)), sa = Math.abs(Math.sin(a));
+    const A = m2.w;                                   // العرض بوحدات النقشة
+    const B = m2.h * n + (it.gap || 0) * (n - 1);     // الطول بوحدات النقشة
+    const per = sa * A + ca * B;                      // وحدات لوح لكل وحدة تحجيم
+    if (per <= 1e-6) return;
+    const wantUnits = inToCm(wantIn) / cmPerUnit();
+    const s = (wantUnits + sa * (c.l + c.r) + ca * (c.t + c.b)) / per;
+    if (!(s > 0)) return;
+    it.scale = s;
     draw(); syncProps(); renderList(); save();
   };
   // كل مِمرَر له حقل رقمي مزدوج — المِمرَر للتقريب والرقم للدقّة
@@ -1760,8 +1846,9 @@ function syncProps() {
     if (vis < 8) { alert("The motif is too small to split."); return; }
     const halfCut = vis / 2;
 
-    const a = { ...it, uid: uidSeq++, crop: { ...c } };
-    const b = { ...it, uid: uidSeq++, crop: { ...c } };
+    // نسخة عميقة لكل نصف — وإلا تشاركا مصفوفة الممحاة نفسها
+    const a = cloneItem(it); a.uid = uidSeq++; a.crop = { ...c };
+    const b = cloneItem(it); b.uid = uidSeq++; b.crop = { ...c };
     if (axis === "v") { a.crop.b = c.b + halfCut; b.crop.t = c.t + halfCut; }
     else              { a.crop.r = c.r + halfCut; b.crop.l = c.l + halfCut; }
 
@@ -1777,7 +1864,9 @@ function syncProps() {
      الممسوح في موضعه من الرسم. ولو سُجِّلت بإحداثيات اللوح لانزاح
      الممسوح عند أول تحجيم. */
   const refreshEr = () => {
-    const nEr = eraseOf(it).length;
+    // العدّاد يعدّ المسحات لا النقاط: المسحة الواحدة عشرات النقاط
+    // المستوفاة، فكان يقول «47 stroke(s)» لتمريرة واحدة
+    const nEr = strokeCount(it);
     const b = $("#erOn");
     if (b) {
       b.textContent = eraseMode ? "Eraser: ON" : "Eraser: off";
@@ -1795,10 +1884,21 @@ function syncProps() {
     board.style.cursor = eraseMode ? "crosshair" : "";
     refreshEr();
   };
+  /* التراجع يُلغي *المسحة* كاملةً لا نقطة واحدة منها.
+
+     كان يحذف آخر نقطة فقط، والمسحة الواحدة تُسجّل عشرات النقاط
+     المستوفاة — فكان على المستخدمة ضغط الزرّ عشرات المرّات لإلغاء
+     تمريرة واحدة، مع أن الزرّ مكتوب عليه «Undo stroke». */
   if ($("#erUndo")) $("#erUndo").onclick = () => {
     const a = eraseOf(it);
     if (!a.length) return;
-    it.erase = a.slice(0, -1);
+    const ids = strokeIds(it);
+    if (ids.length) {
+      const lastId = ids[ids.length - 1];
+      it.erase = a.filter(d => d.s !== lastId);
+    } else {
+      it.erase = a.slice(0, -1);   // بيانات قديمة بلا أرقام ضربات
+    }
     draw(); syncProps(); save();
   };
   if ($("#erClear")) $("#erClear").onclick = () => {
@@ -1823,7 +1923,10 @@ function syncProps() {
   $("#pSplitH").onclick = () => split("h");
 
   $("#pDup").onclick = () => {
-    const cp = { ...it, uid: uidSeq++, x: it.x + 60 };
+    // نسخة عميقة: النسخ السطحي يجعل النسختين تتشاركان *نفس* مصفوفة
+    // الممحاة ومصفوفة القصّ، فالمسح على إحداهما يمسح من الأخرى
+    const cp = cloneItem(it);
+    cp.uid = uidSeq++; cp.x = it.x + 60;
     state.items.push(cp); select(cp.uid); renderList(); save();
   };
   $("#pDel").onclick = () => {
@@ -1848,7 +1951,7 @@ function renderList() {
     d.className = "item" + (state.sel === it.uid ? " on" : "");
     d.innerHTML = `<span class="sw" style="background:${it.color}"></span>
       <span class="nm">${m.name}</span>
-      <span class="sz">${fmtLen(visibleSize(it).w * k)} × ${fmtLen(visibleSize(it).h * k)}${hasCrop(it) ? " ✂" : ""}</span>`;
+      <span class="sz">${fmtLen(outerSize(it).w * k)} × ${fmtLen(outerSize(it).h * k)}${hasCrop(it) ? " ✂" : ""}${it.rot ? " ⟳" : ""}</span>`;
     d.onclick = () => select(it.uid);
     box.appendChild(d);
   });
@@ -2197,10 +2300,12 @@ function printMotifs(items) {
     })();
     const sz = itemSize(it);
     const vs = visibleSize(it);
+    const os = outerSize(it);
     const cp = cropOf(it);
-    // المطبوع هو المتبقّي بعد القصّ، وإلا طُبع ما لا تراه على الشاشة
-    const wMM = vs.w * k * MM_PER_CM;
-    const hMM = vs.h * k * MM_PER_CM;
+    // المطبوع هو المتبقّي بعد القصّ، بصندوقه المحيط بعد التدوير —
+    // وإلا طُبع ما لا تراه على الشاشة، أو طُبع بمقاس غير مقاسه
+    const wMM = os.w * k * MM_PER_CM;
+    const hMM = os.h * k * MM_PER_CM;
     const n = it.repeat || 1;
     const innerH = m.h * n + (it.gap || 0) * (n - 1);
 
@@ -2226,15 +2331,39 @@ function printMotifs(items) {
           ${circles}</mask></defs>
         <g mask="url(#${mid})">${reps}</g>`;
     }
-    // viewBox يُزاح بمقدار القصّ بوحدات النقشة الأصلية
+    /* منطقة القصّ بوحدات النقشة الأصلية */
     const vbx = cp.l / it.scale;
     const vby = cp.t / it.scale;
     const vbw = Math.max(0.5, m.w - (cp.l + cp.r) / it.scale);
     const vbh = Math.max(0.5, innerH - (cp.t + cp.b) / it.scale);
+
+    /* التدوير والقلب يجب أن يُنقلا إلى المطبوع.
+
+       كان المطبوع يتجاهلهما تماماً: نقشة تراها المستخدمة مدوّرة 40°
+       ومقلوبة تُطبع منتصبة غير مقلوبة — فتُنقل على القماش باتجاه
+       خاطئ، والخطأ لا يظهر إلا بعد القصّ والتطريز.
+
+       والقصّ لم يكن يحتاج قصّاً صريحاً قبل التدوير لأن الـ<svg>
+       الخارجي يقتطع ما خرج عن viewBox. أمّا مع التدوير فالمقصوص
+       يدور *داخل* الإطار فيظهر مرّة أخرى — فصار القصّ بـclipPath
+       صريح يُطبَّق في فضاء النقشة قبل تدويرها. */
+    const rotDeg = it.rot || 0;
+    const ar = (rotDeg * Math.PI) / 180;
+    const ca = Math.abs(Math.cos(ar)), sa = Math.abs(Math.sin(ar));
+    const Wu = vbw * ca + vbh * sa;          // الصندوق المحيط بوحدات النقشة
+    const Hu = vbw * sa + vbh * ca;
+    const clipId = `pcp_${it.uid}`;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg"
-        viewBox="${r2(vbx)} ${r2(vby)} ${r2(vbw)} ${r2(vbh)}"
+        viewBox="0 0 ${r2(Wu)} ${r2(Hu)}"
         width="${r2(wMM)}mm" height="${r2(hMM)}mm"
-        style="color:#000;display:block">${reps}</svg>`;
+        style="color:#000;display:block">
+      <defs><clipPath id="${clipId}"><rect x="${r2(vbx)}" y="${r2(vby)}"
+        width="${r2(vbw)}" height="${r2(vbh)}"/></clipPath></defs>
+      <g transform="translate(${r2(Wu / 2)},${r2(Hu / 2)}) rotate(${rotDeg})
+         scale(${it.flip ? -1 : 1},1)
+         translate(${r2(-(vbx + vbw / 2))},${r2(-(vby + vbh / 2))})">
+        <g clip-path="url(#${clipId})">${reps}</g>
+      </g></svg>`;
 
     // تقسيم على شبكة أوراق في الاتجاهين.
     //
@@ -2301,7 +2430,7 @@ function printMotifs(items) {
       <div class="warn">
         <b>Before printing — very important:</b>
         <ul>
-          <li>Choose paper size <b>A4</b>.</li>
+          <li>Choose paper size <b>${PRINT.paper}</b>.</li>
           <li>Set the scale to <b>100%</b> and turn off
               <b>Fit to page</b> / <b>Shrink to fit</b>.</li>
           <li>If it is left on, the printed size will change and the motif
@@ -2311,8 +2440,8 @@ function printMotifs(items) {
         each sheet must match the actual size on the paper.
       </div>
       <p>A motif larger than one sheet is split across several sheets with a
-         <b>${10} mm</b> overlap, and each sheet carries alignment marks on
-         its edges for joining.</p>
+         <b>${PRINT.overlap} mm</b> overlap, and each sheet carries alignment
+         marks on its edges for joining.</p>
     </div>`;
   showPrint(intro + pages,
     `${items.length} motifs · ${totalPages} sheets · abaya ${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″`, "motifs");
@@ -2323,25 +2452,38 @@ function printDesign() {
   const clone = board.cloneNode(true);
   clone.querySelectorAll(".selbox,.handle").forEach(n => n.remove());
   const k = cmPerUnit();
-  const rows = state.items.map(it => {
-    const m = motifById(it.mid), sz = itemSize(it);
+  /* الجدول يسرد نقشات *القطعة المعروضة* فقط.
+
+     كان يسرد state.items كلها، واللوح لا يُظهر إلا pieceItems() —
+     فورقة المرجع المُرسلة للمطرّزة تذكر نقشة موضوعة على الظهر
+     بينما الصورة للواجهة، فتبحث عنها في الصورة ولا تجدها. */
+  const shown = pieceItems();
+  const pcName = imgCut() && curPiece() ? curPiece().name : null;
+  const rows = shown.map(it => {
+    const m = motifById(it.mid), os = outerSize(it);
     return `<tr><td>${m.id}</td><td>${m.name}</td>
-      <td>${fmtLen(sz.w * k)} × ${fmtLen(sz.h * k)}</td>
+      <td>${fmtLen(os.w * k)} × ${fmtLen(os.h * k)}</td>
+      <td>${it.rot || 0}°${it.flip ? " ⇄" : ""}</td>
       <td><span style="display:inline-block;width:4mm;height:4mm;
         background:${it.color};border:.2mm solid #999"></span></td></tr>`;
   }).join("");
+  const others = state.items.length - shown.length;
   const html = `
     <div class="intro design">
       <h1>Abaya design — ${cut().name}</h1>
-      <p>Abaya size: <b>${cmToIn(state.lenCm).toFixed(0)}″ × ${state.widIn}″</b> ·
-         Motifs: <b>${state.items.length}</b></p>
+      <p>${pcName ? `Piece: <b>${pcName}</b> · ` : ""}Length:
+         <b>${fmtLen(state.lenCm)}</b> ·
+         Motifs on this piece: <b>${shown.length}</b></p>
+      ${others > 0 ? `<p style="color:#8a5a12">${others} more motif(s) are
+         placed on other pieces — switch piece and print again to document
+         them.</p>` : ""}
       ${clone.outerHTML}
       <table><thead><tr><th>Code</th><th>Motif</th>
-        <th>True size</th><th>Colour</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="4">No motifs</td></tr>'}</tbody>
+        <th>True size</th><th>Rotation</th><th>Colour</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5">No motifs</td></tr>'}</tbody>
       </table>
     </div>`;
-  showPrint(html, `Abaya image · ${state.items.length} motifs`, "design");
+  showPrint(html, `Abaya image · ${shown.length} motifs`, "design");
 }
 
 /* ================= معاينة منصّة الدوران =================
@@ -2427,23 +2569,63 @@ function close3D() {
 
 /* ---------------------- الحفظ التلقائي ---------------------- */
 const KEY = "abaya-panel-v1";
+let quotaWarned = false;
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify({
+  const payload = {
     cut: state.cut, piece: state.piece,
     circ: IMG_CUTS.map(c => ({ id: c.id, circ: { ...c.circ } })),
     lenCm: state.lenCm, widIn: state.widIn,
     abayaColor: state.abayaColor,
+    // صورة القصّة المرفوعة وإظهار القياس يُحفظان أيضاً، وإلا ضاع
+    // ما رفعته المستخدمة بمجرّد إعادة تحميل الصفحة
+    bg: state.bg, bgOpacity: state.bgOpacity, showDim: state.showDim,
     items: state.items, uidSeq
-  })); } catch (e) {}
+  };
+  try {
+    localStorage.setItem(KEY, JSON.stringify(payload));
+  } catch (e) {
+    /* الصورة المرفوعة هي الثقيلة دائماً، فتُستبعد ويُعاد الحفظ.
+       وإن فشل أيضاً فالمستخدمة *يجب* أن تُبلَّغ: تجاهل الخطأ بصمت
+       كان يجعلها تظنّ عملها محفوظاً فتُغلق الصفحة وتفقده. */
+    try {
+      localStorage.setItem(KEY, JSON.stringify(
+        Object.assign({}, payload, { bg: null })));
+      if (!quotaWarned) {
+        quotaWarned = true;
+        alert("Browser storage is full, so the uploaded cut photo is no "
+          + "longer saved with the design. The motifs themselves are saved. "
+          + "Use \"Delete my motifs\" to free space.");
+      }
+    } catch (e2) {
+      if (!quotaWarned) {
+        quotaWarned = true;
+        alert("⚠ Could not save the design — browser storage is full.\n\n"
+          + "Your work is NOT being saved automatically. Print or export it "
+          + "now, and use \"Delete my motifs\" to free space.");
+      }
+    }
+  }
 }
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || "null");
     if (!s) return;
-    if (s.cut && CUTS.some(c => c.id === s.cut)) state.cut = s.cut;
+    /* القصّات الصورية (closh/thoub) يجب أن تُقبل أيضاً.
+       كان التحقّق من CUTS القديمة وحدها، فأي قصّة صورية تُرفض بصمت
+       وتُفتح اللوحة دائماً على «straight» — تختار المستخدمة الكلوش
+       وتعمل عليها، ثم تعود فتجد عملها على قصّة أخرى. */
+    if (s.cut && [...IMG_CUTS, ...CUTS].some(c => c.id === s.cut))
+      state.cut = s.cut;
     if (s.lenCm) state.lenCm = s.lenCm;
     if (s.widIn) state.widIn = s.widIn;
-    if (s.piece) state.piece = s.piece;
+    // القطعة تُقبل فقط إن كانت من قطع هذه القصّة
+    if (s.piece) {
+      const ic = IMG_CUTS.find(c => c.id === state.cut);
+      if (!ic || ic.pieces.some(p => p.id === s.piece)) state.piece = s.piece;
+    }
+    if (s.bg) state.bg = s.bg;
+    if (s.bgOpacity > 0) state.bgOpacity = s.bgOpacity;
+    if (typeof s.showDim === "boolean") state.showDim = s.showDim;
     if (Array.isArray(s.circ)) s.circ.forEach(r => {
       const c = IMG_CUTS.find(x => x.id === r.id);
       if (c && r.circ) Object.assign(c.circ, r.circ);

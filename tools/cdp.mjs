@@ -1,0 +1,152 @@
+/* سائق Chrome DevTools Protocol بلا أي اعتماديات خارجية.
+   الصندوق بلا إنترنت فلا يمكن تثبيت playwright، لكن Node 22 يملك
+   WebSocket مدمجاً وChromium موجود في /opt/playwright — فهذا يكفي
+   لتشغيل اللوحة في متصفّح حقيقي وتنفيذ شيفرة داخلها.
+
+   الاستخدام:
+     const b = await launch();
+     await b.open('file:///path/page.html');
+     const v = await b.eval('document.title');
+     await b.shot('/tmp/x.png', 1200, 900);
+     await b.close();
+*/
+import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const CHROME = process.env.CHROME
+  || "/opt/playwright/chromium-1232/chrome-linux64/chrome";
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function fetchJSON(url, tries = 60) {
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) return await r.json();
+    } catch { /* المتصفّح لم يرفع المنفذ بعد */ }
+    await sleep(250);
+  }
+  throw new Error("لم يستجب المتصفّح على منفذ التنقيح: " + url);
+}
+
+export async function launch({ width = 1440, height = 980 } = {}) {
+  const port = 9222 + Math.floor(Math.random() * 2000);
+  const profile = mkdtempSync(join(tmpdir(), "cdp-"));
+  const proc = spawn(CHROME, [
+    "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars",
+    "--disable-dev-shm-usage", "--no-first-run", "--no-default-browser-check",
+    "--disable-extensions", "--allow-file-access-from-files",
+    `--remote-debugging-port=${port}`,
+    `--user-data-dir=${profile}`,
+    `--window-size=${width},${height}`,
+    "about:blank",
+  ], { stdio: ["ignore", "ignore", "pipe"] });
+
+  const stderr = [];
+  proc.stderr.on("data", d => stderr.push(String(d)));
+
+  const info = await fetchJSON(`http://127.0.0.1:${port}/json/version`);
+  const ws = new WebSocket(info.webSocketDebuggerUrl);
+  await new Promise((res, rej) => {
+    ws.onopen = res;
+    ws.onerror = () => rej(new Error("فشل الاتصال بالمتصفّح\n" + stderr.join("")));
+  });
+
+  let seq = 0;
+  const pending = new Map();
+  const events = [];
+  ws.onmessage = ev => {
+    const msg = JSON.parse(ev.data);
+    if (msg.id && pending.has(msg.id)) {
+      const { res, rej } = pending.get(msg.id);
+      pending.delete(msg.id);
+      msg.error ? rej(new Error(JSON.stringify(msg.error))) : res(msg.result);
+    } else if (msg.method) {
+      events.push(msg);
+    }
+  };
+
+  // جلسة على الصفحة نفسها لا على المتصفّح
+  const targets = await send("Target.getTargets");
+  const page = targets.targetInfos.find(t => t.type === "page");
+  const { sessionId } = await send("Target.attachToTarget",
+    { targetId: page.targetId, flatten: true });
+
+  function send(method, params = {}, sid) {
+    const id = ++seq;
+    return new Promise((res, rej) => {
+      pending.set(id, { res, rej });
+      ws.send(JSON.stringify({ id, method, params, sessionId: sid }));
+      setTimeout(() => {
+        if (pending.has(id)) { pending.delete(id); rej(new Error("مهلة: " + method)); }
+      }, 60000);
+    });
+  }
+  const cmd = (m, p) => send(m, p, sessionId);
+
+  await cmd("Page.enable");
+  await cmd("Runtime.enable");
+  await cmd("Log.enable");
+
+  const api = {
+    events,
+    /** أخطاء الصفحة ورسائل console.error منذ آخر فتح */
+    errors() {
+      return events
+        .filter(e => e.method === "Log.entryAdded"
+          && ["error", "warning"].includes(e.params.entry.level))
+        .map(e => `[${e.params.entry.level}] ${e.params.entry.text}`
+          + (e.params.entry.url ? ` @ ${e.params.entry.url}` : ""));
+    },
+    async open(url, waitMs = 900) {
+      events.length = 0;
+      await cmd("Page.navigate", { url });
+      // انتظار اكتمال التحميل ثم مهلة قصيرة لتشغيل سكربتات التهيئة
+      const t0 = Date.now();
+      while (Date.now() - t0 < 20000) {
+        const r = await cmd("Runtime.evaluate",
+          { expression: "document.readyState", returnByValue: true });
+        if (r.result.value === "complete") break;
+        await sleep(120);
+      }
+      await sleep(waitMs);
+    },
+    /** تنفيذ تعبير وإرجاع قيمته (يدعم await) */
+    async eval(expr) {
+      const r = await cmd("Runtime.evaluate", {
+        expression: `(async()=>{${expr.includes("return") ? expr : "return (" + expr + ")"}})()`,
+        awaitPromise: true, returnByValue: true,
+      });
+      if (r.exceptionDetails) {
+        throw new Error("خطأ داخل الصفحة: "
+          + (r.exceptionDetails.exception?.description
+            || r.exceptionDetails.text));
+      }
+      return r.result.value;
+    },
+    async setSize(w, h) {
+      await cmd("Emulation.setDeviceMetricsOverride",
+        { width: w, height: h, deviceScaleFactor: 1, mobile: false });
+    },
+    /** لقطة شاشة — تحرس حدّ 2000 بكسل في كل بُعد */
+    async shot(path, w = 1440, h = 980) {
+      if (w > 2000 || h > 2000) {
+        throw new Error(`لقطة ${w}×${h} تتجاوز حدّ 2000 بكسل — `
+          + `الصور الأكبر تُرفض في طلبات الصور المتعدّدة. صغّري المقاس.`);
+      }
+      await api.setSize(w, h);
+      await sleep(250);
+      const r = await cmd("Page.captureScreenshot", { format: "png" });
+      writeFileSync(path, Buffer.from(r.data, "base64"));
+      return path;
+    },
+    async close() {
+      try { ws.close(); } catch {}
+      proc.kill("SIGKILL");
+      try { rmSync(profile, { recursive: true, force: true }); } catch {}
+    },
+  };
+  return api;
+}
