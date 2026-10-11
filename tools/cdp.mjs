@@ -126,6 +126,68 @@ export async function launch({ width = 1440, height = 980 } = {}) {
       }
       return r.result.value;
     },
+    /* ===== إدخال حقيقي =====
+       تُرسَل الأحداث عبر Input.dispatch* فيُولّدها المتصفّح بنفسه،
+       فتمرّ بكل مسار المعالجة الحقيقي (pointer events، التقاط
+       المؤشّر، getScreenCTM). أمّا dispatchEvent من جافاسكربت فيصنع
+       حدثاً اصطناعياً قد ينجح حيث يفشل الاستخدام الفعلي — وهو ما
+       يجعل الاختبار يكذب. */
+    async mouseMove(x, y, buttons = 0) {
+      await cmd("Input.dispatchMouseEvent", {
+        type: "mouseMoved", x, y, buttons,
+        button: buttons ? "left" : "none",
+        pointerType: "mouse",
+      });
+    },
+    async mouseDown(x, y) {
+      await cmd("Input.dispatchMouseEvent", {
+        type: "mousePressed", x, y, button: "left", buttons: 1,
+        clickCount: 1, pointerType: "mouse",
+      });
+    },
+    async mouseUp(x, y) {
+      await cmd("Input.dispatchMouseEvent", {
+        type: "mouseReleased", x, y, button: "left", buttons: 0,
+        clickCount: 1, pointerType: "mouse",
+      });
+    },
+    /** سحب بخطوات وسطية — الخطوة الواحدة لا تُحاكي السحب الحقيقي */
+    async drag(x1, y1, x2, y2, steps = 10) {
+      await api.mouseMove(x1, y1);
+      await api.mouseDown(x1, y1);
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        await api.mouseMove(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, 1);
+        await sleep(16);
+      }
+      await api.mouseUp(x2, y2);
+      await sleep(40);
+    },
+    async key(k, modifiers = 0) {
+      const special = {
+        Escape: { code: "Escape", vk: 27 },
+        Enter: { code: "Enter", vk: 13, text: "\r" },
+        Delete: { code: "Delete", vk: 46 },
+        Alt: { code: "AltLeft", vk: 18 },
+        ArrowUp: { code: "ArrowUp", vk: 38 },
+        ArrowDown: { code: "ArrowDown", vk: 40 },
+        ArrowLeft: { code: "ArrowLeft", vk: 37 },
+        ArrowRight: { code: "ArrowRight", vk: 39 },
+      };
+      const sp = special[k];
+      const base = sp
+        ? { key: k, code: sp.code, windowsVirtualKeyCode: sp.vk,
+            nativeVirtualKeyCode: sp.vk, text: sp.text }
+        : { key: k, code: "Key" + k.toUpperCase(), text: k,
+            windowsVirtualKeyCode: k.toUpperCase().charCodeAt(0),
+            nativeVirtualKeyCode: k.toUpperCase().charCodeAt(0) };
+      await cmd("Input.dispatchKeyEvent",
+        Object.assign({ type: sp && !sp.text ? "rawKeyDown" : "keyDown",
+          modifiers }, base));
+      await cmd("Input.dispatchKeyEvent",
+        Object.assign({ type: "keyUp", modifiers }, base));
+      await sleep(40);
+    },
     async setSize(w, h) {
       await cmd("Emulation.setDeviceMetricsOverride",
         { width: w, height: h, deviceScaleFactor: 1, mobile: false });
@@ -141,6 +203,25 @@ export async function launch({ width = 1440, height = 980 } = {}) {
       const r = await cmd("Page.captureScreenshot", { format: "png" });
       writeFileSync(path, Buffer.from(r.data, "base64"));
       return path;
+    },
+    /** لقطة لمنطقة محدّدة بتكبير — للتدقيق في التفاصيل.
+        المتصفّح يقتطع ويُكبّر بنفسه فلا حاجة لمكتبة صور (وPillow
+        غير مثبّت ولا إنترنت لتثبيته). والحدّ 2000 بكسل محروس على
+        الأبعاد *الناتجة* بعد التكبير. */
+    async shotClip(path, { x, y, width, height, scale = 1 }) {
+      const outW = Math.round(width * scale), outH = Math.round(height * scale);
+      if (outW > 2000 || outH > 2000) {
+        throw new Error(`اللقطة الناتجة ${outW}×${outH} تتجاوز حدّ 2000 بكسل `
+          + `— صغّري المنطقة أو التكبير (الأقصى هنا `
+          + `${(2000 / Math.max(width, height)).toFixed(2)}×)`);
+      }
+      const r = await cmd("Page.captureScreenshot", {
+        format: "png",
+        clip: { x, y, width, height, scale },
+        captureBeyondViewport: false,
+      });
+      writeFileSync(path, Buffer.from(r.data, "base64"));
+      return { path, width: outW, height: outH };
     },
     async close() {
       try { ws.close(); } catch {}

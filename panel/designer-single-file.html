@@ -249,6 +249,40 @@
     cursor:nwse-resize;touch-action:none}
   /* مقبض القصّ مربّع ليتميّز عن مقبض التحجيم الدائري */
   .crop-h{fill:#fff;stroke:var(--sel);stroke-width:2}
+
+  /* ===== الممحاة =====
+     الدائرة تُظهر *بالضبط* ما سيُمحى قبل الضغط. وstroke ثابت السماكة
+     (non-scaling) لتبقى الحاشية رقيقة مهما صغر الإطار، والدائرة
+     لا تستقبل أحداث المؤشّر وإلا حجبت النقشة تحتها عن الضغط. */
+  .er-brush{pointer-events:none}
+  .er-brush-ring{fill:#e0348a1f;stroke:#e0348a;stroke-width:1.5;
+    stroke-dasharray:5 3;vector-effect:non-scaling-stroke}
+  .er-brush-ring.restore{fill:#16a34a1f;stroke:#16a34a;stroke-dasharray:none}
+  .er-brush-dot{fill:#e0348a;stroke:#fff;stroke-width:.6;
+    vector-effect:non-scaling-stroke}
+  /* أثر المسح — يُظهر أين مُسح وكم مُسح، وإلا بدا أن لا شيء حدث */
+  /* pointer-events:all يُسجّل الضغط حتى على مساحة غير مطليّة،
+     بخلاف القاعدة الافتراضية visiblePainted التي تشترط إصابة الخطّ */
+  .er-hit{fill:#000;fill-opacity:0;pointer-events:all;cursor:none}
+  .er-ghost{pointer-events:none}
+  .er-ghost circle{fill:#e0348a14;stroke:#e0348a66;stroke-width:.8;
+    vector-effect:non-scaling-stroke}
+
+  .er-steps{border-inline-start:3px solid var(--line);padding-inline-start:8px;
+    margin:6px 0 0;line-height:1.75}
+  .er-steps.on{border-inline-start-color:#e0348a;background:#e0348a0d;
+    border-radius:0 6px 6px 0;padding:6px 8px}
+  .er-steps kbd{display:inline-block;padding:0 4px;border:1px solid var(--line);
+    border-bottom-width:2px;border-radius:4px;font-size:10px;background:#fff}
+
+  /* شريط إرشادي فوق اللوح — يبقى ظاهراً طول عمل الممحاة */
+  #erBanner{position:absolute;inset-block-start:10px;inset-inline-start:50%;
+    transform:translate(50%);z-index:6;
+    background:#e0348a;color:#fff;font-size:11.5px;font-weight:600;
+    padding:5px 12px;border-radius:999px;box-shadow:0 2px 8px #0003;
+    pointer-events:none;white-space:nowrap;max-width:94%;overflow:hidden;
+    text-overflow:ellipsis}
+  html[dir=ltr] #erBanner{transform:translate(-50%)}
   .dimline{stroke:var(--sel);stroke-width:1;
     vector-effect:non-scaling-stroke}
 
@@ -431,7 +465,7 @@
   <header>
     <div>
       <h1>Abaya Design Studio</h1>
-      <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">2026-10-11 19:14</span></div>
+      <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">2026-10-11 19:32</span></div>
     </div>
     <div class="spacer"></div>
     <div class="toolbar">
@@ -537,6 +571,7 @@
     <!-- ============ Centre: stage ============ -->
     <div class="stage" id="stage">
       <svg id="board" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="erBanner" hidden></div>
     </div>
 
     <!-- ============ Right: motif properties ============ -->
@@ -1098,6 +1133,10 @@ function draw() {
   if (state.showDim) g.appendChild(dimension());
 
   board.appendChild(g);
+
+  /* دائرة الفرشاة تُعاد بعد كل رسم: draw() تبني اللوح من جديد فتُفقد
+     الدائرة أثناء المسح نفسه — وهو أسوأ وقت لاختفائها. */
+  if (eraseMode) drawBrush();
 }
 
 /* لوح الجسم بلا أكمام، مبنيّ من المقاسات.
@@ -1251,10 +1290,32 @@ function strokeCount(it) {
 }
 let erSeq = 1;
 
-/* مقاس رأس الممحاة بالإنش — يُحوَّل إلى وحدات النقشة عند الاستخدام */
-let erBrushIn = 0.12;
+/* ====================== الممحاة ======================
+
+   مقاس رأس الممحاة بالإنش — لأن المستخدمة تفكّر بالإنش على القماش،
+   لا بوحدات الرسم الداخلية.
+
+   ‏0.25 إنش ≈ 6 مم. كان الافتراضي 0.12 إنش (3 مم) وهو أصغر من أن
+   يُرى على لوح مُصغَّر، فتمسح المستخدمة ولا ترى شيئاً يتغيّر فتظنّ
+   الممحاة معطوبة. */
+let erBrushIn = 0.25;
 let eraseMode = false;
+let erRestore = false;    // فرشاة الإرجاع: تُعيد ما مُسح
 let erStroke = null;      // ضربة قيد الرسم
+let erHover = null;       // موضع المؤشّر على اللوح لرسم دائرة الفرشاة
+let erAlt = false;        // Alt مضغوط = إرجاع مؤقّت
+const erRestoring = () => erRestore || erAlt;
+
+/* نصف قطر الفرشاة بوحدات *اللوح* — ثابت لا يتغيّر بالنقشة، لأنه
+   مقاس حقيقي على القماش. وبوحدات *النقشة* يُقسَم على تحجيمها. */
+function erBrushBoardR() {
+  const inPerUnit = cmToIn(cmPerUnit());
+  return Math.max(0.5, (erBrushIn / 2) / Math.max(1e-6, inPerUnit));
+}
+function erBrushMotifR(it) {
+  const inPerUnit = cmToIn(cmPerUnit());
+  return Math.max(0.5, (erBrushIn / 2) / Math.max(1e-6, it.scale * inPerUnit));
+}
 
 function cropOf(it) {
   const c = it.crop || {};
@@ -1392,12 +1453,126 @@ function renderItem(it) {
     });
     wrap.appendChild(box);
   }
+  /* أثر المسح يُعرَض خفيفاً وقت تشغيل الممحاة.
+
+     القناع يُخفي الممسوح فقط، فلا تعرف المستخدمة أين مسحت ولا
+     كم مسحت — خاصّةً إذا كانت النقشة خطوطاً رقيقة على عباية داكنة،
+     فيختفي الخطّ ويبدو أن شيئاً لم يحدث. */
+  if (eraseMode && er.length) {
+    /* مجموعة شقيقة للـstack بنفس تحويله — فتتطابق إحداثياتها مع
+       نقاط المسح. ولا تُوضع *داخل* الـstack لأنه مُقنَّع، فتُمحى
+       معه الدوائر التي يُفترض أن تُظهر أثر المسح. */
+    const ghost = el("g", {
+      class: "er-ghost",
+      transform: `translate(${-m.w / 2},${-sz.h / it.scale / 2})`
+    });
+    er.forEach(k => ghost.appendChild(
+      el("circle", { cx: k.x, cy: k.y, r: k.r })));
+    inner.appendChild(ghost);
+  }
+
+  /* مساحة التقاط للممحاة تغطّي مستطيل النقشة كاملاً.
+
+     هذا *السبب الجذري* لإحساس أن الممحاة لا تعمل: النقشة خطوط
+     رقيقة، وقاعدة SVG الافتراضية (visiblePainted) لا تُسجّل الضغط
+     إلا على الخطّ نفسه. فأي بداية سحب في الفراغ بين الخطوط — وهو
+     معظم مساحة النقشة — لا تصل إلى الممحاة إطلاقاً، فلا يحدث شيء
+     ولا رسالة تُفسّر. والفرشاة يجب أن تعمل في الفراغ أيضاً لأن
+     المسح يُمرَّر *فوق* المنطقة لا على خطّ بعينه.
+
+     تُضاف فقط في وضع الممحاة، فلا تؤثّر على السحب والتحديد. */
+  if (eraseMode) {
+    const cH = cropOf(it);
+    const hit = el("rect", {
+      class: "er-hit",
+      x: (-sz.w / 2 + cH.l) / it.scale,
+      y: (-sz.h / 2 + cH.t) / it.scale,
+      width: Math.max(0.5, sz.w - cH.l - cH.r) / it.scale,
+      height: Math.max(0.5, sz.h - cH.t - cH.b) / it.scale
+    });
+    inner.appendChild(hit);
+  }
+
   wrap.addEventListener("pointerdown", e => {
-    // في وضع الممحاة يمسح الضغط بدل أن يسحب
-    if (eraseMode && state.sel === it.uid) { startErase(e, it); return; }
+    /* في وضع الممحاة يمسح الضغط بدل أن يسحب — على *أي* نقشة تُلمس.
+
+       كان الشرط `state.sel === it.uid` يقتضي تحديد النقشة أولاً،
+       فتُشغّل المستخدمة الممحاة وتضغط على النقشة فتنسحب بدل أن
+       تُمحى، فتظنّ الممحاة لا تعمل. */
+    if (eraseMode) {
+      if (state.sel !== it.uid) { state.sel = it.uid; syncProps(); renderList(); }
+      startErase(e, it);
+      return;
+    }
     startDrag(e, it);
   });
   return wrap;
+}
+
+/* تشغيل الممحاة وإطفاؤها من مكان واحد.
+
+   المؤشّر يُخفى ويُستبدل بالدائرة، كما في برامج الرسم: وجود سهم
+   ودائرة معاً يُربك، ومؤشّر التصليب وحده لا يدلّ على مقاس المسح. */
+function setEraseMode(on) {
+  eraseMode = !!on;
+  if (!eraseMode) { erRestore = false; erHover = null; }
+  board.style.cursor = eraseMode ? "none" : "";
+  draw(); refreshErUI(); drawBrush();
+}
+function setBrush(inches) {
+  erBrushIn = Math.max(0.02, Math.min(2, inches));
+  const a = $("#erSize"), b = $("#erSizeN");
+  if (a) a.value = Math.round(erBrushIn * 100);
+  if (b) b.value = erBrushIn.toFixed(2);
+  refreshErUI(); drawBrush();
+}
+/* يُحدّث نصوص الممحاة أينما كانت لوحة الخصائص مبنيّة.
+   refreshEr الداخلية في syncProps تُعرَّف لكل نقشة، وهذه تعمل
+   دائماً — فتُستعمل من الاختصارات والأزرار العامة. */
+function refreshErUI() {
+  const b = $("#erOn");
+  if (b) {
+    b.textContent = eraseMode
+      ? "🧽 Eraser: ON — drag over the motif"
+      : "🧽 Eraser: OFF — click to turn on";
+    b.classList.toggle("primary", eraseMode);
+  }
+  const rb = $("#erRest");
+  if (rb) {
+    rb.textContent = erRestore ? "↩ Restore brush: ON" : "↩ Restore brush: off";
+    rb.classList.toggle("primary", erRestore);
+  }
+  const st = $("#erSteps");
+  if (st) st.classList.toggle("on", eraseMode);
+  const banner = $("#erBanner");
+  if (banner) {
+    banner.hidden = !eraseMode;
+    banner.textContent = erRestoring()
+      ? `Restoring · brush ${erBrushIn.toFixed(2)}″ — drag to put the motif back`
+      : `Erasing · brush ${erBrushIn.toFixed(2)}″ — drag over the motif`
+      + ` · Alt = restore · [ ] = size · Esc = done`;
+  }
+}
+
+/* ====================== دائرة الفرشاة ======================
+
+   أهمّ إصلاح في الممحاة: أن تُرى قبل أن تمسح. بلا دائرة ظاهرة لا
+   تعرف المستخدمة مقاس ما سيُمحى ولا موضعه بالضبط، فتمسح أكثر أو أقلّ
+   مما تريد — ومؤشّر التصليب (crosshair) لا يدلّ على المقاس إطلاقاً. */
+function drawBrush() {
+  const old = board.querySelector(".er-brush");
+  if (old) old.remove();
+  if (!eraseMode || !erHover || !mainG) return;
+  const r = erBrushBoardR();
+  const g = el("g", { class: "er-brush" });
+  g.appendChild(el("circle", {
+    cx: erHover.x, cy: erHover.y, r,
+    class: erRestoring() ? "er-brush-ring restore" : "er-brush-ring"
+  }));
+  // نقطة المركز تدلّ على موضع المسح بالضبط حين تكبر الفرشاة
+  g.appendChild(el("circle", { cx: erHover.x, cy: erHover.y, r: 1.6,
+    class: "er-brush-dot" }));
+  mainG.appendChild(g);
 }
 
 /* ---------------------- السحب والتحجيم ---------------------- */
@@ -1455,19 +1630,36 @@ function motifPoint(e, uid) {
   return { x: q.x, y: q.y };
 }
 
+/* يُزيل نقاط المسح الواقعة تحت الفرشاة — فرشاة الإرجاع.
+
+   وجودها يُغيّر الممحاة من أداة مُخيفة إلى أداة يمكن تجربتها: الخطأ
+   يُصلَح بالمرور فوقه بدل البحث في تاريخ المسحات. */
+function erRestoreAt(it, q, r) {
+  const before = eraseOf(it);
+  const kept = before.filter(d => Math.hypot(d.x - q.x, d.y - q.y) > r + d.r * 0.25);
+  if (kept.length === before.length) return false;
+  it.erase = kept;
+  return true;
+}
+
 function startErase(e, it) {
   e.preventDefault(); e.stopPropagation();
   const q = motifPoint(e, it.uid);
   if (!q) return;
-  // نصف رأس الممحاة بوحدات النقشة = الإنش ÷ (إنش لكل وحدة)
-  const inPerUnit = cmToIn(cmPerUnit());
-  const r = Math.max(0.5, (erBrushIn / 2) / Math.max(1e-6, it.scale * inPerUnit));
-  // كل نقطة تحمل رقم مسحتها، فيُمكن التراجع عن المسحة كاملةً
-  const sid = erSeq++;
-  it.erase = eraseOf(it).concat([{ x: q.x, y: q.y, r, s: sid }]);
-  erStroke = { uid: it.uid, r, last: q, sid };
+  const r = erBrushMotifR(it);
+  // Alt يقلب الوظيفة مؤقّتاً إلى إرجاع — كما في برامج الرسم
+  const restoring = erRestoring() || e.altKey;
+  if (restoring) {
+    erStroke = { uid: it.uid, r, last: q, restore: true };
+    if (erRestoreAt(it, q, r)) draw();
+  } else {
+    // كل نقطة تحمل رقم مسحتها، فيُمكن التراجع عن المسحة كاملةً
+    const sid = erSeq++;
+    it.erase = eraseOf(it).concat([{ x: q.x, y: q.y, r, s: sid }]);
+    erStroke = { uid: it.uid, r, last: q, sid };
+    draw();
+  }
   board.setPointerCapture(e.pointerId);
-  draw();
 }
 
 let cropDrag = null;
@@ -1479,6 +1671,14 @@ function startCrop(e, it, side) {
   board.setPointerCapture(e.pointerId);
 }
 
+/* تتبّع موضع الفرشاة — يسبق كل شيء ليبقى محدّثاً حتى بلا ضغط */
+board.addEventListener("pointermove", e => {
+  if (!eraseMode) return;
+  erHover = boardPoint(e);
+  drawBrush();
+});
+board.addEventListener("pointerleave", () => { erHover = null; drawBrush(); });
+
 board.addEventListener("pointermove", e => {
   if (erStroke) {
     const it = state.items.find(i => i.uid === erStroke.uid);
@@ -1489,8 +1689,23 @@ board.addEventListener("pointermove", e => {
     const L = erStroke.last;
     const d = Math.hypot(q.x - L.x, q.y - L.y);
     const step = Math.max(1, erStroke.r * 0.7);
-    const arr = eraseOf(it).slice();
     const nSeg = Math.min(60, Math.floor(d / step));
+    if (erStroke.restore) {
+      // الإرجاع يسري على طول المسار أيضاً، وإلا تركت الحركة السريعة
+      // جزراً ممسوحة بين موضعين
+      let changed = erRestoreAt(it, q, erStroke.r);
+      for (let i = 1; i <= nSeg; i++) {
+        const t = i / nSeg;
+        if (erRestoreAt(it, { x: L.x + (q.x - L.x) * t,
+                              y: L.y + (q.y - L.y) * t }, erStroke.r)) {
+          changed = true;
+        }
+      }
+      erStroke.last = q;
+      if (changed) { draw(); syncProps(); }
+      return;
+    }
+    const arr = eraseOf(it).slice();
     for (let i = 1; i <= nSeg; i++) {
       const t = i / nSeg;
       arr.push({ x: L.x + (q.x - L.x) * t, y: L.y + (q.y - L.y) * t,
@@ -1672,16 +1887,29 @@ function syncProps() {
     <div class="hint" style="margin:7px 0 3px">
       Or drag the square handles on the motif edges to crop by eye.</div>
 
-    <label class="f">Eraser — rub out part of the motif</label>
-    <div class="btns">
-      <button class="btn sm" id="erOn">Eraser: off</button>
-      <button class="btn sm" id="erUndo">Undo stroke</button>
+    <label class="f">Eraser — rub out the bits you do not want</label>
+    <button class="btn block" id="erOn">🧽 Eraser: OFF — click to turn on</button>
+    <div class="er-steps hint" id="erSteps">
+      <b>1.</b> Turn the eraser on &nbsp;<b>2.</b> A pink circle follows your
+      pointer — that is exactly what will be rubbed out &nbsp;<b>3.</b> Drag
+      over the motif. Hold <kbd>Alt</kbd> to put it back.
+    </div>
+    <div class="btns" style="margin-top:6px">
+      <button class="btn sm" id="erRest">↩ Restore brush: off</button>
+      <button class="btn sm" id="erUndo">Undo last stroke</button>
       <button class="btn sm danger" id="erClear">Restore all</button>
     </div>
-    <div class="ctl" style="margin-top:6px">
-      <input type="range" id="erSize" min="2" max="60" step="1"
+    <label class="f" style="margin-top:8px">Eraser size</label>
+    <div class="btns" style="margin-bottom:5px">
+      <button class="chip mini" id="erS1">Fine 0.1″</button>
+      <button class="chip mini" id="erS2">Medium 0.25″</button>
+      <button class="chip mini" id="erS3">Large 0.6″</button>
+      <button class="chip mini" id="erS4">Wipe 1.2″</button>
+    </div>
+    <div class="ctl">
+      <input type="range" id="erSize" min="2" max="200" step="1"
              value="${Math.round(erBrushIn * 100)}">
-      <input type="number" id="erSizeN" min="0.02" max="0.6" step="0.01"
+      <input type="number" id="erSizeN" min="0.02" max="2" step="0.01"
              value="${erBrushIn.toFixed(2)}"><span class="u">in</span>
     </div>
     <div class="hint" id="erInfo" style="margin-top:5px"></div>
@@ -1870,23 +2098,32 @@ function syncProps() {
     // العدّاد يعدّ المسحات لا النقاط: المسحة الواحدة عشرات النقاط
     // المستوفاة، فكان يقول «47 stroke(s)» لتمريرة واحدة
     const nEr = strokeCount(it);
-    const b = $("#erOn");
-    if (b) {
-      b.textContent = eraseMode ? "Eraser: ON" : "Eraser: off";
-      b.classList.toggle("primary", eraseMode);
-    }
+    refreshErUI();
     const inf = $("#erInfo");
-    if (inf) inf.textContent = nEr
-      ? `${nEr} stroke(s) erased · drag over the motif to erase more`
-      : "Turn the eraser on, then drag over the motif.";
+    if (inf) {
+      inf.textContent = nEr
+        ? `${nEr} stroke(s) rubbed out on this motif`
+          + ` · “Restore all” brings it all back`
+        : eraseMode
+          ? "Ready — drag the pink circle over the part you want gone."
+          : "Nothing rubbed out on this motif yet.";
+    }
   };
   refreshEr();
 
-  if ($("#erOn")) $("#erOn").onclick = () => {
-    eraseMode = !eraseMode;
-    board.style.cursor = eraseMode ? "crosshair" : "";
-    refreshEr();
+  if ($("#erOn")) $("#erOn").onclick = () => { setEraseMode(!eraseMode); };
+  if ($("#erRest")) $("#erRest").onclick = () => {
+    erRestore = !erRestore;
+    if (erRestore && !eraseMode) { setEraseMode(true); return; }
+    refreshEr(); drawBrush();
   };
+  [["#erS1", 0.1], ["#erS2", 0.25], ["#erS3", 0.6], ["#erS4", 1.2]]
+    .forEach(([sel, v]) => {
+      if ($(sel)) $(sel).onclick = () => {
+        setBrush(v);
+        if (!eraseMode) setEraseMode(true);
+      };
+    });
   /* التراجع يُلغي *المسحة* كاملةً لا نقطة واحدة منها.
 
      كان يحذف آخر نقطة فقط، والمسحة الواحدة تُسجّل عشرات النقاط
@@ -1909,18 +2146,12 @@ function syncProps() {
     it.erase = [];
     draw(); syncProps(); save();
   };
-  const erPair = (sl, nu) => {
-    const a = $(sl), b = $(nu);
-    if (a) a.oninput = e => { erBrushIn = (+e.target.value) / 100;
-      if (b) b.value = erBrushIn.toFixed(2); };
-    if (b) b.onchange = e => {
-      const v = parseFloat(e.target.value);
-      if (!isFinite(v) || v <= 0) return;
-      erBrushIn = v;
-      if (a) a.value = Math.round(v * 100);
-    };
+  // تغيير المقاس يُحدّث الدائرة فوراً، وإلا لم تعرف المستخدمة أثره
+  if ($("#erSize")) $("#erSize").oninput = e => setBrush((+e.target.value) / 100);
+  if ($("#erSizeN")) $("#erSizeN").onchange = e => {
+    const v = parseFloat(e.target.value);
+    if (isFinite(v) && v > 0) setBrush(v);
   };
-  erPair("#erSize", "#erSizeN");
 
   $("#pSplitV").onclick = () => split("v");
   $("#pSplitH").onclick = () => split("h");
@@ -2823,8 +3054,33 @@ function initUI() {
   };
 
   document.addEventListener("keydown", e => {
+    const typing = document.activeElement
+      && ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName);
+
+    /* اختصارات الممحاة — تعمل بلا تحديد نقشة.
+       E للتشغيل، والقوسان للمقاس، وEsc للخروج. وهي نفس اختصارات
+       برامج الرسم المعروفة فلا تحتاج تعلّماً. */
+    if (!typing) {
+      const k = e.key.toLowerCase();
+      if (k === "e") { e.preventDefault(); setEraseMode(!eraseMode); return; }
+      if (eraseMode) {
+        if (e.key === "[") { e.preventDefault(); setBrush(erBrushIn / 1.4); return; }
+        if (e.key === "]") { e.preventDefault(); setBrush(erBrushIn * 1.4); return; }
+        if (e.key === "Escape") { e.preventDefault(); setEraseMode(false); return; }
+        if (k === "r") { e.preventDefault(); erRestore = !erRestore;
+          refreshErUI(); drawBrush(); return; }
+      }
+    }
+    // Alt يقلب الفرشاة إلى إرجاع مؤقّتاً، فيتغيّر لون الدائرة فوراً
+    if (e.key === "Alt") {
+      erAlt = true;
+      if (eraseMode) { drawBrush(); refreshErUI(); }
+    }
+
     const it = selItem();
     if (!it) return;
+    // في وضع الممحاة لا تُحرَّك النقشة بالأسهم ولا تُحذف بالخطأ
+    if (eraseMode) return;
     if (e.key === "Delete" || e.key === "Backspace") {
       if (document.activeElement.tagName === "INPUT") return;
       e.preventDefault();
@@ -2839,6 +3095,17 @@ function initUI() {
       it.x += moves[e.key][0]; it.y += moves[e.key][1];
       draw(); syncProps(); save();
     }
+  });
+
+  document.addEventListener("keyup", e => {
+    if (e.key === "Alt") {
+      erAlt = false;
+      if (eraseMode) { drawBrush(); refreshErUI(); }
+    }
+  });
+  // فقدان التركيز يترك Alt «مضغوطاً» إلى الأبد فتبقى الفرشاة إرجاعاً
+  window.addEventListener("blur", () => {
+    if (erAlt) { erAlt = false; if (eraseMode) { drawBrush(); refreshErUI(); } }
   });
 }
 

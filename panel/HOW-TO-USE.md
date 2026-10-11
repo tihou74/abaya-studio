@@ -84,6 +84,39 @@ readout, A4 printing), and is remembered by your browser.
 
 You can upload several files at once. **Delete my motifs** clears them all.
 
+### 3b · The eraser — rub out the bits you do not want
+
+This is the tool for removing an **extra leaf, a stray stem end, or half a
+rosette** without touching the rest of the motif.
+
+**How it works, in three steps:**
+
+1. Select the motif, then press the big **🧽 Eraser: OFF** button (or press
+   the **`E`** key). The button turns gold and reads **Eraser: ON**.
+2. A **pink circle follows your pointer**. That circle is *exactly* what will
+   be rubbed out — nothing more, nothing less. A pink bar appears above the
+   abaya to remind you the eraser is on.
+3. **Drag** over the part you want gone. It disappears as you drag, and a
+   faint pink shadow shows you where you have already erased.
+
+| What you want | How |
+|---|---|
+| Bigger or smaller eraser | **Fine 0.1″** · **Medium 0.25″** · **Large 0.6″** · **Wipe 1.2″** — or the slider, or type the size in inches. Keys **`[`** and **`]`** |
+| Put something back | Hold **`Alt`** while dragging — the circle turns **green**. Or press the **↩ Restore brush** button |
+| Undo one drag | **Undo last stroke** — removes the whole drag in one press |
+| Start over | **Restore all** — brings the entire motif back |
+| Finish | Press **`Esc`**, or the eraser button again |
+
+> **The eraser works anywhere inside the motif's box** — you do not have to
+> press exactly on a line. And you can erase a motif without selecting it
+> first: just drag over it.
+
+> **What you erase is what gets printed.** The erased parts are gone from the
+> A4 printout too, so you stitch exactly what you see.
+
+> **Erasing sticks to the motif, not to the abaya.** Resize or rotate the
+> motif after erasing and the erased parts stay in the right place.
+
 ### 4 · Place it and colour it
 
 - **Drag** it where you want.
