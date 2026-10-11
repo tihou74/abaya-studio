@@ -747,6 +747,35 @@ const IMG_CUTS = [{
     { id: "sketchB", name: "Sketch · back",  kind: "image",
       src: "cuts/closh-back.png",  w: 412, h: 1018 }
   ]
+}, {
+  id: "thoub",
+  name: "Thoub — open front, side slits (image)",
+  pxPerInch: 860 / 58,
+  measures: {
+    length: 58, chest: 24, shoulder: 15, hem: 50,
+    sleeveLength: 24, sleeveWidth: 6
+  },
+  /* قراءة المقاسات تأكّدت من الرسمة نفسها لا بالسؤال:
+       الأكتاف 15 → الرسمة تُظهر 15.8 عند 6% من الأعلى ✓
+       الذيل 50 → الرسمة تُظهر 23.5؛ فـ50 محيطاً = 25 مفروشاً ✓
+                   (ولو كان مفروشاً لكان 50 أي ضعف ما في الرسمة)
+       الصدر 24 → مفروش، إذ 24 محيطاً = 12 وهو أنحف من الأكتاف 15
+                   وذلك مستحيل هندسياً
+       الكُمّ 6 → مفروش (وفي الكلوش 12 محيطاً = 6 مفروشاً، فالقيمة
+                   الفعّالة واحدة)
+
+     والذيل المفروش 25″ أوسع قليلاً من الصدر 24″ — أي قصّة شبه
+     مستقيمة، وهو ما يفسّر الفتحتين الجانبيتين: الثوب المستقيم
+     يحتاجهما للحركة. */
+  circ: { chest: false, hem: true, sleeve: false },
+  pieces: [
+    { id: "front",  name: "Front (body)", kind: "body", face: "front" },
+    { id: "back",   name: "Back (body)",  kind: "body", face: "back" },
+    { id: "sleeve", name: "Sleeve (flat)", kind: "rect" },
+    { id: "flat",   name: "Flat panel (true scale)", kind: "trap" },
+    { id: "sketchF", name: "Sketch · front", kind: "image",
+      src: "cuts/thoub-front.png", w: 555, h: 860 }
+  ]
 }];
 
 /* أبعاد القطع المشتقّة من المقاسات — تُحسب حياً فتتبع أي تغيير */
