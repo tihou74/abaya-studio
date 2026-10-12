@@ -91,6 +91,7 @@ def main():
 PANEL_SRC = "designer.html"
 PANEL_ONE = "designer-single-file.html"
 DATA_TAG = '<script src="motifs-data.js"></script>'
+CUTS_TAG = '<script src="cuts-data.js"></script>'
 
 
 def inline_cut_images(html: str) -> str:
@@ -127,7 +128,9 @@ def build_single_file(payload: str):
     src = OUT / PANEL_SRC
     html = src.read_text(encoding="utf-8")
     if DATA_TAG not in html:
-        raise ValueError(f"وسم البيانات غير موجود في {PANEL_SRC}")
+        raise ValueError(f"وسم بيانات النقشات غير موجود في {PANEL_SRC}")
+    if CUTS_TAG not in html:
+        raise ValueError(f"وسم بيانات القصّات غير موجود في {PANEL_SRC}")
 
     # </script> داخل نصّ السكربت يُنهي الوسم مبكّراً فتتلف الصفحة،
     # ولا يظهر ذلك إلا عند الفتح. ويُتفادى بتقسيم التسلسل.
@@ -137,16 +140,23 @@ def build_single_file(payload: str):
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     html = html.replace("__BUILD__", stamp)
 
-    # صور القصّات تُدمَج كـ data URL، وإلا ظهرت القطع فارغة في
-    # نسخة الملف الواحد لأن المسار النسبي (cuts/...) لا يوجد بجوارها.
-    html = inline_cut_images(html)
+    # بيانات القصّات تُدمج هي أيضاً، وصور القصّات داخلها تُحوَّل إلى
+    # data URL — وإلا ظهرت القطع فارغة في نسخة الملف الواحد لأن
+    # المسار النسبي (cuts/...) لا يوجد بجوارها.
+    cuts_js = (OUT / "cuts-data.js").read_text(encoding="utf-8")
+    cuts_js = inline_cut_images(cuts_js)
+    cuts_inline = ("<script>\n"
+                   "/* بيانات القصّات مدموجة — المصدر panel/cuts-data.js */\n"
+                   + cuts_js.replace("</", "<\\/") + "\n</script>")
 
     inline = ("<script>\n"
               "/* بيانات النقشات مدموجة — مُولّدة آلياً بـ build_panel.py */\n"
               "window.MOTIFS = " + safe + ";\n"
               "</script>")
+    html = html.replace(DATA_TAG, inline, 1)
+    html = html.replace(CUTS_TAG, cuts_inline, 1)
     out = OUT / PANEL_ONE
-    out.write_text(html.replace(DATA_TAG, inline, 1), encoding="utf-8")
+    out.write_text(html, encoding="utf-8")
     print(f"ونسخة ملف واحد للجوال: {out.relative_to(ROOT)}"
           f"  ({out.stat().st_size / 1024 / 1024:.1f} م.ب)")
 

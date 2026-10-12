@@ -264,6 +264,23 @@
   /* pointer-events:all يُسجّل الضغط حتى على مساحة غير مطليّة،
      بخلاف القاعدة الافتراضية visiblePainted التي تشترط إصابة الخطّ */
   .er-hit{fill:#000;fill-opacity:0;pointer-events:all;cursor:none}
+
+  /* ===== المعايرة ===== */
+  .cal-g{pointer-events:none}
+  .cal-line{stroke:#0d9488;stroke-width:2.5;stroke-dasharray:7 4;
+    vector-effect:non-scaling-stroke}
+  .cal-end{fill:#0d9488;stroke:#fff;stroke-width:1.5;
+    vector-effect:non-scaling-stroke}
+  .cal-txt{fill:#0d9488;font-weight:700;paint-order:stroke;
+    stroke:#fff;stroke-width:4px}
+  .cal-note{background:#ccfbf1;border:1px solid #5eead4;color:#115e59;
+    border-radius:7px;padding:6px 8px;margin-top:6px;font-size:11px;
+    line-height:1.7}
+  /* تنبيه قصّة معطوبة — ظاهر لا في طيّات وحدة التحكّم */
+  .cut-bad{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;
+    border-radius:7px;padding:7px 9px;margin:6px 0;font-size:11.5px;
+    line-height:1.75}
+  .cut-bad b{display:block;margin-bottom:2px}
   .er-ghost{pointer-events:none}
   .er-ghost circle{fill:#e0348a14;stroke:#e0348a66;stroke-width:.8;
     vector-effect:non-scaling-stroke}
@@ -492,6 +509,7 @@
         <h2><span class="n">1</span>Abaya cut</h2>
         <select id="cut"></select>
 
+        <div id="cutProblems" style="display:none"></div>
         <div id="pieceWrap" style="display:none;margin-top:9px">
           <label class="f">Piece — each is measured on its own</label>
           <div class="segmented" id="pieceChips"></div>
@@ -505,6 +523,7 @@
           <div id="measWarn" style="display:none;margin-top:7px;padding:7px 9px;
                background:#fff6e5;border:1px solid #e0b35c;border-radius:7px;
                font-size:11.5px;line-height:1.6;color:#8a6412"></div>
+          <div id="calWrap" style="display:none;margin-top:9px"></div>
         </div>
 
         <label class="f">Or upload your own cut image</label>
@@ -647,6 +666,7 @@
 </div>
 
 <script src="motifs-data.js"></script>
+<script src="cuts-data.js"></script>
 <script>
 /* =======================================================================
    لوحة تصميم العبايات — تعمل بلا إنترنت وبلا خادم.
@@ -752,82 +772,109 @@ const CUTS = [
    باترون مفروش. الكتف يطابق المقاس المعطى تقريباً، أما الذيل فالرسم
    يُظهره أضيق بكثير من دورانه الحقيقي. فالمقاس المطبوع صحيح دائماً،
    لكن نسبة النقشة إلى عرض الذيل الحقيقي ليست كما تبدو في الرسم. */
-const IMG_CUTS = [{
-  id: "closh",
-  name: "Closh — flared (image)",
-  pxPerInch: 1026 / 58,          // ارتفاع الوجه الأمامي = الطول
-  measures: {                     // إنش، كما وردت من المستخدمة
-    length: 58, chest: 24, shoulder: 15, hem: 120,
-    sleeveLength: 24, sleeveWidth: 12
-  },
-  /* هل الرقم محيط أم عرض مفروش؟ الفرق ضعف، ويقلب كل القياسات.
+/* ===================== بناء القصّات من بياناتها =====================
 
-     مؤكَّد من المستخدمة:
-       الصدر 24 = عرض مفروش   (المحيط ‏48″ = 122 سم)
-       الذيل 120 = محيط        (المفروش ‏60″)
-       الكُمّ 12 = محيط         (المفروش ‏6″)
+   القصّات تأتي من panel/cuts-data.js. وهنا تُشتقّ منها القطع آلياً.
 
-     وقد قيل أوّلاً إن الصدر محيط، فنُبِّه إلى أن ذلك يُعطي ‏12″
-     مفروشاً وهو أضيق من الأكتاف (15) — مستحيل هندسياً، إذ لا يكون
-     الصدر أنحف من الكتفين — فصُحِّح إلى مفروش. ومن ثَمّ بقي
-     measureWarning حارساً دائماً على هذا النوع من الخطأ.
+   لماذا لا تُكتب القطع في البيانات؟ لأنها كانت تُكرَّر يدوياً لكل
+   قصّة بستّة أسطر متماثلة، وأي سطر ناقص يمرّ بصمت — وقد نقص فعلاً
+   رسم الوجه الخلفي من الثوب. والقطع كلها مشتقّة من المقاسات والأوجه،
+   فلا معنى لإعادة كتابتها.
 
-     والمفاتيح تبقى ظاهرة في الواجهة لأن القصّات القادمة قد تأتي
-     مقاساتها بعُرف مختلف. */
-  circ: { chest: false, hem: true, sleeve: true },
-  pieces: [
-    /* الواجهة والخلفية بلا أكمام — سطح العمل الذي تُوضع عليه النقشة.
-       تُبنى هندسياً من المقاسات لا من الرسمة النقطية: قصّ الأكمام من
-       الرسمة بالتعبئة الانتشارية فشل، إذ خطوط الحياكة غير مغلقة في
-       البكسل فتسرّبت التعبئة من الجسم إلى الكُمّ (247 ألف بكسل في
-       الخلفية). والبناء الهندسي أدقّ أيضاً، فالرسمة الفنية تُظهر
-       الذيل 18.5″ بدل 60″ الحقيقية. */
+   ومعامل القياس يُحسب **لكل وجه** من ارتفاع صورته لا رقماً مكتوباً
+   باليد لكل قصّة — فصورة جديدة لا تستلزم تعديل أي رقم، وأوجه القصّة
+   الواحدة قد تختلف أبعادها. */
+
+const CUT_SRC = Array.isArray(window.ABAYA_CUTS) ? window.ABAYA_CUTS : [];
+
+const FACE_LABEL = { front: "front", back: "back", side: "side" };
+const SKETCH_ID = { front: "sketchF", back: "sketchB", side: "sketchS" };
+
+/* بكسل لكل إنش لوجه معيّن: ارتفاع صورته ÷ الطول، مضروباً في معامل
+   المعايرة إن عُيِّر. والمعايرة تُصحّح قصّاً غير مضبوط للصورة بلا
+   تعديل أي رقم يدوياً. */
+function facePPI(cutObj, faceKey) {
+  const f = cutObj.faces && cutObj.faces[faceKey];
+  const len = cutObj.measures && cutObj.measures.length;
+  if (!f || !f.h || !len) return null;
+  const k = (cutObj.calib && cutObj.calib[faceKey]) || 1;
+  return (f.h / len) * k;
+}
+
+/* القطع المشتقّة: الجسم أماماً وخلفاً، والكُمّ، والقطعة المفروشة،
+   ثم رسم مرجعي لكل وجه موجود. */
+function buildPieces(cutObj) {
+  const M = cutObj.measures || {};
+  const out = [
     { id: "front",  name: "Front (body)", kind: "body", face: "front" },
-    { id: "back",   name: "Back (body)",  kind: "body", face: "back" },
-    // الكُمّ مستطيل مسطّح بناءً على طلب المستخدمة. العرض = نصف
-    // المحيط المعطى (12 إنش محيطاً ← 6 إنش مفروشاً).
-    { id: "sleeve", name: "Sleeve (flat)", kind: "rect" },
-    // قطعة بالنسب الحقيقية: شبه منحرف من الصدر المفروش إلى الذيل
-    // المفروش على كامل الطول. الرسمة الفنية تُظهر الذيل أضيق بكثير
-    // من دورانه الحقيقي، فهذه القطعة هي الصحيحة لأشرطة الذيل
-    // والتوزيع الكامل.
-    { id: "flat", name: "Flat panel (true scale)", kind: "trap" },
-    /* الرسمة الأصلية كاملةً بالأكمام — للمرجع والشكل لا للعمل */
-    { id: "sketchF", name: "Sketch · front", kind: "image",
-      src: "cuts/closh-front.png", w: 403, h: 1026 },
-    { id: "sketchB", name: "Sketch · back",  kind: "image",
-      src: "cuts/closh-back.png",  w: 412, h: 1018 }
-  ]
-}, {
-  id: "thoub",
-  name: "Thoub — open front, side slits (image)",
-  pxPerInch: 860 / 58,
-  measures: {
-    length: 58, chest: 24, shoulder: 15, hem: 50,
-    sleeveLength: 24, sleeveWidth: 6
-  },
-  /* قراءة المقاسات تأكّدت من الرسمة نفسها لا بالسؤال:
-       الأكتاف 15 → الرسمة تُظهر 15.8 عند 6% من الأعلى ✓
-       الذيل 50 → الرسمة تُظهر 23.5؛ فـ50 محيطاً = 25 مفروشاً ✓
-                   (ولو كان مفروشاً لكان 50 أي ضعف ما في الرسمة)
-       الصدر 24 → مفروش، إذ 24 محيطاً = 12 وهو أنحف من الأكتاف 15
-                   وذلك مستحيل هندسياً
-       الكُمّ 6 → مفروش (وفي الكلوش 12 محيطاً = 6 مفروشاً، فالقيمة
-                   الفعّالة واحدة)
+    { id: "back",   name: "Back (body)",  kind: "body", face: "back" }
+  ];
+  if (M.sleeveWidth > 0 && M.sleeveLength > 0) {
+    out.push({ id: "sleeve", name: "Sleeve (flat)", kind: "rect" });
+  }
+  out.push({ id: "flat", name: "Flat panel (true scale)", kind: "trap" });
+  ["front", "back", "side"].forEach(fk => {
+    const f = cutObj.faces && cutObj.faces[fk];
+    if (!f || !f.src) return;
+    out.push({
+      id: SKETCH_ID[fk], name: "Sketch · " + FACE_LABEL[fk],
+      kind: "image", face: fk, src: f.src, w: f.w, h: f.h,
+      // المعامل يُخزَّن على القطعة فتبقى pieceGeom بلا فروع إضافية
+      get ppi() { return facePPI(cutObj, fk); }
+    });
+  });
+  return out;
+}
 
-     والذيل المفروش 25″ أوسع قليلاً من الصدر 24″ — أي قصّة شبه
-     مستقيمة، وهو ما يفسّر الفتحتين الجانبيتين: الثوب المستقيم
-     يحتاجهما للحركة. */
-  circ: { chest: false, hem: true, sleeve: false },
-  pieces: [
-    { id: "front",  name: "Front (body)", kind: "body", face: "front" },
-    { id: "back",   name: "Back (body)",  kind: "body", face: "back" },
-    { id: "sleeve", name: "Sleeve (flat)", kind: "rect" },
-    { id: "flat",   name: "Flat panel (true scale)", kind: "trap" },
-    { id: "sketchF", name: "Sketch · front", kind: "image",
-      src: "cuts/thoub-front.png", w: 555, h: 860 }
-  ]
-}];
+/* التحقّق من القصّة قبل عرضها — رسالة واضحة بدل انكسار صامت.
+
+   كل شرط هنا مقابل خطأ وقع فعلاً أو يقع حتماً: مقاس ناقص، أو صورة
+   بلا أبعاد، أو صورة تتجاوز حدّ 2000 بكسل الذي يُسقط الجلسة، أو
+   وجه أمامي مفقود وهو مرجع كل القياسات. */
+function validateCut(cutObj) {
+  const errs = [];
+  const M = cutObj.measures || {};
+  ["length", "chest", "shoulder", "hem"].forEach(k => {
+    if (!(M[k] > 0)) errs.push(`measure "${k}" is missing or not positive`);
+  });
+  const faces = cutObj.faces || {};
+  if (!faces.front) errs.push("no front face image — it is the size reference");
+  Object.keys(faces).forEach(fk => {
+    const f = faces[fk];
+    if (!FACE_LABEL[fk]) { errs.push(`unknown face "${fk}"`); return; }
+    if (!f.src) errs.push(`face "${fk}" has no src`);
+    if (!(f.w > 0) || !(f.h > 0)) {
+      errs.push(`face "${fk}" has no pixel size (w/h) —`
+        + ` run: python3 check_png.py panel/cuts`);
+    } else if (f.w > 2000 || f.h > 2000) {
+      errs.push(`face "${fk}" is ${f.w}×${f.h}px — over the 2000px limit;`
+        + ` run: python3 check_png.py --fix panel/cuts`);
+    }
+  });
+  if (!cutObj.id || /\s/.test(cutObj.id)) errs.push("id must be latin, no spaces");
+  if (!cutObj.name) errs.push("name is missing");
+  return errs;
+}
+
+/* القصّة تُنسَخ أوّلاً ثم تُبنى قطعها *على النسخة*.
+
+   ترتيب هاتين الخطوتين ليس تفصيلاً: buildPieces يُغلق على الكائن
+   الممرَّر إليه ليقرأ منه معامل المعايرة لاحقاً. فلو بُنيت القطع على
+   كائن البيانات الأصلي ثم نُسخت القصّة، لكُتبت المعايرة في النسخة
+   وقُرئت من الأصل — فيُحفظ المعامل ولا يتغيّر المقاس أبداً. وقد
+   حدث ذلك فعلاً وكشفه الاختبار. */
+const CUT_PROBLEMS = [];
+const IMG_CUTS = [];
+CUT_SRC.forEach(c => {
+  const errs = validateCut(c);
+  if (errs.length) {
+    CUT_PROBLEMS.push({ id: c.id || "(no id)", errs });
+    return;
+  }
+  const cut = Object.assign({}, c, { calib: Object.assign({}, c.calib) });
+  cut.pieces = buildPieces(cut);
+  IMG_CUTS.push(cut);
+});
 
 /* أبعاد القطع المشتقّة من المقاسات — تُحسب حياً فتتبع أي تغيير */
 function pieceGeom(cutObj, pc) {
@@ -848,7 +895,9 @@ function pieceGeom(cutObj, pc) {
              wIn: Math.max(flatOf(cutObj, "chest"), flatOf(cutObj, "hem")),
              hIn: cutObj.measures.length };
   }
-  return { wIn: pc.w / cutObj.pxPerInch, hIn: pc.h / cutObj.pxPerInch };
+  // القطعة الصورية: معامل **وجهها** لا معامل القصّة كلها
+  const ppi = pc.ppi || facePPI(cutObj, pc.face) || 1;
+  return { wIn: pc.w / ppi, hIn: pc.h / ppi };
 }
 
 /* العرض المفروش لمقاس ما — نصفه إن كان محيطاً */
@@ -902,6 +951,56 @@ function pieceUnitW() {
 function syncPieceLength() {
   const pi = pieceInches();
   if (pi) state.lenCm = inToCm(pi.hIn);
+}
+
+/* ===================== المعايرة =====================
+
+   معامل القياس يُشتقّ من فرض أن ارتفاع الصورة = الطول الحقيقي. وهذا
+   يصحّ فقط إن كانت الصورة مقصوصة على حدود العباية تماماً. وأي هامش
+   — ولو بكسلات — يُخطئ كل المقاسات بنفس النسبة.
+
+   فالمعايرة: تُسحب مسطرة على بُعد *معلوم* في الرسمة ويُكتب مقداره
+   الحقيقي، فيُصحَّح المعامل. وهي أدقّ من إعادة قصّ الصورة ولا تمسّ
+   البيانات.
+
+   الرياضيات: إن قاس البرنامج البُعد M إنشاً وكان حقيقةً R إنشاً،
+   فالطول المفترض للوجه يجب أن يُضرب في R/M. وبما أن
+   ppi = (h / length) · calib  و hIn = h / ppi = length / calib،
+   فإنّ ضرب الطول في R/M يعني  calib ← calib · M/R. */
+let calMode = false;
+let calDrag = null;
+
+function calibratableFace() {
+  const pc = curPiece();
+  return pc && pc.kind === "image" ? pc.face : null;
+}
+
+function setCalMode(on) {
+  calMode = !!on && !!calibratableFace();
+  if (calMode) { setEraseMode(false); }
+  calDrag = null;
+  board.style.cursor = calMode ? "crosshair" : "";
+  draw(); syncProps();
+}
+
+function applyCalibration(measuredIn, realIn) {
+  const c = imgCut(), face = calibratableFace();
+  if (!c || !face) return false;
+  if (!(measuredIn > 0) || !(realIn > 0)) return false;
+  c.calib = c.calib || {};
+  const prev = c.calib[face] || 1;
+  c.calib[face] = prev * (measuredIn / realIn);
+  syncPieceLength();
+  save(); draw(); syncProps(); renderPieces();
+  return true;
+}
+
+function resetCalibration() {
+  const c = imgCut(), face = calibratableFace();
+  if (!c || !face) return;
+  if (c.calib) delete c.calib[face];
+  syncPieceLength();
+  save(); draw(); syncProps(); renderPieces();
 }
 
 const ABAYA_COLORS = ["#1c1c22","#2b2b36","#3c3730","#4a4039","#5b4b3f",
@@ -1130,6 +1229,25 @@ function draw() {
   if (state.showDim) g.appendChild(dimension());
 
   board.appendChild(g);
+
+  /* مسطرة المعايرة أثناء السحب — تُرسم داخل مجموعة اللوح فتتبع
+     إحداثياته، ومعها القياس الحيّ بالإنش. */
+  if (calMode && calDrag) {
+    const d = calDrag;
+    const cg = el("g", { class: "cal-g" });
+    cg.appendChild(el("line", { x1: d.a.x, y1: d.a.y, x2: d.b.x, y2: d.b.y,
+      class: "cal-line" }));
+    [[d.a], [d.b]].forEach(([q]) =>
+      cg.appendChild(el("circle", { cx: q.x, cy: q.y, r: 5, class: "cal-end" })));
+    const len = Math.hypot(d.b.x - d.a.x, d.b.y - d.a.y);
+    const t = el("text", {
+      x: (d.a.x + d.b.x) / 2, y: (d.a.y + d.b.y) / 2 - 12,
+      class: "cal-txt", "text-anchor": "middle", "font-size": 22
+    });
+    t.textContent = (len * cmToIn(cmPerUnit())).toFixed(2) + "″";
+    cg.appendChild(t);
+    g.appendChild(cg);
+  }
 
   /* دائرة الفرشاة تُعاد بعد كل رسم: draw() تبني اللوح من جديد فتُفقد
      الدائرة أثناء المسح نفسه — وهو أسوأ وقت لاختفائها. */
@@ -1667,6 +1785,42 @@ function startCrop(e, it, side) {
                rot: (it.rot || 0) * Math.PI / 180 };
   board.setPointerCapture(e.pointerId);
 }
+
+/* سحب مسطرة المعايرة — يسبق بقيّة المستمعين ويمنعها عند التشغيل */
+board.addEventListener("pointerdown", e => {
+  if (!calMode) return;
+  e.preventDefault(); e.stopPropagation();
+  const p = boardPoint(e);
+  calDrag = { a: p, b: p };
+  board.setPointerCapture(e.pointerId);
+  draw();
+}, true);
+board.addEventListener("pointermove", e => {
+  if (!calMode || !calDrag) return;
+  calDrag.b = boardPoint(e);
+  draw();
+}, true);
+board.addEventListener("pointerup", e => {
+  if (!calMode || !calDrag) return;
+  const d = calDrag;
+  calDrag = null;
+  const units = Math.hypot(d.b.x - d.a.x, d.b.y - d.a.y);
+  const measuredIn = units * cmToIn(cmPerUnit());
+  draw();
+  if (units < 8) return;            // نقرة عابرة لا سحب
+  const ans = prompt(
+    `The line you drew measures ${measuredIn.toFixed(2)}″ in the app.\n`
+    + `What is its real length in inches?`,
+    measuredIn.toFixed(2));
+  if (ans == null) return;
+  const realIn = parseFloat(ans);
+  if (!(realIn > 0)) { alert("Enter a positive number of inches."); return; }
+  if (applyCalibration(measuredIn, realIn)) {
+    setCalMode(false);
+    alert(`Calibrated. This face now reads `
+      + `${(pieceInches() || {}).hIn.toFixed(1)}″ tall.`);
+  }
+}, true);
 
 /* تتبّع موضع الفرشاة — يسبق كل شيء ليبقى محدّثاً حتى بلا ضغط */
 board.addEventListener("pointermove", e => {
@@ -2258,6 +2412,53 @@ function renderPieces() {
   const warn = measureWarning(c);
   $("#measWarn").textContent = warn || "";
   $("#measWarn").style.display = warn ? "block" : "none";
+
+  renderCalib();
+}
+
+/* واجهة المعايرة — تظهر على رسوم المرجع فقط، فهي وحدها التي
+   يُشتقّ مقاسها من بكسلات الصورة. أمّا الجسم والقطعة المفروشة
+   فمقاسهما من أرقام المقاسات مباشرةً فلا معنى لمعايرتهما. */
+function renderCalib() {
+  const host = $("#calWrap");
+  if (!host) return;
+  const face = calibratableFace();
+  const c = imgCut();
+  if (!c || !face) { host.innerHTML = ""; host.style.display = "none"; return; }
+  host.style.display = "block";
+  const k = (c.calib && c.calib[face]) || 1;
+  const pi = pieceInches() || {};
+  host.innerHTML = `
+    <label class="f">Calibrate this sketch</label>
+    <div class="btns">
+      <button class="btn sm${calMode ? " primary" : ""}" id="calOn">${
+        calMode ? "📏 Drawing — drag on the sketch" : "📏 Calibrate by ruler"}</button>
+      <button class="btn sm" id="calReset"${k === 1 ? " disabled" : ""}
+        >Reset</button>
+    </div>
+    <div class="cal-note">
+      The size comes from the image height, which only works if the picture
+      is cropped exactly to the garment. If it is not,
+      <b>drag a line over a distance you know</b> (a hem, a sleeve) and type
+      its real length — everything is corrected from that.
+      ${k !== 1 ? `<br><b>Calibrated ×${k.toFixed(3)}</b>` : ""}
+      <br>This face currently reads <b>${(pi.hIn || 0).toFixed(1)}″</b> tall.
+    </div>`;
+  $("#calOn").onclick = () => setCalMode(!calMode);
+  $("#calReset").onclick = () => {
+    if (confirm("Remove the calibration for this face?")) resetCalibration();
+  };
+}
+
+/* القصّات المعطوبة تُعرَض للمستخدمة لا تُدفَن في وحدة التحكّم */
+function renderCutProblems() {
+  const host = $("#cutProblems");
+  if (!host) return;
+  if (!CUT_PROBLEMS.length) { host.innerHTML = ""; host.style.display = "none"; return; }
+  host.style.display = "block";
+  host.innerHTML = CUT_PROBLEMS.map(p =>
+    `<div class="cut-bad"><b>Cut “${p.id}” was skipped</b>`
+    + p.errs.map(e => `• ${e}`).join("<br>") + `</div>`).join("");
 }
 
 function renderChips() {
@@ -2804,7 +3005,10 @@ let quotaWarned = false;
 function save() {
   const payload = {
     cut: state.cut, piece: state.piece,
-    circ: IMG_CUTS.map(c => ({ id: c.id, circ: { ...c.circ } })),
+    // المعايرة ومفاتيح المحيط تُحفظان لكل قصّة، وإلا أُعيدت
+    // المعايرة من الصفر في كل فتح
+    circ: IMG_CUTS.map(c => ({ id: c.id, circ: { ...c.circ },
+                               calib: { ...(c.calib || {}) } })),
     lenCm: state.lenCm, widIn: state.widIn,
     abayaColor: state.abayaColor,
     // صورة القصّة المرفوعة وإظهار القياس يُحفظان أيضاً، وإلا ضاع
@@ -2859,7 +3063,9 @@ function load() {
     if (typeof s.showDim === "boolean") state.showDim = s.showDim;
     if (Array.isArray(s.circ)) s.circ.forEach(r => {
       const c = IMG_CUTS.find(x => x.id === r.id);
-      if (c && r.circ) Object.assign(c.circ, r.circ);
+      if (!c) return;
+      if (r.circ) Object.assign(c.circ, r.circ);
+      if (r.calib) { c.calib = Object.assign(c.calib || {}, r.calib); }
     });
     if (s.abayaColor) state.abayaColor = s.abayaColor;
     if (Array.isArray(s.items))
@@ -3106,7 +3312,14 @@ function initUI() {
   });
 }
 
-if (!window.MOTIFS || !window.MOTIFS.length) {
+if (!window.ABAYA_CUTS) {
+  document.body.innerHTML = `<div style="padding:40px;font-family:Tahoma;
+    line-height:2;max-width:620px;margin:40px auto">
+    <h2>The cuts data file did not load</h2>
+    <p>Make sure <b>cuts-data.js</b> sits in the same folder as this page.</p>
+    <p>Or use the <b>single-file</b> version, which needs no other file.</p>
+    </div>`;
+} else if (!window.MOTIFS || !window.MOTIFS.length) {
   document.body.innerHTML = `<div style="padding:40px;font-family:Tahoma;
     direction:rtl;line-height:2">
     <h2>The motif data file did not load</h2>
@@ -3126,6 +3339,7 @@ if (!window.MOTIFS || !window.MOTIFS.length) {
   load();
   if (imgCut()) syncPieceLength();
   initUI();
+  renderCutProblems();
   renderPieces();
   saveMine();        // يُظهر عدّاد نقشاتي إن وُجدت
   renderChips();
