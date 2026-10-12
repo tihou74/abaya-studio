@@ -182,12 +182,48 @@ try {
         log.push(c.id+'/'+pc.id+'='+pi.wIn.toFixed(1)+'x'+pi.hIn.toFixed(1));
       }
     }
-    return JSON.stringify({n: log.length, log});
+    const expected = IMG_CUTS.reduce((a,c)=>a+c.pieces.length,0);
+    return JSON.stringify({n: log.length, expected, log});
   `).then(JSON.parse);
   const errs2 = b.errors();
   check("كل القصّات بكل قطعها تُعرض بلا خطأ",
-    errs2.length === 0 && sweep.n === 11,
-    `${sweep.n} قطعة: ${sweep.log.join(" · ")}`);
+    errs2.length === 0 && sweep.n === sweep.expected && sweep.n > 0,
+    `${sweep.n}/${sweep.expected} قطعة: ${sweep.log.join(" · ")}`);
+
+
+  /* ١٠ · اتفاقية الشفافية: الخلفية شفّافة والجسم مُعتِم */
+  const alpha = await b.eval(`
+    const out = [];
+    for (const c of IMG_CUTS) {
+      for (const fk of Object.keys(c.faces)) {
+        const f = c.faces[fk];
+        const img = new Image();
+        img.src = f.src;
+        await new Promise(ok => { img.onload = ok; img.onerror = ok; });
+        if (!img.naturalWidth) { out.push({id:c.id+'/'+fk, load:false}); continue; }
+        const W = img.naturalWidth, H = img.naturalHeight;
+        const cv = document.createElement('canvas');
+        cv.width = W; cv.height = H;
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const px = ctx.getImageData(0,0,W,H).data;
+        const A = (x,y) => px[((y*W+x)*4)+3];
+        let trans = 0;
+        for (let i=3;i<px.length;i+=4) if (px[i] < 24) trans++;
+        out.push({ id: c.id+'/'+fk, load: true,
+          corner: A(1,1), center: A(Math.floor(W/2), Math.floor(H*0.55)),
+          transPct: +(trans/(W*H)*100).toFixed(1) });
+      }
+    }
+    return JSON.stringify(out);
+  `).then(JSON.parse);
+  const alphaOk = alpha.every(a => a.load && a.corner < 24 && a.center > 200
+    && a.transPct > 3 && a.transPct < 80);
+  check("صور القصّات: خلفية شفّافة وجسم مُعتِم",
+    alphaOk,
+    alpha.map(a => a.load
+      ? `${a.id}: زاوية=${a.corner} مركز=${a.center} شفاف=${a.transPct}%`
+      : `${a.id}: لم تُحمَّل`).join("\n   "));
 
 } finally { await b.close(); }
 
