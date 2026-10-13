@@ -265,6 +265,58 @@
      بخلاف القاعدة الافتراضية visiblePainted التي تشترط إصابة الخطّ */
   .er-hit{fill:#000;fill-opacity:0;pointer-events:all;cursor:none}
 
+  /* ===== مكتبة التصاميم ===== */
+  .cur-design{color:var(--accent);font-weight:650}
+  .cur-design:empty{display:none}
+  .btn .cnt{display:inline-grid;place-items:center;min-width:17px;height:17px;
+    padding:0 4px;margin-inline-start:5px;border-radius:9px;
+    background:var(--accent);color:#fff;font-size:10.5px;font-weight:700}
+  .btn .cnt:empty{display:none}
+  /* سمة hidden يتجاوزها أي display مُعلَن، فالنافذة تبقى مفتوحة
+     دائماً وتحجب اللوح بـposition:fixed — ولا يكشف ذلك إلا اختبار
+     بمؤشّر حقيقي، لأن الاختبارات التي تنقر بجافاسكربت تنجح وهي
+     محجوبة. ولذلك يُشترط :not([hidden]) صراحةً، ويُفرض الحدّ عاماً. */
+  [hidden]{display:none !important}
+  #designsView{position:fixed;inset:0;z-index:55;background:var(--bg);
+    overflow:auto}
+  #designsView:not([hidden]){display:flex;flex-direction:column}
+  #designsBody{padding:14px;max-width:1100px;margin:0 auto;width:100%}
+  .dv-grid{display:grid;gap:12px;
+    grid-template-columns:repeat(auto-fill,minmax(168px,1fr))}
+  .dv-card{border:1px solid var(--line);border-radius:12px;background:#fff;
+    overflow:hidden;display:flex;flex-direction:column;
+    box-shadow:0 1px 2px #0000000d;transition:box-shadow .15s,transform .15s}
+  .dv-card:hover{box-shadow:0 6px 18px #0000001f;transform:translateY(-2px)}
+  .dv-card.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .dv-thumb{height:190px;background:
+    repeating-conic-gradient(#efece8 0% 25%,#f7f5f2 0% 50%) 50%/16px 16px;
+    display:grid;place-items:center;padding:8px;cursor:pointer}
+  .dv-thumb svg{width:100%;height:100%}
+  .dv-thumb .none{font-size:11px;color:var(--muted);text-align:center}
+  .dv-meta{padding:8px 10px;border-top:1px solid var(--line)}
+  .dv-name{font-size:12.5px;font-weight:700;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .dv-sub{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.6}
+  .dv-acts{display:flex;gap:4px;padding:0 8px 8px;flex-wrap:wrap}
+  .dv-acts button{flex:1;min-width:52px;font-size:10.5px;padding:5px 4px;
+    border:1px solid var(--line);border-radius:6px;background:#fff;
+    color:var(--ink-2);cursor:pointer}
+  .dv-acts button:hover{background:var(--bg);border-color:var(--line-strong)}
+  .dv-acts button.open{background:var(--accent);border-color:var(--accent);
+    color:#fff;font-weight:700;flex:2 1 100%}
+  .dv-acts button.del{color:#9b2c2c;border-color:#e7cfcf}
+  .dv-empty{padding:34px 16px;text-align:center;color:var(--muted);
+    font-size:13px;line-height:1.95}
+  .dv-warn{font-size:11.5px;line-height:1.7;background:#fff6e5;
+    border:1px solid #e0b35c;color:#8a6412;border-radius:8px;
+    padding:8px 10px;margin-bottom:12px}
+  .dv-warn:empty{display:none}
+
+  /* تنبيه تصغير المعاينة على الشاشات الصغيرة */
+  .pv-scale{font-size:11px;line-height:1.5;color:#8a6412;background:#fff6e5;
+    border:1px solid #e0b35c;border-radius:6px;padding:4px 8px;
+    flex:1 1 220px;min-width:0}
+
   /* ===== المعايرة ===== */
   .cal-g{pointer-events:none}
   .cal-line{stroke:#0d9488;stroke-width:2.5;stroke-dasharray:7 4;
@@ -470,7 +522,8 @@
     html,body{overflow:visible;background:#fff}
     .app,.pv-bar{display:none !important}
     #printView{position:static;background:#fff;overflow:visible}
-    #printRoot{padding:0}
+    /* zoom المعاينة للشاشة فقط — المطبوع بمقاسه الحقيقي دائماً */
+    #printRoot{padding:0;zoom:1 !important}
     #printRoot .pg,#printRoot .intro{margin:0;box-shadow:none;width:auto;
       min-height:0}
   }
@@ -483,9 +536,17 @@
     <div>
       <h1>Abaya Design Studio</h1>
       <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">__BUILD__</span></div>
+      <div class="sub cur-design" id="curDesign"></div>
     </div>
     <div class="spacer"></div>
     <div class="toolbar">
+      <button class="btn" id="btnSaveDesign"
+              title="Save this abaya so you can open it again any time"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save</button>
+      <button class="btn" id="btnDesigns"
+              title="All the abayas you have saved"
+              ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>My abayas <span class="cnt" id="designCount"></span></button>
+      <span class="sep"></span>
       <button class="btn ghost" id="btnReset"
               title="Clear the design and start over"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>New</button>
       <span class="sep"></span>
@@ -640,10 +701,34 @@
   <div id="v3Stage"><div id="v3Inner"></div></div>
 </div>
 
+<!-- ============ My abayas ============ -->
+<div id="designsView" hidden>
+  <div class="pv-bar">
+    <button class="btn" id="dvBack">← Back to the design</button>
+    <span style="font-size:13px;font-weight:700">My abayas</span>
+    <span class="spacer"></span>
+    <button class="btn sm" id="dvExport"
+      title="Download all your abayas as one file — your backup">⬇ Backup file</button>
+    <button class="btn sm" id="dvImport"
+      title="Restore abayas from a backup file">📂 Restore</button>
+    <input type="file" id="dvFile" accept=".json,application/json" hidden>
+  </div>
+  <div id="designsBody">
+    <div class="dv-warn" id="dvWarn"></div>
+    <div class="dv-grid" id="designsGrid"></div>
+    <div class="dv-empty" id="designsEmpty" hidden>
+      <b>No saved abayas yet.</b><br>
+      Design an abaya, then press <b>Save</b> in the top bar. It will be
+      listed here and you can open it again any time.
+    </div>
+  </div>
+</div>
+
 <div id="printView" hidden>
   <div class="pv-bar">
     <button class="btn primary" id="pvPrint">Print now</button>
     <button class="btn" id="pvBack">← Back</button>
+    <span class="pv-scale" id="pvScale" hidden></span>
     <span id="pvMode" style="font-size:13px;font-weight:700;
           padding:5px 10px;border-radius:7px"></span>
     <span class="sep" style="width:1px;height:24px;background:var(--line)"></span>
@@ -1677,16 +1762,30 @@ function refreshErUI() {
 function drawBrush() {
   const old = board.querySelector(".er-brush");
   if (old) old.remove();
-  if (!eraseMode || !erHover || !mainG) return;
+  if (!eraseMode || !mainG) return;
+  /* على اللمس لا يوجد تحويم: الإصبع لا يمرّ فوق الشيء قبل أن يلمسه.
+     فبلا موضع معروف لا تُرسم الدائرة أبداً على الجوال، ولا ترى
+     المستخدمة مقاس ما سيُمحى — وهو أهمّ ما تُفيده الدائرة.
+
+     فتُرسم عند مركز النقشة المحدّدة بانتظار أوّل لمسة، فيُرى المقاس
+     على العباية نفسها لا في فراغ. */
+  let at = erHover;
+  if (!at) {
+    const it = selItem();
+    if (!it) return;
+    at = { x: it.x, y: it.y };
+  }
   const r = erBrushBoardR();
   const g = el("g", { class: "er-brush" });
   g.appendChild(el("circle", {
-    cx: erHover.x, cy: erHover.y, r,
+    cx: at.x, cy: at.y, r,
     class: erRestoring() ? "er-brush-ring restore" : "er-brush-ring"
   }));
   // نقطة المركز تدلّ على موضع المسح بالضبط حين تكبر الفرشاة
-  g.appendChild(el("circle", { cx: erHover.x, cy: erHover.y, r: 1.6,
+  g.appendChild(el("circle", { cx: at.x, cy: at.y, r: 1.6,
     class: "er-brush-dot" }));
+  // الدائرة المنتظرة (بلا لمس بعد) تُميَّز بخفوتها عن المتتبِّعة
+  if (!erHover) g.setAttribute("opacity", "0.55");
   mainG.appendChild(g);
 }
 
@@ -2692,6 +2791,39 @@ function loadPrint() {
   } catch (e) { /* تجاهل */ }
 }
 
+/* تصغير *المعاينة* لتدخل شاشة الهاتف — بلا أي أثر على المطبوع.
+
+   الورقة عرضها ثابت بالمليمترات (194 مم ≈ 733 بكسل) لأن المقاس
+   الحقيقي هو جوهر الأداة. وعلى شاشة 390 بكسل يُقتطع نصفها فيصير
+   النصّ غير مقروء — فلا تستطيع المستخدمة مراجعة ما ستطبعه.
+
+   تُستعمل zoom لا transform: transform لا يُغيّر صندوق التخطيط
+   فيبقى التمرير بمقاس الورقة الأصلي ويظهر شريط تمرير أفقي بلا
+   محتوى. وzoom يُصغّر التخطيط نفسه فيعمل التمرير طبيعياً.
+
+   و@media print تُعيد zoom إلى 1، فالمطبوع بمقاسه الحقيقي دائماً. */
+function fitPreview() {
+  const root = $("#printRoot");
+  if (!root) return;
+  root.style.zoom = "1";
+  const first = root.querySelector(".intro, .pg");
+  if (!first) return;
+  const avail = root.clientWidth - 8;
+  const need = first.offsetWidth;
+  if (!(need > 0) || !(avail > 0)) return;
+  const z = Math.min(1, avail / need);
+  root.style.zoom = z < 0.999 ? String(Math.max(0.25, z)) : "1";
+  const note = $("#pvScale");
+  if (note) {
+    note.hidden = z >= 0.999;
+    note.textContent = `Preview shrunk to ${Math.round(z * 100)}% so it fits `
+      + `your screen — printing is unaffected and stays at true size.`;
+  }
+}
+window.addEventListener("resize", () => {
+  if (!$("#printView").hidden) fitPreview();
+});
+
 function showPrint(html, info, mode) {
   lastPrint = mode === "design" ? "design" : "motifs";
   applyPrintCss();
@@ -2712,6 +2844,8 @@ function showPrint(html, info, mode) {
   $("#printView").hidden = false;
   window.scrollTo(0, 0);
   $("#printRoot").parentElement.scrollTop = 0;
+  // الورقة أعرض من شاشة الهاتف، فتُصغَّر المعاينة وحدها
+  fitPreview();
 }
 
 function printMotifs(items) {
@@ -2999,10 +3133,345 @@ function close3D() {
   $("#view3d").hidden = true;
 }
 
+/* تهريب HTML — أسماء التصاميم تكتبها المستخدمة، فقد تحتوي < أو &
+   فتُفسد البناء أو تُدخل وسماً. */
+function esc(v) {
+  return String(v == null ? "" : v).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[c]);
+}
+
+/* ====================== مكتبة التصاميم ======================
+
+   المطلوب: كل عباية تُصمَّم تبقى محفوظة وتُفتح متى شُئت. والحفظ
+   التلقائي السابق كان يحفظ **تصميماً واحداً** في مفتاح واحد، فأي
+   تصميم جديد يمحو ما قبله بلا رجعة.
+
+   فصار لكل عباية مدخلٌ باسمها في قائمة، والتصميم المفتوح يُحدَّث
+   آلياً مع كل تعديل — فلا يوجد «عمل غير محفوظ» إطلاقاً.
+
+   وتبقى نسخة الملفّ ضرورية لا رفاهية: مخزن المتصفّح يُمحى بتنظيف
+   بيانات التصفّح أو بتغيير المتصفّح أو الجهاز. ولذلك زرّ «نسخة
+   احتياطية» يُنزّل كل التصاميم في ملفّ واحد. */
+const DESIGNS_KEY = "abaya-designs-v1";
+let designs = { seq: 1, list: [] };
+let curDesignId = null;
+
+/* لقطة **مستقلّة** تماماً من التصميم.
+
+   تخزين state.items بمرجعه يجعل التصميم المحفوظ يتغيّر مع العمل
+   اللاحق: فتُحفظ عباية، ثم يُبدأ تصميم جديد بـ`state.items.length=0`
+   فتُفرَغ مصفوفة العباية المحفوظة نفسها، ثم تُضاف نقشات التصميم
+   الجديد إليها — فتجد المستخدمة عبايتها القديمة وقد صارت الجديدة.
+   وهو عيب لا يُكتشف إلا بعد أن يُفسد عملها، وقد أمسكه الاختبار.
+
+   والنسخ العميق لازم لا سطحي: كل نقشة تحتوي كائن القصّ ومصفوفة
+   الممحاة. */
+function designPayload() {
+  return JSON.parse(JSON.stringify({
+    cut: state.cut, piece: state.piece,
+    circ: IMG_CUTS.map(c => ({ id: c.id, circ: { ...c.circ },
+                               calib: { ...(c.calib || {}) } })),
+    lenCm: state.lenCm, widIn: state.widIn,
+    abayaColor: state.abayaColor,
+    bg: state.bg, bgOpacity: state.bgOpacity, showDim: state.showDim,
+    items: state.items, uidSeq
+  }));
+}
+
+function applyPayload(d) {
+  if (!d) return;
+  if (d.cut && [...IMG_CUTS, ...CUTS].some(c => c.id === d.cut)) state.cut = d.cut;
+  if (d.piece) {
+    const ic = IMG_CUTS.find(c => c.id === state.cut);
+    if (!ic || ic.pieces.some(p => p.id === d.piece)) state.piece = d.piece;
+  }
+  if (Array.isArray(d.circ)) d.circ.forEach(r => {
+    const c = IMG_CUTS.find(x => x.id === r.id);
+    if (!c) return;
+    if (r.circ) Object.assign(c.circ, r.circ);
+    if (r.calib) c.calib = Object.assign(c.calib || {}, r.calib);
+  });
+  if (d.lenCm > 0) state.lenCm = d.lenCm;
+  if (d.widIn > 0) state.widIn = d.widIn;
+  if (d.abayaColor) state.abayaColor = d.abayaColor;
+  state.bg = d.bg || null;
+  if (d.bgOpacity > 0) state.bgOpacity = d.bgOpacity;
+  if (typeof d.showDim === "boolean") state.showDim = d.showDim;
+  // نسخة عميقة أيضاً عند الفتح: وإلا شارك العملُ الحالي بياناتَ
+  // المدخل المحفوظ، فكل تحريك نقشة يُعدّله قبل أي حفظ
+  state.items = Array.isArray(d.items)
+    ? JSON.parse(JSON.stringify(d.items.filter(i => motifById(i.mid)))) : [];
+  state.items.forEach(i => { if (!("crop" in i)) i.crop = {t:0,b:0,l:0,r:0}; });
+  uidSeq = d.uidSeq || (state.items.reduce((a,i)=>Math.max(a,i.uid),0) + 1);
+  state.sel = null;
+}
+
+function loadDesigns() {
+  try {
+    const raw = localStorage.getItem(DESIGNS_KEY);
+    if (!raw) return;
+    const o = JSON.parse(raw);
+    if (o && Array.isArray(o.list)) {
+      designs = { seq: o.seq || (o.list.length + 1), list: o.list };
+    }
+  } catch (e) {}
+}
+
+/* الحفظ مع التعامل مع امتلاء الحصّة: الصور المرفوعة هي الثقيلة
+   دائماً، فتُستبعد من التصاميم القديمة أوّلاً ثم من الجديد — ولا
+   يُفقد شيء بصمت أبداً. */
+function persistDesigns() {
+  const attempt = obj => {
+    localStorage.setItem(DESIGNS_KEY, JSON.stringify(obj));
+    return true;
+  };
+  try { return attempt(designs); } catch (e) {}
+  try {
+    const slim = { seq: designs.seq, list: designs.list.map((d, i) =>
+      i === designs.list.length - 1 ? d
+        : Object.assign({}, d, { data: Object.assign({}, d.data, { bg: null }) })) };
+    if (attempt(slim)) {
+      designs = slim;
+      designWarn("Storage was full, so the uploaded cut photos were removed "
+        + "from your older abayas. The designs themselves are safe. "
+        + "Use “Backup file” to keep a copy outside the browser.");
+      return true;
+    }
+  } catch (e) {}
+  try {
+    const slimmer = { seq: designs.seq, list: designs.list.map(d =>
+      Object.assign({}, d, { data: Object.assign({}, d.data, { bg: null }) })) };
+    if (attempt(slimmer)) {
+      designs = slimmer;
+      designWarn("Storage was full. Uploaded cut photos were removed from all "
+        + "abayas to make room. Please press “Backup file”.");
+      return true;
+    }
+  } catch (e) {}
+  designWarn("⚠ Could not save — browser storage is full. Press "
+    + "“Backup file” now, then delete some abayas.");
+  alert("Browser storage is full, so this abaya could NOT be saved.\\n\\n"
+    + "Open “My abayas”, press “Backup file” to download a copy, "
+    + "then delete abayas you no longer need.");
+  return false;
+}
+
+function designWarn(msg) {
+  const n = $("#dvWarn");
+  if (n) n.textContent = msg || "";
+}
+
+function defaultDesignName() {
+  const c = imgCut() || cut();
+  const d = new Date();
+  const p = v => String(v).padStart(2, "0");
+  return `${c ? c.name.split(" —")[0] : "Abaya"} `
+       + `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} `
+       + `${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function saveDesignAs(name) {
+  const nm = (name || "").trim() || defaultDesignName();
+  const entry = { id: "d" + (designs.seq++), name: nm,
+    savedAt: Date.now(), data: designPayload() };
+  designs.list.unshift(entry);
+  if (!persistDesigns()) { designs.list.shift(); return null; }
+  curDesignId = entry.id;
+  renderCurDesign(); renderDesigns();
+  return entry;
+}
+
+/* التصميم المفتوح يُحدَّث مع كل تعديل — بلا زرّ ولا تذكير */
+function touchCurrentDesign() {
+  if (!curDesignId) return;
+  const e = designs.list.find(d => d.id === curDesignId);
+  if (!e) { curDesignId = null; renderCurDesign(); return; }
+  e.data = designPayload();
+  e.savedAt = Date.now();
+  persistDesigns();
+}
+
+function openDesign(id) {
+  const e = designs.list.find(d => d.id === id);
+  if (!e) return;
+  // العمل الحالي لا يُفقد: إن كان بلا اسم وفيه نقشات فيُحفظ أوّلاً
+  if (!curDesignId && state.items.length) {
+    if (confirm("Save the abaya you are working on first?\\n"
+      + "(Cancel keeps working on it without saving)")) {
+      const nm = prompt("Name for the current abaya:", defaultDesignName());
+      if (nm === null) return;
+      saveDesignAs(nm);
+    }
+  }
+  applyPayload(e.data);
+  curDesignId = e.id;
+  syncPieceLength();
+  save();
+  renderCurDesign(); renderPieces(); renderCutProblems();
+  draw(); syncProps(); renderList();
+  closeDesigns();
+}
+
+function deleteDesign(id) {
+  const e = designs.list.find(d => d.id === id);
+  if (!e) return;
+  if (!confirm(`Delete “${e.name}”?\\nThis cannot be undone.`)) return;
+  designs.list = designs.list.filter(d => d.id !== id);
+  if (curDesignId === id) curDesignId = null;
+  persistDesigns(); renderCurDesign(); renderDesigns();
+}
+
+function renameDesign(id) {
+  const e = designs.list.find(d => d.id === id);
+  if (!e) return;
+  const nm = prompt("New name:", e.name);
+  if (nm === null) return;
+  e.name = nm.trim() || e.name;
+  persistDesigns(); renderCurDesign(); renderDesigns();
+}
+
+function duplicateDesign(id) {
+  const e = designs.list.find(d => d.id === id);
+  if (!e) return;
+  const copy = { id: "d" + (designs.seq++), name: e.name + " (copy)",
+    savedAt: Date.now(), data: JSON.parse(JSON.stringify(e.data)) };
+  designs.list.unshift(copy);
+  persistDesigns(); renderDesigns();
+}
+
+/* مصغّرة التصميم: تُبنى من بياناته المحفوظة بإعادة استخدام دوال
+   الرسم نفسها، فتطابق ما تراه المستخدمة على سطح العمل. والحالة
+   تُحفظ وتُستعاد كاملةً حول العملية. */
+function designThumb(d) {
+  const keep = {
+    cut: state.cut, piece: state.piece, lenCm: state.lenCm,
+    widIn: state.widIn, color: state.abayaColor, items: state.items,
+    sel: state.sel, bg: state.bg
+  };
+  let html = "";
+  try {
+    state.cut = d.cut; state.lenCm = d.lenCm || state.lenCm;
+    state.widIn = d.widIn || state.widIn;
+    state.abayaColor = d.abayaColor || state.abayaColor;
+    state.items = Array.isArray(d.items)
+      ? d.items.filter(i => motifById(i.mid)) : [];
+    state.sel = null; state.bg = null;
+    const c = IMG_CUTS.find(x => x.id === d.cut);
+    if (c) {
+      const body = c.pieces.find(p => p.kind === "body"
+        && p.id === (d.piece || "front")) || c.pieces.find(p => p.kind === "body");
+      if (body) { state.piece = body.id; html = pieceSvgFor(body.id, 0); }
+    }
+  } catch (e) { html = ""; }
+  state.cut = keep.cut; state.piece = keep.piece; state.lenCm = keep.lenCm;
+  state.widIn = keep.widIn; state.abayaColor = keep.color;
+  state.items = keep.items; state.sel = keep.sel; state.bg = keep.bg;
+  return html;
+}
+
+function designMotifCount(d) {
+  return Array.isArray(d.items) ? d.items.length : 0;
+}
+
+function renderCurDesign() {
+  const n = $("#curDesign");
+  if (n) {
+    const e = designs.list.find(d => d.id === curDesignId);
+    n.textContent = e ? "Open: " + e.name : "";
+  }
+  const c = $("#designCount");
+  if (c) c.textContent = designs.list.length ? String(designs.list.length) : "";
+}
+
+function renderDesigns() {
+  renderCurDesign();
+  const grid = $("#designsGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  $("#designsEmpty").hidden = designs.list.length > 0;
+  designs.list.forEach(e => {
+    const card = document.createElement("div");
+    card.className = "dv-card" + (e.id === curDesignId ? " on" : "");
+    const thumb = designThumb(e.data);
+    const cutObj = [...IMG_CUTS, ...CUTS].find(c => c.id === e.data.cut);
+    const dt = new Date(e.savedAt);
+    const p = v => String(v).padStart(2, "0");
+    card.innerHTML =
+      `<div class="dv-thumb">${thumb
+        || '<div class="none">No preview<br>(drawn cut)</div>'}</div>`
+      + `<div class="dv-meta"><div class="dv-name">${esc(e.name)}</div>`
+      + `<div class="dv-sub">${esc(cutObj ? cutObj.name.split(" —")[0] : "—")}`
+      + ` · ${designMotifCount(e.data)} motif(s)<br>`
+      + `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())} `
+      + `${p(dt.getHours())}:${p(dt.getMinutes())}</div></div>`
+      + `<div class="dv-acts">`
+      + `<button class="open">Open</button>`
+      + `<button class="ren">Rename</button>`
+      + `<button class="dup">Copy</button>`
+      + `<button class="del">Delete</button></div>`;
+    card.querySelector(".dv-thumb").onclick = () => openDesign(e.id);
+    card.querySelector(".open").onclick = () => openDesign(e.id);
+    card.querySelector(".ren").onclick = () => renameDesign(e.id);
+    card.querySelector(".dup").onclick = () => duplicateDesign(e.id);
+    card.querySelector(".del").onclick = () => deleteDesign(e.id);
+    grid.appendChild(card);
+  });
+}
+
+function openDesigns() {
+  renderDesigns();
+  $("#designsView").hidden = false;
+  window.scrollTo(0, 0);
+}
+function closeDesigns() { $("#designsView").hidden = true; }
+
+/* ---- النسخة الاحتياطية في ملفّ ---- */
+function exportDesigns() {
+  if (!designs.list.length) { alert("No saved abayas to back up yet."); return; }
+  const blob = new Blob([JSON.stringify(
+    { app: "abaya-designer", kind: "designs", version: 1,
+      exportedAt: new Date().toISOString(), designs }, null, 1)],
+    { type: "application/json" });
+  const a = document.createElement("a");
+  const d = new Date();
+  const p = v => String(v).padStart(2, "0");
+  a.href = URL.createObjectURL(blob);
+  a.download = `my-abayas-${d.getFullYear()}${p(d.getMonth()+1)}`
+    + `${p(d.getDate())}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a);
+    URL.revokeObjectURL(a.href); }, 150);
+}
+
+function importDesigns(text) {
+  let o;
+  try { o = JSON.parse(text); }
+  catch (e) { alert("That file is not a backup file."); return; }
+  const incoming = o && o.designs && Array.isArray(o.designs.list)
+    ? o.designs.list : null;
+  if (!incoming) { alert("That file does not contain saved abayas."); return; }
+  // تُضاف ولا تُستبدل: الاستبدال يمحو عمل المستخدمة الحالي
+  let added = 0;
+  incoming.forEach(e => {
+    if (!e || !e.data) return;
+    const id = "d" + (designs.seq++);
+    designs.list.push({ id, name: (e.name || "Abaya") , 
+      savedAt: e.savedAt || Date.now(), data: e.data });
+    added++;
+  });
+  designs.list.sort((a, b) => b.savedAt - a.savedAt);
+  persistDesigns(); renderDesigns();
+  alert(`Restored ${added} abaya(s). They were added to your list — `
+    + `nothing was replaced.`);
+}
+
 /* ---------------------- الحفظ التلقائي ---------------------- */
 const KEY = "abaya-panel-v1";
 let quotaWarned = false;
 function save() {
+  // التصميم المفتوح يُحدَّث مع كل تعديل فلا يوجد عمل غير محفوظ
+  touchCurrentDesign();
   const payload = {
     cut: state.cut, piece: state.piece,
     // المعايرة ومفاتيح المحيط تُحفظان لكل قصّة، وإلا أُعيدت
@@ -3222,10 +3691,61 @@ function initUI() {
     $("#printView").hidden = true;
     $("#printRoot").innerHTML = "";
   };
+  /* «جديد» لا يمحو عملاً غير محفوظ: إن كان التصميم الحالي بلا اسم
+     وفيه نقشات فيُعرض حفظه أوّلاً. وإن كان محفوظاً فهو في المكتبة
+     أصلاً ويُفتح متى شُئت. */
   $("#btnReset").onclick = () => {
-    if (!confirm("Delete the current design and start over?")) return;
+    if (state.items.length && !curDesignId) {
+      const ans = confirm("Save this abaya before starting a new one?\n\n"
+        + "OK = save it first\nCancel = continue without saving");
+      if (ans) {
+        const nm = prompt("Name for this abaya:", defaultDesignName());
+        if (nm === null) return;
+        if (!saveDesignAs(nm)) return;
+      }
+    }
+    if (!confirm("Start a new, empty abaya?")) return;
+    curDesignId = null;
     state.items = []; state.sel = null;
+    renderCurDesign();
     draw(); syncProps(); renderList(); save();
+  };
+
+  /* ---- مكتبة التصاميم ---- */
+  $("#btnSaveDesign").onclick = () => {
+    if (!state.items.length
+        && !confirm("This abaya has no motifs yet. Save it anyway?")) return;
+    if (curDesignId) {
+      const e = designs.list.find(d => d.id === curDesignId);
+      const nm = prompt("Save as — leave the name to update “"
+        + (e ? e.name : "") + "”, or type a new name to save a copy:",
+        e ? e.name : defaultDesignName());
+      if (nm === null) return;
+      if (e && nm.trim() === e.name) {
+        touchCurrentDesign();
+        alert(`Updated “${e.name}”.`);
+        return;
+      }
+      if (saveDesignAs(nm)) alert(`Saved as “${nm.trim()}”.`);
+      return;
+    }
+    const nm = prompt("Name for this abaya:", defaultDesignName());
+    if (nm === null) return;
+    const e = saveDesignAs(nm);
+    if (e) alert(`Saved. Open it any time from “My abayas”.`);
+  };
+  $("#btnDesigns").onclick = openDesigns;
+  $("#dvBack").onclick = closeDesigns;
+  $("#dvExport").onclick = exportDesigns;
+  $("#dvImport").onclick = () => $("#dvFile").click();
+  $("#dvFile").onchange = e => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => importDesigns(ev.target.result);
+    r.onerror = () => alert("Could not read that file.");
+    r.readAsText(f);
   };
 
   // رفع نقشات من عندها
@@ -3263,6 +3783,9 @@ function initUI() {
     /* اختصارات الممحاة — تعمل بلا تحديد نقشة.
        E للتشغيل، والقوسان للمقاس، وEsc للخروج. وهي نفس اختصارات
        برامج الرسم المعروفة فلا تحتاج تعلّماً. */
+    if (!typing && e.key === "Escape" && !$("#designsView").hidden) {
+      e.preventDefault(); closeDesigns(); return;
+    }
     if (!typing) {
       const k = e.key.toLowerCase();
       if (k === "e") { e.preventDefault(); setEraseMode(!eraseMode); return; }
@@ -3335,11 +3858,13 @@ if (!window.ABAYA_CUTS) {
   })();
 
   loadPrint();
+  loadDesigns();
   loadMine();        // نقشاتها المرفوعة تُضاف للمكتبة قبل بناء الواجهة
   load();
   if (imgCut()) syncPieceLength();
   initUI();
   renderCutProblems();
+  renderCurDesign();
   renderPieces();
   saveMine();        // يُظهر عدّاد نقشاتي إن وُجدت
   renderChips();

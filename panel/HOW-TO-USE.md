@@ -185,11 +185,39 @@ marks, and you get the complete motif at the correct size.
 
 ---
 
+## My abayas — every design you make is kept
+
+Press **Save** in the top bar and give the abaya a name. It is then listed
+under **My abayas** and you can open it again any time.
+
+| | |
+|---|---|
+| **Save** | Names this abaya and keeps it |
+| **My abayas** | Every abaya you saved, with a small picture of each |
+| **Open** | Brings back the cut, the colours, and every motif exactly where it was |
+| **Rename · Copy · Delete** | On each card |
+
+Once an abaya is open, **every change is saved by itself** — there is no
+“unsaved work”. The name of the open abaya is shown under the title.
+
+And pressing **New** never loses anything: if the abaya you are working on
+has no name yet, you are offered to save it first.
+
+### ⚠️ Make a backup file
+
+Your abayas live inside the browser. They are lost if you clear browsing
+data, or if you switch browser or phone. So in **My abayas** press
+**⬇ Backup file** — it downloads all of them as one file. Keep it on your
+phone or send it to yourself.
+
+To bring them back (or move them to another phone): **📂 Restore** and pick
+the file. Restoring **adds** them; it never replaces what you already have.
+
 ## Quick answers
 
 **Is my design saved?**
-Yes, automatically in the browser. Close the page and reopen it and your
-design comes back. **New design** clears it and starts over.
+Yes. The abaya you are working on comes back when you reopen the page, and
+anything you pressed **Save** on is kept under **My abayas** for good.
 
 **I want a picture of the design to send to a client.**
 **Abaya image (reference)** produces a page with the abaya drawing and a
@@ -199,6 +227,11 @@ table of every motif with its size and colour. Save it as PDF.
 The motif files in the `bands` and `damask` folders are vector (SVG), so open
 one in any vector editor and change the stroke width. Quality does not
 degrade however much you enlarge it.
+
+**The preview looks small on my phone.**
+On a narrow screen the preview is shrunk so the whole sheet fits — a note at
+the top tells you by how much. **Printing is not affected**: it always comes
+out at true size.
 
 **Can I print from my phone?**
 Press **Print now**, then choose **Save as PDF** from the share sheet and

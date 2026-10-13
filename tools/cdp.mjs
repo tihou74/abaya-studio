@@ -188,6 +188,47 @@ export async function launch({ width = 1440, height = 980 } = {}) {
         Object.assign({ type: "keyUp", modifiers }, base));
       await sleep(40);
     },
+    /** محاكاة جهاز لمس: مقاس وكثافة بكسل ولمس حقيقي لا فأرة */
+    async touchMode(w, h, dpr = 2) {
+      await cmd("Emulation.setDeviceMetricsOverride", {
+        width: w, height: h, deviceScaleFactor: dpr, mobile: true,
+      });
+      await cmd("Emulation.setTouchEmulationEnabled",
+        { enabled: true, maxTouchPoints: 5 });
+      await cmd("Emulation.setEmitTouchEventsForMouse",
+        { enabled: true, configuration: "mobile" });
+    },
+    async touchStart(x, y) {
+      await cmd("Input.dispatchTouchEvent", {
+        type: "touchStart", touchPoints: [{ x, y, id: 1 }],
+      });
+    },
+    async touchMove(x, y) {
+      await cmd("Input.dispatchTouchEvent", {
+        type: "touchMove", touchPoints: [{ x, y, id: 1 }],
+      });
+    },
+    async touchEnd() {
+      await cmd("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    },
+    async tap(x, y) {
+      await api.touchStart(x, y);
+      await sleep(60);
+      await api.touchEnd();
+      await sleep(80);
+    },
+    /** سحب بالإصبع بخطوات وسطية */
+    async touchDrag(x1, y1, x2, y2, steps = 10) {
+      await api.touchStart(x1, y1);
+      await sleep(30);
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        await api.touchMove(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t);
+        await sleep(16);
+      }
+      await api.touchEnd();
+      await sleep(40);
+    },
     async setSize(w, h) {
       await cmd("Emulation.setDeviceMetricsOverride",
         { width: w, height: h, deviceScaleFactor: 1, mobile: false });
