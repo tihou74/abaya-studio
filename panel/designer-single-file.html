@@ -2,7 +2,14 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- «إضافة إلى الشاشة الرئيسية» على آيفون: تُشغَّل بلا شريط Safari،
+     ومخزن البيانات فيها أثبت من صفحة عادية. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Abaya Studio">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#8a6d3b">
 <title>Abaya Design Studio — Fatima</title>
 <style>
   /* ====================================================================
@@ -535,7 +542,7 @@
   <header>
     <div>
       <h1>Abaya Design Studio</h1>
-      <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">2026-10-13 22:34</span></div>
+      <div class="sub">Fatima · 80 ready-made motifs <span class="build" id="buildStamp">2026-10-14 09:35</span></div>
       <div class="sub cur-design" id="curDesign"></div>
     </div>
     <div class="spacer"></div>
@@ -3557,22 +3564,58 @@ function openDesigns() {
 }
 function closeDesigns() { $("#designsView").hidden = true; }
 
-/* ---- النسخة الاحتياطية في ملفّ ---- */
-function exportDesigns() {
-  if (!designs.list.length) { alert("No saved abayas to back up yet."); return; }
-  const blob = new Blob([JSON.stringify(
-    { app: "abaya-designer", kind: "designs", version: 1,
-      exportedAt: new Date().toISOString(), designs }, null, 1)],
-    { type: "application/json" });
-  const a = document.createElement("a");
+/* ---- النسخة الاحتياطية في ملفّ ----
+
+   على آيفون لا تعمل خاصّية download في وسم <a>: Safari يفتح الملفّ
+   في المتصفّح بدل حفظه، فتظنّ المستخدمة أنها أخذت نسخة احتياطية
+   وليست عندها شيء — وهو أسوأ فشل ممكن لزرّ احتياطي.
+
+   فتُستعمل «المشاركة» (Web Share) متى توفّرت: تفتح لوحة المشاركة
+   فتحفظ في «الملفّات» أو تُرسل لنفسها على واتساب. وهي الطريقة
+   المعتادة على آيفون. ويبقى التحميل المباشر بديلاً على الحاسوب
+   وأندرويد. */
+function backupFileName() {
   const d = new Date();
   const p = v => String(v).padStart(2, "0");
-  a.href = URL.createObjectURL(blob);
-  a.download = `my-abayas-${d.getFullYear()}${p(d.getMonth()+1)}`
-    + `${p(d.getDate())}.json`;
+  return `my-abayas-${d.getFullYear()}${p(d.getMonth() + 1)}`
+    + `${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+}
+
+function backupText() {
+  return JSON.stringify({ app: "abaya-designer", kind: "designs", version: 1,
+    exportedAt: new Date().toISOString(), designs }, null, 1);
+}
+
+async function exportDesigns() {
+  if (!designs.list.length) { alert("No saved abayas to back up yet."); return; }
+  const name = backupFileName();
+  const text = backupText();
+
+  // ١ · المشاركة — الطريق الصحيح على آيفون
+  try {
+    if (typeof File === "function" && navigator.canShare) {
+      const file = new File([text], name, { type: "application/json" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "My abayas backup" });
+        designWarn("Backup shared. Keep it somewhere safe — “Save to Files” "
+          + "or send it to yourself.");
+        return;
+      }
+    }
+  } catch (e) {
+    // إلغاء المستخدمة للمشاركة ليس فشلاً، فلا يُسقط إلى بديل مزعج
+    if (e && e.name === "AbortError") return;
+  }
+
+  // ٢ · التحميل المباشر — الحاسوب وأندرويد
+  const blob = new Blob([text], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name; a.rel = "noopener";
   document.body.appendChild(a); a.click();
-  setTimeout(() => { document.body.removeChild(a);
-    URL.revokeObjectURL(a.href); }, 150);
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+  designWarn("Backup downloaded as " + name
+    + " — keep it outside the browser.");
 }
 
 function importDesigns(text) {
